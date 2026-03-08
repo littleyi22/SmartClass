@@ -56,6 +56,52 @@
     --text-main: #fff7ed;
 }
 
+/* Macaron Gradient Themes */
+.theme-macaron-pink {
+    --primary: #fb7185;
+    --bg-dark: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+    --bg-sidebar: rgba(255, 255, 255, 0.4);
+    --bg-card: rgba(255, 255, 255, 0.6);
+    --text-main: #be123c;
+    --text-muted: #e11d48;
+}
+
+.theme-macaron-blue {
+    --primary: #38bdf8;
+    --bg-dark: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+    --bg-sidebar: rgba(255, 255, 255, 0.4);
+    --bg-card: rgba(255, 255, 255, 0.6);
+    --text-main: #0369a1;
+    --text-muted: #0284c7;
+}
+
+.theme-macaron-green {
+    --primary: #34d399;
+    --bg-dark: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    --bg-sidebar: rgba(255, 255, 255, 0.4);
+    --bg-card: rgba(255, 255, 255, 0.6);
+    --text-main: #047857;
+    --text-muted: #059669;
+}
+
+.theme-macaron-purple {
+    --primary: #c084fc;
+    --bg-dark: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+    --bg-sidebar: rgba(255, 255, 255, 0.4);
+    --bg-card: rgba(255, 255, 255, 0.6);
+    --text-main: #6b21a8;
+    --text-muted: #7e22ce;
+}
+
+.theme-macaron-yellow {
+    --primary: #fbbf24;
+    --bg-dark: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    --bg-sidebar: rgba(255, 255, 255, 0.4);
+    --bg-card: rgba(255, 255, 255, 0.6);
+    --text-main: #b45309;
+    --text-muted: #d97706;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -360,6 +406,32 @@ header {
 }
 .student-card h4 { font-size: 1.1rem; margin-bottom: 0.3rem; }
 .student-card .seat-no { font-size: 0.8rem; color: var(--text-muted); }
+
+/* Modern Tables */
+.student-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.student-table th, .student-table td {
+    padding: 1rem;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.student-table th {
+    background: rgba(0, 0, 0, 0.2);
+    font-weight: 600;
+    color: var(--secondary);
+}
+
+.student-table tr:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
 
 /* Modals */
 .modal {

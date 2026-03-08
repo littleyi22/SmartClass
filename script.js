@@ -218,11 +218,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         groups.forEach((group, idx) => {
+            const groupScore = currClass.groupScores ? (currClass.groupScores[idx] || 0) : 0;
             const gDiv = document.createElement('div');
             gDiv.className = 'group-box';
             let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:0.5rem;">
-                <h4 style="color:var(--secondary); margin:0;">第 ${idx + 1} 組 (共${group.length}人)</h4>
-                <button class="btn-secondary" onclick="window.modGroupS(${idx}, 1)" style="padding:0.2rem 0.5rem; background:var(--success); color:white; border:none; border-radius:4px; font-size:0.8rem; cursor:pointer;">+小組分</button>
+                <h4 style="color:var(--secondary); margin:0;">第 ${idx + 1} 組 (共${group.length}人) <span style="color:var(--warning); margin-left:1rem;">總分: ${groupScore}</span></h4>
+                <div style="display:flex; gap:0.5rem;">
+                    <button class="btn-secondary" onclick="window.modGroupS(${idx}, 1)" style="padding:0.2rem 0.5rem; background:var(--success); color:white; border:none; border-radius:4px; font-size:0.8rem; cursor:pointer;">+小組分</button>
+                    <button class="btn-secondary" onclick="window.modGroupS(${idx}, -1)" style="padding:0.2rem 0.5rem; background:var(--danger); color:white; border:none; border-radius:4px; font-size:0.8rem; cursor:pointer;">-小組分</button>
+                </div>
             </div>`;
             group.forEach(sRef => {
                 const s = currClass.students.find(x => x.id === sRef.id) || sRef;
@@ -363,11 +367,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 rows.forEach((row, idx) => {
                     // Skip if empty or header row
-                    const clsName = row[0] ? String(row[0]).trim() : '';
+                    const clsName = String(row[0]).trim();
                     if (!clsName || clsName === '班級') return;
 
-                    const seatNo = parseInt(row[1]);
+                    const seatNo = parseInt(String(row[1]).trim());
                     const name = row[2] ? String(row[2]).trim() : '';
+                    const groupNum = row[3] ? parseInt(String(row[3]).trim()) : null;
                     
                     if (!isNaN(seatNo) && name) {
                         let targetClass = state.classes.find(c => c.name === clsName);
@@ -384,7 +389,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                         
                         if(!targetClass.students.find(s => s.seatNo === seatNo)){
-                            targetClass.students.push({
+                            const newStudent = {
                                 id: Date.now() + Math.random(),
                                 seatNo,
                                 name,
@@ -392,11 +397,26 @@ document.addEventListener('DOMContentLoaded', () => {
                                 missingHW: false,
                                 goodBehavior: false,
                                 note: ''
-                            });
+                            };
+                            targetClass.students.push(newStudent);
                             imported++;
                             targetClass.students.sort((a,b) => a.seatNo - b.seatNo);
+                            
+                            // Auto assign to group
+                            if (groupNum && groupNum > 0) {
+                                if(!targetClass.groups) targetClass.groups = [];
+                                while(targetClass.groups.length < groupNum) {
+                                    targetClass.groups.push([]);
+                                }
+                                targetClass.groups[groupNum - 1].push(newStudent);
+                            }
                         }
                     }
+                });
+                
+                // Cleanup empty groups
+                state.classes.forEach(c => {
+                    if(c.groups) c.groups = c.groups.filter(g => g.length > 0);
                 });
                 
                 if(firstNewClassId) state.currentClassId = firstNewClassId;
@@ -413,6 +433,69 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         reader.readAsArrayBuffer(file);
         e.target.value = ''; // reset
+    };
+
+    // Edit Students Modal Logic
+    const editStudentsModal = document.getElementById('edit-students-modal');
+    document.getElementById('btn-edit-students').onclick = () => {
+        editStudentsModal.style.display = 'flex';
+        renderEditStudentsTable();
+    };
+    
+    window.renderEditStudentsTable = () => {
+        const currClass = getCurrentClass();
+        const tbody = document.querySelector('#edit-students-table tbody');
+        tbody.innerHTML = '';
+        
+        if (currClass.students.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="empty-state">目前沒有學生資料</td></tr>';
+            return;
+        }
+        
+        currClass.students.forEach(s => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${s.seatNo}</td>
+                <td>${s.name}</td>
+                <td>
+                    <button class="btn-danger" onclick="deleteStudent(${s.id})" style="padding: 0.3rem 0.8rem; font-size: 0.9rem;">刪除</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    };
+    
+    window.deleteStudent = (id) => {
+        if(!confirm("確定要刪除這位學生嗎？")) return;
+        const currClass = getCurrentClass();
+        currClass.students = currClass.students.filter(s => s.id !== id);
+        // Clean from groups
+        if(currClass.groups) {
+            currClass.groups.forEach(g => {
+                const idx = g.findIndex(x => x.id === id);
+                if(idx > -1) g.splice(idx, 1);
+            });
+        }
+        saveState();
+        renderStudents();
+        renderGroups();
+        updateDashboard();
+        renderEditStudentsTable();
+        addActivity("手動刪除了一名學生");
+    };
+    
+    document.getElementById('btn-delete-all-students').onclick = () => {
+        if(!confirm("⚠️ 警告！確定要刪除該班級「所有」學生嗎？此動作無法復原！")) return;
+        const currClass = getCurrentClass();
+        currClass.students = [];
+        currClass.groups = [];
+        currClass.groupScores = [];
+        saveState();
+        renderStudents();
+        renderGroups();
+        updateDashboard();
+        renderEditStudentsTable();
+        addActivity("清空了全班學生名單");
     };
 
     // --- Teaching Progress ---
@@ -508,16 +591,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.modGroupS = (gIdx, val) => {
         const currClass = getCurrentClass();
-        if(currClass.groups && currClass.groups[gIdx]) {
-            currClass.groups[gIdx].forEach(gs => {
-                const s = currClass.students.find(x => x.id === gs.id);
-                if(s) s.score += val;
-            });
-            renderStudents();
-            saveState();
-            addActivity(`第 ${gIdx+1} 組 全組加分`);
-            if (val > 0) confetti({ particleCount: 40, spread: 50, origin: { y: 0.8 } });
-        }
+        if(!currClass.groupScores) currClass.groupScores = new Array(currClass.groups ? currClass.groups.length : 10).fill(0);
+        currClass.groupScores[gIdx] = (currClass.groupScores[gIdx] || 0) + val;
+        renderGroups();
+        saveState();
+        addActivity(`第 ${gIdx+1} 組 小組分數 ${val > 0 ? '+' : ''}${val}`);
+        if (val > 0) confetti({ particleCount: 40, spread: 50, origin: { y: 0.8 } });
     };
 
     document.getElementById('btn-pick-group').onclick = () => {
@@ -558,10 +637,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let isRoundActive = false;
     let classroomId = 'SC-' + Math.floor(1000 + Math.random() * 9000);
 
+    const connectionModal = document.getElementById('connection-modal');
+    document.getElementById('btn-student-entry').onclick = () => {
+        connectionModal.style.display = 'flex';
+        initTeacherPeer();
+    };
+
     const buzzerModal = document.getElementById('buzzer-modal');
     document.getElementById('tool-buzzer').onclick = () => {
         buzzerModal.style.display = 'flex';
-        initTeacherPeer();
     };
 
     function initTeacherPeer() {
@@ -570,13 +654,17 @@ document.addEventListener('DOMContentLoaded', () => {
         
         peer.on('open', (id) => {
             document.getElementById('classroom-id-display').textContent = id;
-            const qrContainer = document.getElementById('buzzer-qrcode');
-            qrContainer.innerHTML = '';
-            // Update URL to point to student.html
-            const p = window.location.pathname;
-            const basePath = p.substring(0, p.lastIndexOf('/'));
-            const studentUrl = window.location.origin + basePath + "/student.html?room=" + id;
-            new QRCode(qrContainer, { text: studentUrl, width: 250, height: 250 });
+            if(document.getElementById('global-classroom-id')) document.getElementById('global-classroom-id').textContent = id;
+            
+            const qrContainer = document.getElementById('global-qrcode');
+            if(qrContainer) {
+                qrContainer.innerHTML = '';
+                // Update URL to point to student.html
+                const p = window.location.pathname;
+                const basePath = p.substring(0, p.lastIndexOf('/'));
+                const studentUrl = window.location.origin + basePath + "/student.html?room=" + id;
+                new QRCode(qrContainer, { text: studentUrl, width: 250, height: 250 });
+            }
         });
 
         peer.on('connection', (conn) => {
@@ -609,6 +697,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateConnectedCount() {
         document.getElementById('connected-count').textContent = connections.length;
+        if(document.getElementById('global-connected-count')) document.getElementById('global-connected-count').textContent = connections.length;
     }
 
     function processBuzz(seat, name, conn) {

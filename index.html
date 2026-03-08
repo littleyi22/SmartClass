@@ -92,6 +92,9 @@
                     <button class="btn-special" id="btn-random-pick-quick">
                         <i data-lucide="sparkles"></i> <span>隨機抽人</span>
                     </button>
+                    <button class="btn-primary" id="btn-student-entry" style="background: var(--success); color: white;">
+                        <i data-lucide="smartphone"></i> <span>學生連線</span>
+                    </button>
                     <!-- Google Sync Status -->
                     <div class="google-status-widget" style="display: flex; align-items: center; gap: 0.5rem; background: var(--bg-card); padding: 0.4rem 0.8rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
                         <i data-lucide="cloud-off" id="google-status-icon" style="color: var(--text-muted); width: 20px; height: 20px;"></i>
@@ -155,6 +158,9 @@
                             <i data-lucide="file-spreadsheet"></i> 匯入名單(Excel)
                         </button>
                         <button class="btn-secondary" id="btn-reset-scores">重置全體分數</button>
+                        <button class="btn-primary" id="btn-edit-students" style="background: var(--warning); color: #000;">
+                            <i data-lucide="user-cog"></i> 編輯學生
+                        </button>
                         <button class="btn-primary" id="btn-add-student">
                             <i data-lucide="user-plus"></i> 新增學生
                         </button>
@@ -298,25 +304,20 @@
                 </div>
             </div>
             <div class="buzzer-columns">
-                <div class="buzzer-qr-side">
-                    <div id="buzzer-qrcode" style="padding: 1rem; background: white; border-radius: 12px; margin-bottom: 1rem;"></div>
-                    <p class="qr-label">請學生掃描 QR Code 進入搶答區</p>
-                    <div style="margin-top: 2rem; display: flex; flex-direction: column; gap: 0.8rem;">
-                        <button class="btn-primary btn-large" id="btn-start-buzzer-round" style="width: 100%;">
-                            <i data-lucide="play" style="margin-right: 0.5rem;"></i> 開始搶答輪次
-                        </button>
-                        <button class="btn-secondary" id="btn-reset-buzzer" style="width: 100%;">
+                <div class="buzzer-left">
+                    <button class="btn-primary btn-pulse" id="btn-start-buzzer-round" style="width: 100%; padding: 1.5rem; font-size: 1.5rem; margin-bottom: 1rem;"><i data-lucide="play"></i> 開始新輪次</button>
+                    
+                    <div style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; height: 300px; display: flex; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3>搶答排行榜</h3>
+                            <span style="font-size: 0.85rem; color: var(--text-muted);">已連線學生: <span id="connected-count">0</span></span>
+                        </div>
+                        <div id="buzzer-winner-list" class="winner-list" style="flex-grow: 1; overflow-y: auto;">
+                            <div class="empty-state">等待搶答者...</div>
+                        </div>
+                        <button class="btn-secondary" id="btn-reset-buzzer" style="width: 100%; margin-top: 1rem;">
                             <i data-lucide="rotate-ccw" style="margin-right: 0.5rem;"></i> 重設排行榜
                         </button>
-                    </div>
-                </div>
-                <div class="buzzer-list-side">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                        <h3>搶答排行榜</h3>
-                        <span style="font-size: 0.85rem; color: var(--text-muted);">已連線學生: <span id="connected-count">0</span></span>
-                    </div>
-                    <div id="buzzer-winner-list" class="winner-list" style="height: 300px; overflow-y: auto;">
-                        <div class="empty-state">等待搶答者...</div>
                     </div>
                 </div>
             </div>
@@ -428,6 +429,48 @@
         </div>
     </div>
 
+    <!-- Connection Modal -->
+    <div id="connection-modal" class="modal">
+        <div class="modal-content" style="text-align: center; max-width: 400px;">
+            <span class="close" data-modal="connection-modal">&times;</span>
+            <h2><i data-lucide="smartphone" style="color: var(--success); margin-right: 0.5rem;"></i>學生連線入口</h2>
+            <div style="margin: 2rem 0;">
+                <div id="global-qrcode" style="padding: 1rem; background: white; border-radius: 12px; margin: 0 auto 1rem; display: inline-block;"></div>
+                <p style="font-size: 1.5rem; color: var(--secondary); margin-bottom: 0.5rem;">教室代碼</p>
+                <div id="global-classroom-id" style="font-size: 2.5rem; font-weight: 800; letter-spacing: 4px; background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 12px; color: var(--primary);">----</div>
+            </div>
+            <p style="color: var(--text-muted); font-size: 1.2rem;"><i data-lucide="users" style="width: 20px; height: 20px; display: inline-block; vertical-align: middle;"></i> 目前已連線： <strong id="global-connected-count" style="color: white; font-size: 1.5rem;">0</strong> 人</p>
+        </div>
+    </div>
+
+    <!-- Edit Students Modal -->
+    <div id="edit-students-modal" class="modal">
+        <div class="modal-content" style="max-width: 700px; max-height: 85vh; display: flex; flex-direction: column;">
+            <span class="close" data-modal="edit-students-modal">&times;</span>
+            <h2><i data-lucide="user-cog" style="color: var(--warning); margin-right: 0.5rem;"></i>編輯班級學生</h2>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin: 1rem 0; padding-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <p style="color: var(--text-muted);">針對目前所選的班級進行管理。</p>
+                <button class="btn-danger" id="btn-delete-all-students"><i data-lucide="trash-2"></i> 一鍵刪除全班</button>
+            </div>
+            
+            <div style="flex-grow: 1; overflow-y: auto;">
+                <table class="student-table" id="edit-students-table">
+                    <thead>
+                        <tr>
+                            <th width="20%">座號</th>
+                            <th width="50%">姓名</th>
+                            <th width="30%">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Rows populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- Settings Modal -->
     <div id="settings-modal" class="modal">
         <div class="modal-content">
@@ -448,6 +491,16 @@
                     <button class="theme-btn emerald" data-theme="emerald" title="森林綠意"></button>
                     <button class="theme-btn royal" data-theme="royal" title="皇家紫色"></button>
                     <button class="theme-btn sunset" data-theme="sunset" title="黃昏暖陽"></button>
+                </div>
+            </div>
+            <div class="settings-group">
+                <label>馬卡龍漸層風格 ✨</label>
+                <div class="theme-selector">
+                    <button class="theme-btn macaron-pink" data-theme="macaron-pink" title="櫻花粉粉" style="background: linear-gradient(135deg, #fce7f3, #fb7185);"></button>
+                    <button class="theme-btn macaron-blue" data-theme="macaron-blue" title="天空藍藍" style="background: linear-gradient(135deg, #e0f2fe, #38bdf8);"></button>
+                    <button class="theme-btn macaron-green" data-theme="macaron-green" title="薄荷綠綠" style="background: linear-gradient(135deg, #d1fae5, #34d399);"></button>
+                    <button class="theme-btn macaron-purple" data-theme="macaron-purple" title="薰衣草紫" style="background: linear-gradient(135deg, #f3e8ff, #c084fc);"></button>
+                    <button class="theme-btn macaron-yellow" data-theme="macaron-yellow" title="檸檬黃黃" style="background: linear-gradient(135deg, #fef3c7, #fbbf24);"></button>
                 </div>
             </div>
             <div class="settings-group">
