@@ -106,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const addActivity = (msg) => {
         const time = new Date().toLocaleTimeString('zh-TW', { hour12: false });
         state.activities.unshift({ time, msg });
-        if (state.activities.length > 20) state.activities.pop();
+        if (state.activities.length > 50) state.activities.pop();
         renderActivities();
         saveState();
     };
@@ -367,10 +367,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-download-template').onclick = () => {
         const worksheet = XLSX.utils.aoa_to_sheet([
-            ["班級", "座號", "姓名"],
-            ["101", 1, "林小明"],
-            ["101", 2, "陳美美"],
-            ["108", 1, "王大同"]
+            ["班級", "座號", "姓名", "小組(1~10)"],
+            ["101", 1, "林小明", 1],
+            ["101", 2, "陳美美", 2],
+            ["108", 1, "王大同", ""]
         ]);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "學生名單");
@@ -417,8 +417,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             if(!firstNewClassId) firstNewClassId = targetClass.id;
                         }
                         
-                        if(!targetClass.students.find(s => s.seatNo === seatNo)){
-                            const newStudent = {
+                        let student = targetClass.students.find(s => s.seatNo === seatNo);
+                        if(!student){
+                            student = {
                                 id: Date.now() + Math.random(),
                                 seatNo,
                                 name,
@@ -427,17 +428,28 @@ document.addEventListener('DOMContentLoaded', () => {
                                 goodBehavior: false,
                                 note: ''
                             };
-                            targetClass.students.push(newStudent);
-                            imported++;
+                            targetClass.students.push(student);
                             targetClass.students.sort((a,b) => a.seatNo - b.seatNo);
+                            imported++;
+                        } else {
+                            if (name) student.name = name;
+                            imported++;
+                        }
                             
-                            // Auto assign to group
-                            if (groupNum && groupNum > 0) {
-                                if(!targetClass.groups) targetClass.groups = [];
-                                while(targetClass.groups.length < groupNum) {
-                                    targetClass.groups.push([]);
-                                }
-                                targetClass.groups[groupNum - 1].push(newStudent);
+                        // Auto assign to group
+                        if (groupNum && groupNum > 0) {
+                            if(!targetClass.groups) targetClass.groups = [];
+                            while(targetClass.groups.length < groupNum) {
+                                targetClass.groups.push([]);
+                            }
+                            
+                            // Prevent duplicate and remove from other groups
+                            if (!targetClass.groups[groupNum - 1].find(s => s.seatNo === seatNo)) {
+                                targetClass.groups.forEach(g => {
+                                    const idx = g.findIndex(s => s.seatNo === seatNo);
+                                    if(idx !== -1) g.splice(idx, 1);
+                                });
+                                targetClass.groups[groupNum - 1].push(student);
                             }
                         }
                     }
@@ -706,6 +718,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (type === 'JOIN') {
                     conn.studentMeta = { seat: d.seat, name: d.name };
+                    updateConnectedCount();
                 } else if (type === 'BUZZ_ACT' && isRoundActive) {
                     processBuzz(d.seat, d.name, conn);
                 } else if (type === 'QA_ANS') {
@@ -727,8 +740,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateConnectedCount() {
-        document.getElementById('connected-count').textContent = connections.length;
-        if(document.getElementById('global-connected-count')) document.getElementById('global-connected-count').textContent = connections.length;
+        const count = connections.length;
+        document.getElementById('connected-count').textContent = count;
+        if(document.getElementById('global-connected-count')) document.getElementById('global-connected-count').textContent = count;
+        
+        const listDiv = document.getElementById('connected-students-list');
+        if (!listDiv) return;
+        
+        if (count === 0) {
+            listDiv.innerHTML = '<div class="empty-state" style="width: 100%; font-size: 0.9rem;">等待學生加入...</div>';
+            return;
+        }
+        
+        listDiv.innerHTML = connections.map(c => {
+            const m = c.studentMeta || { seat: '?', name: '連線中' };
+            return `<span style="background: rgba(255,255,255,0.15); color: white; padding: 0.3rem 0.6rem; border-radius: 20px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2);"><strong style="color:var(--secondary)">${m.seat}</strong> ${m.name}</span>`;
+        }).join('');
     }
 
     function processBuzz(seat, name, conn) {
