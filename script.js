@@ -827,6 +827,32 @@ document.addEventListener('DOMContentLoaded', () => {
     let tokenClient;
     let accessToken = null;
 
+    const updateGoogleStatus = (isLoggedIn) => {
+        const icon = document.getElementById('google-status-icon');
+        const text = document.getElementById('google-status-text');
+        const logoutBtn = document.getElementById('btn-header-google-logout');
+        const btnLogin = document.getElementById('btn-google-login');
+        
+        if (isLoggedIn) {
+            if(icon) { icon.setAttribute('data-lucide', 'cloud'); icon.style.color = 'var(--success)'; }
+            if(text) { text.textContent = '雲端已連線'; text.style.color = 'var(--success)'; }
+            if(logoutBtn) logoutBtn.style.display = 'block';
+            if(btnLogin) {
+                btnLogin.innerHTML = `<i data-lucide="check" style="margin-right:0.5rem;"></i> 已連結 Google 雲端`;
+                btnLogin.style.background = 'var(--success)';
+            }
+        } else {
+            if(icon) { icon.setAttribute('data-lucide', 'cloud-off'); icon.style.color = 'var(--text-muted)'; }
+            if(text) { text.textContent = '未連結'; text.style.color = 'var(--text-muted)'; }
+            if(logoutBtn) logoutBtn.style.display = 'none';
+            if(btnLogin) {
+                btnLogin.innerHTML = `<i data-lucide="log-in" style="margin-right:0.5rem;"></i> 連結 Google 帳號`;
+                btnLogin.style.background = 'var(--primary)';
+            }
+        }
+        lucide.createIcons();
+    };
+
     // Initialize the token client
     if (window.google && window.google.accounts) {
         tokenClient = google.accounts.oauth2.initTokenClient({
@@ -835,12 +861,9 @@ document.addEventListener('DOMContentLoaded', () => {
             callback: (tokenResponse) => {
                 if(tokenResponse && tokenResponse.access_token) {
                     accessToken = tokenResponse.access_token;
-                    alert("Google 帳號連結成功！未來的「下課存檔」將會自動上傳備份至您的雲端硬碟。");
-                    const btn = document.getElementById('btn-google-login');
-                    btn.innerHTML = `<i data-lucide="check" style="margin-right:0.5rem;"></i> 已連結 Google 雲端`;
-                    btn.style.background = 'var(--success)';
+                    updateGoogleStatus(true);
                     addActivity("✅ 已成功串接 Google 雲端硬碟");
-                    lucide.createIcons();
+                    alert("Google 帳號連結成功！未來的「下課存檔」將會自動上傳備份至您的雲端硬碟。");
                 }
             },
         });
@@ -851,6 +874,17 @@ document.addEventListener('DOMContentLoaded', () => {
             tokenClient.requestAccessToken({prompt: 'consent'});
         } else {
             alert("Google 登入服務尚未載入完畢，請重新整理網頁後再試一次。");
+        }
+    };
+
+    document.getElementById('btn-header-google-logout').onclick = () => {
+        if (accessToken) {
+            google.accounts.oauth2.revoke(accessToken, () => {
+                accessToken = null;
+                updateGoogleStatus(false);
+                addActivity("✅ 已登出 Google 帳號");
+                alert("已成功登出 Google 帳號！");
+            });
         }
     };
 
