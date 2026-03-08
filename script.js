@@ -283,11 +283,17 @@ document.addEventListener('DOMContentLoaded', () => {
         const list = currClass.students.filter(s => s.name.includes(filter) || s.seatNo.toString().includes(filter));
         
         list.forEach(s => {
+            let groupLabel = '';
+            if (currClass.groups) {
+                const gIdx = currClass.groups.findIndex(g => g.find(x => x.id === s.id));
+                if (gIdx !== -1) groupLabel = `<span style="font-size: 0.8rem; background: rgba(255,255,255,0.1); padding: 0.2rem 0.4rem; border-radius: 4px; margin-left: 0.5rem; color: var(--secondary);">第 ${gIdx + 1} 組</span>`;
+            }
+
             const card = document.createElement('div');
             card.className = 'student-card';
             card.innerHTML = `
                 <div class="avatar">${s.name[0]}</div>
-                <h4>${s.name}</h4>
+                <h4>${s.name}${groupLabel}</h4>
                 <div class="seat-no">座號: ${s.seatNo}</div>
                 <div class="badges" style="min-height:24px; margin-top:0.5rem">
                     ${s.missingHW ? '<span class="badge hw" style="color:var(--danger); font-size:0.8rem">⚠ 未交</span>' : ''}
@@ -315,17 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (s) {
             s.score += val;
             if (val > 0) confetti({ particleCount: 40, spread: 50, origin: { y: 0.8 } });
-            addActivity(`${s.name} 個人分數 ${val > 0 ? '+' : ''}${val}`);
-            
-            if (currClass.groups) {
-                const gIdx = currClass.groups.findIndex(g => g.find(x => x.id === id));
-                if (gIdx !== -1) {
-                    if (!currClass.groupScores) currClass.groupScores = [];
-                    currClass.groupScores[gIdx] = (currClass.groupScores[gIdx] || 0) + val;
-                    addActivity(`第 ${gIdx+1} 組 連帶加 ${val > 0 ? '+' : ''}${val} 分`);
-                }
-            }
-            
+            addActivity(`${s.name} 分數 ${val > 0 ? '+' : ''}${val}`);
             renderStudents();
             saveState();
         }
@@ -337,6 +333,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (s) {
             s[field] = !s[field];
             renderStudents();
+            
+            if (field === 'goodBehavior') {
+                addActivity(`${s.name} 被標記為 ${s.goodBehavior ? '⭐ 優良' : '一般'}`);
+            } else if (field === 'missingHW') {
+                addActivity(`${s.name} 被標記為 ${s.missingHW ? '❌ 功課未交' : '已交功課'}`);
+            }
+            
+            updateDashboard();
             saveState();
         }
     };
@@ -346,6 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const s = currClass.students.find(x => x.id === id);
         if (s) {
             s.note = val;
+            addActivity(`${s.name} 備註更新：${val || '清空'}`);
             saveState();
         }
     };
@@ -478,6 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 addActivity(`從Excel匯入了 ${imported} 位學生至相應班級`);
                 renderClassSelect();
                 renderStudents();
+                renderGroups();
                 saveState();
                 alert(`成功匯入 ${imported} 筆資料！${firstNewClassId ? '\n已為您切換至新匯入的班級。' : ''}`);
             } catch (err) {
