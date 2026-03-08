@@ -86,6 +86,7 @@
                 <i data-lucide="zap"></i>
             </div>
             <h2>按我搶答！</h2>
+            <button class="btn-secondary" onclick="showSec('sec-idle')" style="margin-top: 2rem; background: transparent; border: 1px solid rgba(255,255,255,0.2);">返回等待區</button>
         </div>
 
         <!-- 4. Q&A (Short Answer / Multiple Choice) -->
@@ -106,6 +107,16 @@
                     <div class="mc-btn D" onclick="submitMC('D')">D</div>
                 </div>
             </div>
+            <button class="btn-secondary" onclick="showSec('sec-idle')" style="margin-top: 2rem; width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.2);">返回等待區</button>
+        </div>
+
+        <!-- 4.5 Text Input Channel -->
+        <div id="sec-text" class="section">
+            <h2 style="color: var(--secondary);"><i data-lucide="message-square"></i> 文字傳送</h2>
+            <p style="color: #94a3b8; margin-bottom: 1rem;">老師開啟了文字收集，請輸入您的內容</p>
+            <textarea id="text-channel-input" rows="5" placeholder="請輸入文字..." style="width: 100%; padding: 1rem; border-radius: 12px; background: rgba(0,0,0,0.2); color: white; border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; margin-bottom: 1rem;"></textarea>
+            <button class="btn-primary" id="btn-submit-text" style="width: 100%; margin-bottom: 1rem;">送出文字</button>
+            <button class="btn-secondary" onclick="showSec('sec-idle')" style="width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.2);">返回等待區</button>
         </div>
 
         <!-- 5. Link Receiver -->
@@ -128,11 +139,12 @@
         <!-- 7. Whiteboard -->
         <div id="sec-whiteboard" class="section">
             <h2><i data-lucide="pen-tool"></i> 學生小白板</h2>
-            <canvas id="student-canvas"></canvas>
-            <div style="display: flex; gap: 1rem; width: 100%;">
+            <canvas id="student-canvas" style="touch-action: none; background: white; border-radius: 8px; margin: 1rem 0;"></canvas>
+            <div style="display: flex; gap: 0.5rem; width: 100%; margin-bottom: 1rem;">
                 <button class="btn-primary" id="btn-submit-board" style="flex: 2;">送出畫板</button>
                 <button class="btn-red" id="btn-clear-board" style="flex: 1;"><i data-lucide="trash-2"></i></button>
             </div>
+            <button class="btn-secondary" onclick="showSec('sec-idle')" style="width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.2);">返回等待區</button>
         </div>
 
     </div>
@@ -250,6 +262,15 @@
             showSec('sec-idle');
             document.getElementById('idle-msg').innerText = `已送出答案：${choice}`;
         };
+        
+        // Action: Text Channel
+        document.getElementById('btn-submit-text').onclick = () => {
+            const val = document.getElementById('text-channel-input').value;
+            if(!val) return alert('請填寫文字內容');
+            conn.send({ type: 'TEXT_ANS', data: myData, text: val });
+            showSec('sec-idle');
+            document.getElementById('idle-msg').innerText = "文字已成功傳送給老師！";
+        };
 
         // Action: File Upload (Using base64 for simplest P2P transfer)
         document.getElementById('btn-upload-file').onclick = () => {
@@ -293,18 +314,39 @@
         };
 
         const startPos = (e) => { painting = true; draw(e); };
-        const endPos = () => { painting = false; ctx.beginPath(); };
+        const endPos = (e) => { if(painting) { e.preventDefault(); painting = false; ctx.beginPath(); } };
         const draw = (e) => {
             if(!painting) return;
-            e.preventDefault();
+            e.preventDefault(); // Prevent scrolling on mobile
             const rect = canvas.getBoundingClientRect();
-            const x = (e.clientX || e.touches[0].clientX) - rect.left;
-            const y = (e.clientY || e.touches[0].clientY) - rect.top;
-            ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineTo(x,y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x,y);
+            let clientX, clientY;
+            
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else if (e.changedTouches && e.changedTouches.length > 0) {
+                clientX = e.changedTouches[0].clientX;
+                clientY = e.changedTouches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+            
+            ctx.lineWidth = 3; ctx.lineCap = 'round'; 
+            ctx.lineTo(x,y); ctx.stroke(); 
+            ctx.beginPath(); ctx.moveTo(x,y);
         };
         
-        canvas.addEventListener('mousedown', startPos); canvas.addEventListener('mouseup', endPos); canvas.addEventListener('mousemove', draw);
-        canvas.addEventListener('touchstart', startPos); canvas.addEventListener('touchend', endPos); canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('mousedown', startPos); 
+        canvas.addEventListener('mouseup', endPos); 
+        canvas.addEventListener('mousemove', draw);
+        // Add passive: false to preventDefault on touch events
+        canvas.addEventListener('touchstart', startPos, { passive: false }); 
+        canvas.addEventListener('touchend', endPos, { passive: false }); 
+        canvas.addEventListener('touchmove', draw, { passive: false });
 
         const clearBoard = () => {
             ctx.fillStyle = 'white'; ctx.fillRect(0,0,canvas.width,canvas.height);
@@ -312,6 +354,7 @@
         document.getElementById('btn-clear-board').onclick = clearBoard;
 
         document.getElementById('btn-submit-board').onclick = () => {
+            // Check if blank
             const dataUrl = canvas.toDataURL('image/png');
             conn.send({ type: 'WHITEBOARD_SUBMIT', data: myData, imgData: dataUrl });
             showSec('sec-idle');

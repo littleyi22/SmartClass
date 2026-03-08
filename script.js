@@ -64,6 +64,35 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const getCurrentClass = () => state.classes.find(c => c.id === state.currentClassId);
 
+    // --- Mobile Sidebar Setup ---
+    const mobileMenuBtn = document.getElementById('btn-mobile-menu');
+    const sidebar = document.querySelector('.sidebar');
+    let overlay = document.querySelector('.mobile-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'mobile-overlay';
+        document.body.appendChild(overlay);
+    }
+
+    if (mobileMenuBtn) {
+        mobileMenuBtn.onclick = () => {
+            sidebar.classList.add('mobile-show');
+            overlay.classList.add('show');
+        };
+        overlay.onclick = () => {
+            sidebar.classList.remove('mobile-show');
+            overlay.classList.remove('show');
+        };
+        document.querySelectorAll('.nav-links li').forEach(li => {
+            li.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('mobile-show');
+                    overlay.classList.remove('show');
+                }
+            });
+        });
+    }
+
     // --- Core Functions ---
     const saveState = () => {
         localStorage.setItem('sc_v3_classes', JSON.stringify(state.classes));
@@ -685,6 +714,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     addFileResult(d.seat, d.name, data.filename, data.fileData);
                 } else if (type === 'WHITEBOARD_SUBMIT') {
                     addWhiteboardResult(d.seat, d.name, data.imgData);
+                } else if (type === 'TEXT_ANS') {
+                    addTextResult(d.seat, d.name, data.text);
                 }
             });
             
@@ -809,7 +840,7 @@ document.addEventListener('DOMContentLoaded', () => {
         qaCount++; qaAnsCount.textContent = `(${qaCount} 份)`;
         const div = document.createElement('div');
         div.style.background = 'rgba(255,255,255,0.1)'; div.style.padding = '1rem'; div.style.borderRadius = '8px';
-        div.innerHTML = `<strong style="color:var(--secondary)">${seat}號 ${name}</strong><img src="${imgData}" style="width:100%; height:auto; border-radius:4px; margin-top:0.5rem; background:white;">`;
+        div.innerHTML = `<strong style="color:var(--secondary)">${seat}號 ${name}</strong><img src="${imgData}" style="width:100%; height:auto; border-radius:4px; margin-top:0.5rem; background:white; cursor:pointer;" onclick="const w=window.open(''); w.document.write('<img src=\\''+this.src+'\\' style=\\'max-width:100%;\\'>');">`;
         qaResultsList.prepend(div);
     }
 
@@ -834,6 +865,35 @@ document.addEventListener('DOMContentLoaded', () => {
         li.style.background = 'rgba(255,255,255,0.05)'; li.style.padding = '1rem'; li.style.borderRadius = '8px'; li.style.marginBottom = '0.5rem'; li.style.display = 'flex'; li.style.justifyContent = 'space-between'; li.style.alignItems = 'center';
         li.innerHTML = `<div><strong style="color:var(--secondary)">${seat}號 ${name}</strong> <span style="margin-left:1rem">${filename}</span></div> <a href="${fileData}" download="${seat}_${name}_${filename}" class="btn-primary" style="text-decoration:none; padding: 0.5rem 1rem;">下載</a>`;
         fileResultsList.prepend(li);
+    }
+
+    // 3e. Text Receive Channel
+    const textModal = document.getElementById('text-modal');
+    const textResultsList = document.getElementById('text-results-list');
+    const textRecvCount = document.getElementById('text-recv-count');
+    let textCount = 0;
+
+    document.getElementById('tool-text').onclick = () => textModal.style.display = 'flex';
+    document.getElementById('btn-request-text').onclick = () => {
+        textCount = 0; textRecvCount.textContent = `(${textCount} 份)`;
+        textResultsList.innerHTML = '';
+        connections.forEach(conn => conn.send({ type: 'TEXT_REQ' }));
+        addActivity('開放學生短文輸入通道');
+    };
+    
+    document.getElementById('btn-clear-text-results').onclick = () => {
+        textCount = 0; textRecvCount.textContent = `(${textCount} 份)`;
+        textResultsList.innerHTML = '<div class="empty-state">尚未接收到文字..</div>';
+        connections.forEach(conn => conn.send({ type: 'IDLE', msg: '測驗已結束，等待下一場活動。' }));
+    };
+
+    function addTextResult(seat, name, text) {
+        if(textResultsList.querySelector('.empty-state')) textResultsList.innerHTML = '';
+        textCount++; textRecvCount.textContent = `(${textCount} 份)`;
+        const div = document.createElement('div');
+        div.style.background = 'rgba(255,255,255,0.05)'; div.style.padding = '1rem'; div.style.borderRadius = '12px'; div.style.borderLeft = '4px solid #8b5cf6';
+        div.innerHTML = `<div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;"><strong style="color:var(--secondary)">${seat}號 ${name}</strong></div><div style="font-size: 1.1rem; word-break: break-all;">${text}</div>`;
+        textResultsList.prepend(div);
     }
 
     // 4. Advanced Timer

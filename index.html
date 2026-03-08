@@ -74,11 +74,14 @@
         <main class="main-content">
             <!-- Header -->
             <header>
-                <div class="header-info">
-                    <h1 id="header-page-title">主控面板</h1>
-                    <div class="time-container">
-                        <p id="current-date">---</p>
-                        <p id="current-time">00:00:00</p>
+                <div class="header-info" style="display: flex; align-items: center; gap: 1rem;">
+                    <button id="btn-mobile-menu" class="btn-secondary" style="display: none; padding: 0.5rem;"><i data-lucide="menu"></i></button>
+                    <div>
+                        <h1 id="header-page-title">主控面板</h1>
+                        <div class="time-container">
+                            <p id="current-date">---</p>
+                            <p id="current-time">00:00:00</p>
+                        </div>
                     </div>
                 </div>
                 <div class="header-actions">
@@ -242,6 +245,11 @@
                         <div class="tool-icon" style="color: #10b981;"><i data-lucide="message-square"></i></div>
                         <h3>隨堂測驗</h3>
                         <p>簡答與單選即時互動</p>
+                    </div>
+                    <div class="tool-card" id="tool-text">
+                        <div class="tool-icon" style="color: #8b5cf6;"><i data-lucide="file-text"></i></div>
+                        <h3>收取短文</h3>
+                        <p>收集全班即時文字</p>
                     </div>
                     <div class="tool-card" id="tool-file">
                         <div class="tool-icon" style="color: #f59e0b;"><i data-lucide="upload-cloud"></i></div>
@@ -426,6 +434,24 @@
             <ul id="file-results-list" style="list-style: none; padding: 0; min-height: 200px; max-height: 40vh; overflow-y: auto;">
                 <div class="empty-state">尚未接收到檔案..</div>
             </ul>
+        </div>
+    </div>
+
+    <!-- Text Receive Modal -->
+    <div id="text-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close" data-modal="text-modal">&times;</span>
+            <h2><i data-lucide="file-text" style="margin-right: 0.5rem; color: #8b5cf6;"></i>收取學生短文通道</h2>
+            <button class="btn-primary" id="btn-request-text" style="width: 100%; margin: 1rem 0;">開放學生文字輸入通道</button>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">
+                <h3>已收到短文清單 <span id="text-recv-count" style="font-size: 0.9rem; color: var(--text-muted);">(0 份)</span></h3>
+                <button class="btn-danger" id="btn-clear-text-results" style="padding: 0.3rem 0.8rem; font-size: 0.8rem;">清除結果</button>
+            </div>
+            
+            <div id="text-results-list" style="flex-grow: 1; min-height: 200px; max-height: 50vh; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 12px;">
+                <div class="empty-state">尚未接收到文字..</div>
+            </div>
         </div>
     </div>
 
