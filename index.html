@@ -52,15 +52,11 @@
                     <i data-lucide="wrench"></i>
                     <span>課堂神器</span>
                 </li>
-                <li data-tab="homework">
-                    <i data-lucide="book-open"></i>
-                    <span>今日功課</span>
-                </li>
             </ul>
 
             <div class="sidebar-footer">
-                <button id="btn-end-class" class="btn-primary btn-pulse" title="下課並存雲端">
-                    <i data-lucide="log-out"></i> <span>下課存檔</span>
+                <button id="btn-end-class" class="btn-primary btn-pulse" title="下課並同步雲端">
+                    <i data-lucide="cloud"></i> <span>雲端存檔</span>
                 </button>
                 <div class="footer-actions">
                     <button id="btn-save-local" title="本地手動存檔"><i data-lucide="save"></i></button>
@@ -139,8 +135,13 @@
                         <button class="btn-primary" id="btn-save-progress" style="margin-top: 10px;">儲存進度</button>
                     </div>
                     <div class="quick-homework card">
-                        <h2>今日功課摘要</h2>
-                        <div id="hw-summary-box" class="hw-summary">點擊分頁查看詳細功課</div>
+                        <h2>今日功課</h2>
+                        <textarea id="homework-input" placeholder="請輸入今天的功課內容..." style="width: 100%; height: 100px; background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 1rem; border-radius: 8px; resize: none; margin-bottom: 0.5rem;"></textarea>
+                        <button class="btn-primary" id="btn-save-homework">儲存功課</button>
+                    </div>
+                    <div class="activity-log card" style="grid-column: 1 / -1;">
+                        <h2>近期紀錄</h2>
+                        <div id="activity-list" style="max-height: 250px; overflow-y: auto; padding-right: 1rem; margin-top: 1rem;"></div>
                     </div>
                 </div>
             </section>
@@ -255,21 +256,6 @@
                         <div class="tool-icon" style="color: #f59e0b;"><i data-lucide="upload-cloud"></i></div>
                         <h3>收取檔案</h3>
                         <p>學生專屬上傳通道</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Tab: Homework -->
-            <section id="homework-tab" class="tab-content">
-                <div class="homework-layout">
-                    <div class="homework-editor">
-                        <h2>編輯今日功課</h2>
-                        <textarea id="homework-input" placeholder="請輸入今天的功課內容..." class="large-textarea"></textarea>
-                        <button class="btn-primary" id="btn-save-homework">儲存並同步</button>
-                    </div>
-                    <div class="homework-preview-container">
-                        <h2>功課預覽面板</h2>
-                        <div id="homework-preview" class="homework-text card">尚未設定任何功課</div>
                     </div>
                 </div>
             </section>

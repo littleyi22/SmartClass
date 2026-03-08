@@ -104,9 +104,12 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const addActivity = (msg) => {
+        const currClass = getCurrentClass();
+        if(!currClass) return;
+        if (!currClass.activities) currClass.activities = [];
         const time = new Date().toLocaleTimeString('zh-TW', { hour12: false });
-        state.activities.unshift({ time, msg });
-        if (state.activities.length > 50) state.activities.pop();
+        currClass.activities.unshift({ time, msg });
+        if (currClass.activities.length > 50) currClass.activities.pop();
         renderActivities();
         saveState();
     };
@@ -312,7 +315,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (s) {
             s.score += val;
             if (val > 0) confetti({ particleCount: 40, spread: 50, origin: { y: 0.8 } });
-            addActivity(`${s.name} 分數 ${val > 0 ? '+' : ''}${val}`);
+            addActivity(`${s.name} 個人分數 ${val > 0 ? '+' : ''}${val}`);
+            
+            if (currClass.groups) {
+                const gIdx = currClass.groups.findIndex(g => g.find(x => x.id === id));
+                if (gIdx !== -1) {
+                    if (!currClass.groupScores) currClass.groupScores = [];
+                    currClass.groupScores[gIdx] = (currClass.groupScores[gIdx] || 0) + val;
+                    addActivity(`第 ${gIdx+1} 組 連帶加 ${val > 0 ? '+' : ''}${val} 分`);
+                }
+            }
+            
             renderStudents();
             saveState();
         }
@@ -496,14 +509,28 @@ document.addEventListener('DOMContentLoaded', () => {
         currClass.students.forEach(s => {
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${s.seatNo}</td>
-                <td>${s.name}</td>
+                <td><input type="number" class="custom-select" value="${s.seatNo}" style="width: 60px; padding: 0.3rem;" onchange="updateStudentInfo(${s.id}, 'seatNo', this.value)"></td>
+                <td><input type="text" class="custom-select" value="${s.name}" style="width: 120px; padding: 0.3rem;" onchange="updateStudentInfo(${s.id}, 'name', this.value)"></td>
                 <td>
                     <button class="btn-danger" onclick="deleteStudent(${s.id})" style="padding: 0.3rem 0.8rem; font-size: 0.9rem;">刪除</button>
                 </td>
             `;
             tbody.appendChild(tr);
         });
+    };
+    
+    window.updateStudentInfo = (id, field, val) => {
+        const currClass = getCurrentClass();
+        const student = currClass.students.find(s => s.id === id);
+        if (student) {
+            if (field === 'seatNo') student.seatNo = parseInt(val) || 0;
+            if (field === 'name') student.name = val;
+            currClass.students.sort((a,b) => a.seatNo - b.seatNo);
+            saveState();
+            renderStudents();
+            renderGroups();
+            updateDashboard();
+        }
     };
     
     window.deleteStudent = (id) => {
@@ -1153,18 +1180,19 @@ document.addEventListener('DOMContentLoaded', () => {
         
         elements.brandName.textContent = state.brandName;
         
-        elements.hwPreview.textContent = currClass.homework;
-        elements.hwInput.value = currClass.homework;
-        elements.hwSummary.textContent = (currClass.homework || '').split('\n')[0] + "...";
+        if(elements.hwInput) elements.hwInput.value = currClass.homework || '';
+        if(elements.progInput1) elements.progInput1.value = currClass.teachingProgress || '';
+        if(elements.progInput2) elements.progInput2.value = currClass.teachingProgress || '';
         
-        elements.progInput1.value = currClass.teachingProgress || '';
-        elements.progInput2.value = currClass.teachingProgress || '';
+        renderActivities();
     };
 
     const renderActivities = () => {
         if (!elements.activityList) return;
-        elements.activityList.innerHTML = state.activities.length ? 
-            state.activities.map(a => `<div style="padding:0.5rem 0; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between;"><span>${a.msg}</span><small style="color:var(--text-muted)">${a.time}</small></div>`).join('') :
+        const currClass = getCurrentClass();
+        const acts = currClass.activities || [];
+        elements.activityList.innerHTML = acts.length ? 
+            acts.map(a => `<div style="padding:0.5rem 0; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between;"><span>${a.msg}</span><small style="color:var(--text-muted)">${a.time}</small></div>`).join('') :
             '<div class="empty-state">尚無活動紀錄</div>';
     };
 
