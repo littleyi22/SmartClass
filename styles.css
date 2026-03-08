@@ -14,7 +14,12 @@
     --danger: #ef4444;
     --radius: 16px;
     --shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+    --z-top: 9999;
 }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes pulse-ring { 0% { transform: scale(0.9); opacity: 1; } 100% { transform: scale(1.4); opacity: 0; } }
+
 
 /* Theme Variants */
 .theme-light {
@@ -463,3 +468,38 @@ header {
 .stat-icon.purple { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
 .stat-icon.green { background: rgba(16, 185, 129, 0.2); color: #34d399; }
 .stat-icon.orange { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+    .sidebar { width: 80px; padding: 1rem 0.5rem; }
+    .sidebar .logo span, .sidebar .nav-links span, .sidebar .sidebar-footer span { display: none; }
+    .sidebar .nav-links li { justify-content: center; padding: 1rem; }
+    .main-content { padding: 1rem; }
+    .homework-layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .sidebar { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; flex-direction: row; padding: 0; border-right: none; border-top: 1px solid rgba(255,255,255,0.1); z-index: 1000; overflow: visible; }
+    .sidebar .logo, .sidebar .class-selector, .sidebar .sidebar-footer { display: none; }
+    .sidebar .nav-links { flex-direction: row; width: 100%; height: 100%; justify-content: space-around; }
+    .sidebar .nav-links li { flex: 1; margin: 0; border-radius: 0; flex-direction: column; font-size: 0.7rem; }
+    .sidebar .nav-links i { margin: 0; }
+    
+    .app-container { flex-direction: column; }
+    .main-content { padding-bottom: 90px; }
+    
+    .stats-grid { grid-template-columns: 1fr; gap: 0.8rem; }
+    .stat-card { padding: 1rem; }
+    .header-actions { flex-direction: column; align-items: stretch; gap: 0.5rem; }
+    
+    .student-toolbar { flex-direction: column; gap: 1rem; }
+    .student-toolbar .action-buttons { flex-wrap: wrap; justify-content: center; }
+    
+    .buzzer-columns { flex-direction: column; }
+}
+
+/* Buzzer Specific */
+.winner-item { padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 1rem; border-left: 4px solid var(--secondary); animation: slideIn 0.3s ease-out; }
+@keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+.winner-rank { width: 30px; height: 30px; background: var(--secondary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+

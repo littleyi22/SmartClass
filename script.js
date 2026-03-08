@@ -354,17 +354,22 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.onload = (evt) => {
             try {
                 const data = evt.target.result;
-                const workbook = XLSX.read(data, { type: 'binary' });
+                const workbook = XLSX.read(data, { type: 'array' });
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
                 
-                // Mapping: Column A = Class, Column B = Seat No, Column C = Name
                 let imported = 0;
-                rows.forEach(row => {
+                let firstNewClassId = null;
+                
+                rows.forEach((row, idx) => {
+                    // Skip if empty or header row
                     const clsName = row[0] ? String(row[0]).trim() : '';
+                    if (!clsName || clsName === '班級') return;
+
                     const seatNo = parseInt(row[1]);
                     const name = row[2] ? String(row[2]).trim() : '';
-                    if (clsName && !isNaN(seatNo) && name) {
+                    
+                    if (!isNaN(seatNo) && name) {
                         let targetClass = state.classes.find(c => c.name === clsName);
                         if(!targetClass) {
                             targetClass = {
@@ -375,7 +380,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 homework: '請新增功課'
                             };
                             state.classes.push(targetClass);
+                            if(!firstNewClassId) firstNewClassId = targetClass.id;
                         }
+                        
                         if(!targetClass.students.find(s => s.seatNo === seatNo)){
                             targetClass.students.push({
                                 id: Date.now() + Math.random(),
@@ -392,17 +399,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
                 
+                if(firstNewClassId) state.currentClassId = firstNewClassId;
+                
                 addActivity(`從Excel匯入了 ${imported} 位學生至相應班級`);
                 renderClassSelect();
                 renderStudents();
                 saveState();
-                alert(`成功匯入 ${imported} 筆資料！`);
+                alert(`成功匯入 ${imported} 筆資料！${firstNewClassId ? '\n已為您切換至新匯入的班級。' : ''}`);
             } catch (err) {
                 console.error(err);
-                alert("讀取Excel時發生錯誤：\n" + (err.message || "請確認格式"));
+                alert("讀取Excel時發生錯誤：\n" + (err.message || "請確認格式為 A欄班級、B欄座號、C欄姓名"));
             }
         };
-        reader.readAsBinaryString(file);
+        reader.readAsArrayBuffer(file);
         e.target.value = ''; // reset
     };
 
@@ -533,18 +542,167 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     };
 
-    // 3. Buzzer (QR Simulation)
+    // 3. Buzzer (Super Buzz - PeerJS Implementation)
+    let peer = null;
+    let connections = [];
+    let winners = [];
+    let isRoundActive = false;
+    let classroomId = 'SC-' + Math.floor(1000 + Math.random() * 9000);
+
     const buzzerModal = document.getElementById('buzzer-modal');
     document.getElementById('tool-buzzer').onclick = () => {
         buzzerModal.style.display = 'flex';
-        const qrContainer = document.getElementById('buzzer-qrcode');
-        qrContainer.innerHTML = '';
-        new QRCode(qrContainer, {
-            text: window.location.href + "?mode=student",
-            width: 150,
-            height: 150
-        });
+        initTeacherPeer();
     };
+
+    function initTeacherPeer() {
+        if(peer) return; 
+        peer = new Peer(classroomId);
+        
+        peer.on('open', (id) => {
+            document.getElementById('classroom-id-display').textContent = id;
+            const qrContainer = document.getElementById('buzzer-qrcode');
+            qrContainer.innerHTML = '';
+            const studentUrl = window.location.origin + window.location.pathname + "?mode=student&room=" + id;
+            new QRCode(qrContainer, { text: studentUrl, width: 140, height: 140 });
+        });
+
+        peer.on('connection', (conn) => {
+            connections.push(conn);
+            updateConnectedCount();
+            
+            conn.on('data', (data) => {
+                if (data.type === 'BUZZ' && isRoundActive) {
+                    processBuzz(data.seat, data.name, conn);
+                }
+            });
+            
+            conn.on('close', () => {
+                connections = connections.filter(c => c !== conn);
+                updateConnectedCount();
+            });
+        });
+    }
+
+    function updateConnectedCount() {
+        document.getElementById('connected-count').textContent = connections.length;
+    }
+
+    function processBuzz(seat, name, conn) {
+        if (winners.find(w => w.name === name)) return; // Already buzzed
+        
+        winners.push({ seat, name, time: Date.now() });
+        renderWinners();
+        
+        // Notify student of their rank
+        conn.send({ type: 'RESULT', rank: winners.length });
+        
+        if (winners.length === 1) {
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        }
+    }
+
+    function renderWinners() {
+        const list = document.getElementById('buzzer-winner-list');
+        if (winners.length === 0) {
+            list.innerHTML = '<div class="empty-state">等待搶答者...</div>';
+            return;
+        }
+        list.innerHTML = winners.map((w, idx) => `
+            <div class="winner-item">
+                <div class="winner-rank">${idx + 1}</div>
+                <div style="flex:1">
+                    <div style="font-weight:bold">${w.seat}號 ${w.name}</div>
+                    <div style="font-size:0.8rem; color:var(--text-muted)">搶答成功！</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    document.getElementById('btn-start-buzzer-round').onclick = () => {
+        winners = [];
+        renderWinners();
+        isRoundActive = true;
+        // Notify all connected students
+        connections.forEach(conn => conn.send({ type: 'START_ROUND' }));
+        document.getElementById('btn-start-buzzer-round').innerHTML = '<i data-lucide="zap"></i> 搶答進行中...';
+        lucide.createIcons();
+        
+        setTimeout(() => {
+            isRoundActive = false;
+            document.getElementById('btn-start-buzzer-round').innerHTML = '<i data-lucide="play"></i> 開始新輪次';
+            lucide.createIcons();
+        }, 10000); // 10 second round
+    };
+
+    document.getElementById('btn-reset-buzzer').onclick = () => {
+        winners = [];
+        renderWinners();
+        connections.forEach(conn => conn.send({ type: 'RESET' }));
+    };
+
+    // --- Student Mode Logic ---
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'student') {
+        initStudentMode(params.get('room'));
+    }
+
+    function initStudentMode(room) {
+        document.getElementById('student-mode-container').style.display = 'flex';
+        const studentPeer = new Peer();
+        let conn = null;
+
+        document.getElementById('btn-student-join').onclick = () => {
+            const seat = document.getElementById('student-input-seat').value;
+            const name = document.getElementById('student-input-name').value;
+            if(!seat || !name) return alert('請輸入座號與姓名');
+
+            document.getElementById('student-setup').style.display = 'none';
+            document.getElementById('student-waiting').style.display = 'block';
+            document.getElementById('display-student-name').textContent = name;
+
+            conn = studentPeer.connect(room);
+            conn.on('open', () => {
+                console.log('Connected to classroom: ' + room);
+            });
+
+            conn.on('data', (data) => {
+                if (data.type === 'START_ROUND') {
+                    showBuzzer(true);
+                } else if (data.type === 'RESULT') {
+                    showResult(data.rank);
+                } else if (data.type === 'RESET') {
+                    showBuzzer(false);
+                    document.getElementById('student-result').style.display = 'none';
+                    document.getElementById('student-waiting').style.display = 'block';
+                }
+            });
+        };
+
+        function showBuzzer(active) {
+            document.getElementById('student-waiting').style.display = active ? 'none' : 'block';
+            document.getElementById('student-active').style.display = active ? 'block' : 'none';
+            document.getElementById('student-result').style.display = 'none';
+        }
+
+        function showResult(rank) {
+            document.getElementById('student-active').style.display = 'none';
+            document.getElementById('student-result').style.display = 'block';
+            const msg = rank === 1 ? "恭喜你是第 1 名！🥇" : `你是第 ${rank} 名！`;
+            document.getElementById('result-message').textContent = msg;
+            if(rank === 1) confetti({ particleCount: 150, spread: 70 });
+        }
+
+        document.getElementById('buzzer-button').onclick = () => {
+            const seat = document.getElementById('student-input-seat').value;
+            const name = document.getElementById('student-input-name').value;
+            conn.send({ type: 'BUZZ', seat, name });
+            // Visual feedback
+            const btn = document.getElementById('buzzer-button');
+            btn.style.transform = 'scale(0.9)';
+            setTimeout(() => btn.style.transform = 'scale(1)', 100);
+        };
+    }
 
     // 4. Advanced Timer
     const timerModal = document.getElementById('timer-modal');
