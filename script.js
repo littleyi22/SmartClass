@@ -449,6 +449,8 @@ document.addEventListener('DOMContentLoaded', () => {
         pickerAnim.textContent = "?";
         pickerRes.textContent = "等待命運的安排...";
         startPickBtn.style.display = 'none'; // hide generic start
+        document.getElementById('btn-pick-again').style.display = 'none';
+        
         const interval = setInterval(() => {
             const randomPick = candidates[Math.floor(Math.random() * candidates.length)];
             pickerAnim.textContent = formatWinnerObj(randomPick);
@@ -461,6 +463,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 pickerRes.textContent = `${labelPrefix}：${finalLabel}！`;
                 addActivity(`${labelPrefix}：${finalLabel}`);
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                
+                // Keep references for "Pick Again"
+                document.getElementById('btn-pick-again').style.display = 'block';
+                document.getElementById('btn-pick-again').onclick = () => {
+                    runPickerAnimation(candidates, labelPrefix, formatWinnerObj, onWin);
+                };
+                
                 if(onWin) onWin(winnerObj);
             }
         }, 100);
@@ -564,7 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const qrContainer = document.getElementById('buzzer-qrcode');
             qrContainer.innerHTML = '';
             const studentUrl = window.location.origin + window.location.pathname + "?mode=student&room=" + id;
-            new QRCode(qrContainer, { text: studentUrl, width: 140, height: 140 });
+            new QRCode(qrContainer, { text: studentUrl, width: 250, height: 250 });
         });
 
         peer.on('connection', (conn) => {

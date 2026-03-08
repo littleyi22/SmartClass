@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="main-title-tag">智慧教室助手 v.4</title>
+    <title id="main-title-tag">智慧教室助手 v.5</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -276,7 +276,7 @@
             
             <!-- Footer Copyright -->
             <footer class="bottom-footer">
-                <p>奕鈞老師製作 © 2026 | Version 4.0 (v.4)</p>
+                <p>奕鈞老師製作 © 2026 | Version 5.0 (v.5)</p>
             </footer>
         </main>
     </div>
@@ -294,7 +294,10 @@
                 <div id="picker-animation" class="picker-display l-text">?</div>
                 <div id="picker-result" class="picker-result">等待命運的安排...</div>
             </div>
-            <button class="btn-primary btn-large" id="btn-start-picker">開始隨機挑選</button>
+            <div style="display: flex; gap: 1rem; width: 100%;">
+                <button class="btn-primary btn-large" id="btn-start-picker" style="flex: 1;">開始隨機挑選</button>
+                <button class="btn-secondary btn-large" id="btn-pick-again" style="flex: 1; display: none;">再抽一次</button>
+            </div>
         </div>
     </div>
 
