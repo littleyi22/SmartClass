@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="main-title-tag">智慧教室助手 v.4</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Libraries -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <!-- Google API - GIS and Client Library -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
+</head>
+<body class="theme-default">
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="logo">
+                <i data-lucide="graduation-cap"></i>
+                <span id="brand-name">SmartClass</span>
+            </div>
+            
+            <div class="class-selector" style="margin-top: 0.5rem;">
+                <label>選擇班級</label>
+                <select id="class-select" class="custom-select"></select>
+            </div>
+
+            <ul class="nav-links">
+                <li class="active" data-tab="dashboard">
+                    <i data-lucide="layout-dashboard"></i>
+                    <span>主控面板</span>
+                </li>
+                <li data-tab="students">
+                    <i data-lucide="users"></i>
+                    <span>班級狀態</span>
+                </li>
+                <li data-tab="groups">
+                    <i data-lucide="users-2"></i>
+                    <span>分組</span>
+                </li>
+                <li data-tab="tools">
+                    <i data-lucide="wrench"></i>
+                    <span>課堂神器</span>
+                </li>
+                <li data-tab="homework">
+                    <i data-lucide="book-open"></i>
+                    <span>今日功課</span>
+                </li>
+            </ul>
+
+            <div class="sidebar-footer">
+                <button id="btn-end-class" class="btn-primary btn-pulse" title="下課並存雲端">
+                    <i data-lucide="log-out"></i> <span>下課存檔</span>
+                </button>
+                <div class="footer-actions">
+                    <button id="btn-save-local" title="本地手動存檔"><i data-lucide="save"></i></button>
+                    <button id="btn-export-data" title="匯出資料"><i data-lucide="download"></i></button>
+                    <button id="btn-settings-toggle" title="設置中心"><i data-lucide="settings"></i></button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header>
+                <div class="header-info">
+                    <h1 id="header-page-title">主控面板</h1>
+                    <div class="time-container">
+                        <p id="current-date">---</p>
+                        <p id="current-time">00:00:00</p>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <div class="tool-widget timer-widget" id="header-timer">
+                        <div class="timer-controls">
+                            <button id="btn-timer-reset"><i data-lucide="rotate-ccw"></i></button>
+                            <span id="global-timer-display">00:00</span>
+                            <button id="btn-timer-start"><i data-lucide="play"></i></button>
+                        </div>
+                    </div>
+                    <button class="btn-special" id="btn-random-pick-quick">
+                        <i data-lucide="sparkles"></i> <span>隨機抽人</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Tab: Dashboard -->
+            <section id="dashboard-tab" class="tab-content active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon purple"><i data-lucide="users"></i></div>
+                        <div class="stat-info">
+                            <h3>全班人數</h3>
+                            <p id="stat-total-students">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green"><i data-lucide="award"></i></div>
+                        <div class="stat-info">
+                            <h3>表現優良</h3>
+                            <p id="stat-good-behavior">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange"><i data-lucide="alert-circle"></i></div>
+                        <div class="stat-info">
+                            <h3>功課未交</h3>
+                            <p id="stat-missing-hw">0</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="dashboard-widgets">
+                    <div class="teaching-progress card">
+                        <h2>今日教學進度</h2>
+                        <textarea id="teaching-progress-input" placeholder="填寫今天的教學進度..."></textarea>
+                        <button class="btn-primary" id="btn-save-progress" style="margin-top: 10px;">儲存進度</button>
+                    </div>
+                    <div class="quick-homework card">
+                        <h2>今日功課摘要</h2>
+                        <div id="hw-summary-box" class="hw-summary">點擊分頁查看詳細功課</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Students -->
+            <section id="students-tab" class="tab-content">
+                <div class="student-toolbar">
+                    <div class="search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="student-search-input" placeholder="搜尋學生...">
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn-secondary" id="btn-download-template" title="下載Excel範例檔">
+                            <i data-lucide="download"></i> 範例下載
+                        </button>
+                        <input type="file" id="excel-import-students" accept=".xlsx, .xls" style="display: none;">
+                        <button class="btn-secondary" id="btn-import-excel" onclick="document.getElementById('excel-import-students').click();">
+                            <i data-lucide="file-spreadsheet"></i> 匯入名單(Excel)
+                        </button>
+                        <button class="btn-secondary" id="btn-reset-scores">重置全體分數</button>
+                        <button class="btn-primary" id="btn-add-student">
+                            <i data-lucide="user-plus"></i> 新增學生
+                        </button>
+                    </div>
+                </div>
+                <div class="student-grid" id="student-grid">
+                    <!-- Student cards go here -->
+                </div>
+                <!-- Teaching progress moved below student cards -->
+                <div class="teaching-progress card" style="margin-top: 2rem;">
+                    <h2>今日教學進度</h2>
+                    <textarea id="teaching-progress-input-2" placeholder="填寫今天的教學進度..."></textarea>
+                    <button class="btn-primary" id="btn-save-progress-2" style="margin-top: 10px;">儲存進度</button>
+                </div>
+            </section>
+
+            <!-- Tab: Groups -->
+            <section id="groups-tab" class="tab-content">
+                <div class="tool-header">
+                    <div class="input-group">
+                        <label>我要分幾組？</label>
+                        <input type="number" id="group-count" value="4" min="2" max="10">
+                    </div>
+                    <button class="btn-primary" id="btn-generate-groups">
+                        <i data-lucide="refresh-cw"></i> 自動隨機分組
+                    </button>
+                    <button class="btn-secondary" id="btn-manual-grouping">
+                        <i data-lucide="hand"></i> 手動微調
+                    </button>
+                    <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                        <button class="btn-special" id="btn-pick-group" style="padding: 0.5rem 1rem;">抽小組</button>
+                        <button class="btn-special" id="btn-pick-group-student" style="padding: 0.5rem 1rem;">抽組員</button>
+                    </div>
+                </div>
+                <div class="groups-container" id="groups-container">
+                    <div class="empty-state">設定組數後開始分組</div>
+                </div>
+            </section>
+
+            <!-- Tab: Tools -->
+            <section id="tools-tab" class="tab-content">
+                <div class="tools-grid">
+                    <div class="tool-card" id="tool-random-picker">
+                        <div class="tool-icon"><i data-lucide="dice-5"></i></div>
+                        <h3>幸運大抽籤</h3>
+                        <p>公平抽取一名學生</p>
+                    </div>
+                    <div class="tool-card" id="tool-buzzer">
+                        <div class="tool-icon"><i data-lucide="zap"></i></div>
+                        <h3>超級搶答王</h3>
+                        <p>學生掃碼同步搶答</p>
+                    </div>
+                    <div class="tool-card" id="tool-timer-advanced">
+                        <div class="tool-icon"><i data-lucide="hourglass"></i></div>
+                        <h3>專業計時器</h3>
+                        <p>自定義時間與倒數</p>
+                    </div>
+                    <div class="tool-card" id="tool-noise">
+                        <div class="tool-icon"><i data-lucide="mic-2"></i></div>
+                        <h3>分貝監控器</h3>
+                        <p>維持班級秩序神器</p>
+                    </div>
+                    <div class="tool-card" id="tool-whiteboard">
+                        <div class="tool-icon"><i data-lucide="pen-tool"></i></div>
+                        <h3>簡易白板</h3>
+                        <p>隨手畫、隨手記</p>
+                    </div>
+                    <div class="tool-card" id="tool-dice">
+                        <div class="tool-icon"><i data-lucide="layout-grid"></i></div>
+                        <h3>投擲骰子</h3>
+                        <p>隨機點數與機率</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Homework -->
+            <section id="homework-tab" class="tab-content">
+                <div class="homework-layout">
+                    <div class="homework-editor">
+                        <h2>編輯今日功課</h2>
+                        <textarea id="homework-input" placeholder="請輸入今天的功課內容..." class="large-textarea"></textarea>
+                        <button class="btn-primary" id="btn-save-homework">儲存並同步</button>
+                    </div>
+                    <div class="homework-preview-container">
+                        <h2>功課預覽面板</h2>
+                        <div id="homework-preview" class="homework-text card">尚未設定任何功課</div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Footer Copyright -->
+            <footer class="bottom-footer">
+                <p>奕鈞老師製作 © 2026 | Version 4.0 (v.4)</p>
+            </footer>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <!-- Random Picker Modal -->
+    <div id="random-picker-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" data-modal="random-picker-modal">&times;</span>
+            <div class="modal-header">
+                <i data-lucide="sparkles"></i>
+                <h2>幸運抽籤</h2>
+            </div>
+            <div class="picker-body">
+                <div id="picker-animation" class="picker-display l-text">?</div>
+                <div id="picker-result" class="picker-result">等待命運的安排...</div>
+            </div>
+            <button class="btn-primary btn-large" id="btn-start-picker">開始隨機挑選</button>
+        </div>
+    </div>
+
+    <!-- Buzzer Modal -->
+    <div id="buzzer-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" data-modal="buzzer-modal">&times;</span>
+            <h2>搶答王者挑戰賽</h2>
+            <div class="buzzer-columns">
+                <div class="buzzer-qr-side">
+                    <div id="buzzer-qrcode"></div>
+                    <p class="qr-label">學生請掃碼進入搶答</p>
+                </div>
+                <div class="buzzer-list-side">
+                    <h3>搶答排行榜</h3>
+                    <div id="buzzer-winner-list" class="winner-list">
+                        <div class="empty-state">等待搶答者...</div>
+                    </div>
+                    <button class="btn-secondary" id="btn-reset-buzzer">重設搶答</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Timer Modal -->
+    <div id="timer-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" data-modal="timer-modal">&times;</span>
+            <h2>專業計時器</h2>
+            <div style="font-size: 5rem; text-align: center; margin: 2rem 0; font-weight: bold;" id="adv-timer-display">00:00</div>
+            <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 1rem;">
+                <input type="number" id="timer-mins" placeholder="分鐘" style="width: 80px; padding: 0.5rem;" value="5">
+                <button class="btn-primary" id="btn-start-adv-timer">開始倒數</button>
+                <button class="btn-secondary" id="btn-stop-adv-timer">停止</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Noise Meter Modal -->
+    <div id="noise-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" data-modal="noise-modal">&times;</span>
+            <h2>分貝監控器</h2>
+            <div class="noise-meter-container" style="height: 40px; background: rgba(0,0,0,0.3); border-radius: 20px; overflow: hidden; margin: 2rem 0;">
+                <div id="noise-level" style="height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); transition: width 0.3s;"></div>
+            </div>
+            <p id="noise-status" style="font-size: 1.5rem; text-align: center; margin-bottom: 1rem;">偵測中...</p>
+            <button class="btn-primary" id="btn-toggle-noise" style="width: 100%;">開始監測</button>
+        </div>
+    </div>
+
+    <!-- Whiteboard Modal -->
+    <div id="whiteboard-modal" class="modal">
+        <div class="modal-content" style="max-width: 100%; width: 100%; height: 100%; border-radius: 0; padding: 1rem; display: flex; flex-direction: column;">
+            <span class="close" data-modal="whiteboard-modal" style="z-index: 10;">&times;</span>
+            <h2 style="margin-bottom: 0.5rem; flex-shrink: 0;">簡易白板</h2>
+            <canvas id="whiteboard-canvas" style="flex-grow: 1; min-height: 0; background: white; border-radius: 12px; cursor: crosshair; touch-action: none; width: 100%;"></canvas>
+            <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center; flex-shrink: 0; padding-bottom: 1rem;">
+                <button class="btn-secondary" id="color-black" style="background: black; color: white;">黑筆</button>
+                <button class="btn-secondary" id="color-red" style="background: red; color: white;">紅筆</button>
+                <button class="btn-secondary" id="color-blue" style="background: blue; color: white;">藍筆</button>
+                <button class="btn-secondary" id="color-eraser" style="background: #e2e8f0; color: black; border: 1px solid #cbd5e1;">橡皮擦</button>
+                <button class="btn-primary" id="btn-clear-board">清除白板</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dice Modal -->
+    <div id="dice-modal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close" data-modal="dice-modal">&times;</span>
+            <h2>投擲骰子</h2>
+            <div id="dice-display" style="font-size: 8rem; margin: 2rem 0; color: var(--primary);">⚀</div>
+            <button class="btn-primary btn-large" id="btn-roll-dice">投擲</button>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" data-modal="settings-modal">&times;</span>
+            <h2>系統設置中心</h2>
+            <div class="settings-group">
+                <label>修改網頁標題</label>
+                <div class="input-with-button">
+                    <input type="text" id="settings-brand-name" placeholder="例如: 3年乙班工具箱">
+                    <button class="btn-secondary" id="btn-apply-brand">套用</button>
+                </div>
+            </div>
+            <div class="settings-group">
+                <label>選擇介面風格 (五種模式)</label>
+                <div class="theme-selector">
+                    <button class="theme-btn default" data-theme="default" title="深邃午夜"></button>
+                    <button class="theme-btn light" data-theme="light" title="簡約明亮"></button>
+                    <button class="theme-btn emerald" data-theme="emerald" title="森林綠意"></button>
+                    <button class="theme-btn royal" data-theme="royal" title="皇家紫色"></button>
+                    <button class="theme-btn sunset" data-theme="sunset" title="黃昏暖陽"></button>
+                </div>
+            </div>
+            <div class="settings-group">
+                <label>班級管理</label>
+                <div class="data-actions">
+                    <button class="btn-primary" id="btn-add-class" style="width: 100%;">+ 新增班級</button>
+                </div>
+            </div>
+            <div class="settings-group">
+                <label>雲端同步</label>
+                <div class="data-actions">
+                    <button class="btn-primary" id="btn-google-login" style="width: 100%;"><i data-lucide="log-in" style="margin-right:0.5rem;"></i> 連結 Google 帳號</button>
+                </div>
+            </div>
+            <div class="settings-group">
+                <label>資料管理</label>
+                <div class="data-actions">
+                    <button class="btn-danger" id="btn-clear-all" style="width: 100%;">清除所有資料</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="script.js"></script>
+</body>
+</html>

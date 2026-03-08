@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>學生端搶答 - SmartClass</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #0f172a;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .buzzer-btn {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: radial-gradient(#ef4444, #991b1b);
+            border: 10px solid rgba(255,255,255,0.1);
+            color: white;
+            font-size: 2.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 0 50px rgba(239, 68, 68, 0.5);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .buzzer-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
+        }
+        .status { margin-top: 2rem; font-size: 1.2rem; color: #94a3b8; }
+        .name-input {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 1rem;
+            border-radius: 12px;
+            color: white;
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            width: 80%;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <h1>搶答王者 v.2</h1>
+    <input type="text" id="student-name" class="name-input" placeholder="請輸入你的姓名...">
+    <button class="btn-buzzer buzzer-btn" id="btn-buzz">按下搶答！</button>
+    <p class="status" id="status">準備就緒</p>
+
+    <script>
+        const btn = document.getElementById('btn-buzz');
+        const status = document.getElementById('status');
+        const nameInput = document.getElementById('student-name');
+
+        btn.onclick = () => {
+            const name = nameInput.value.trim();
+            if(!name) {
+                alert("請先輸入姓名！");
+                return;
+            }
+            status.textContent = "已搶答！請查看老師螢幕";
+            btn.disabled = true;
+            btn.style.opacity = "0.5";
+            
+            // 此處為靜態展示，實際同步建議使用 Firebase
+            console.log("Buzzed side:", name);
+        };
+    </script>
+</body>
+</html>
