@@ -3,75 +3,321 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>學生端搶答 - SmartClass</title>
+    <title>智慧教室 - 學生端</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
-        body {
-            font-family: sans-serif;
-            background: #0f172a;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            text-align: center;
+        :root {
+            --primary: #6366f1;
+            --secondary: #06b6d4;
+            --accent: #f43f5e;
+            --bg-dark: #0f172a;
+            --bg-card: rgba(30, 41, 59, 0.9);
+            --text-main: #f8fafc;
         }
-        .buzzer-btn {
-            width: 250px;
-            height: 250px;
-            border-radius: 50%;
-            background: radial-gradient(#ef4444, #991b1b);
-            border: 10px solid rgba(255,255,255,0.1);
-            color: white;
-            font-size: 2.5rem;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 0 50px rgba(239, 68, 68, 0.5);
-            transition: transform 0.1s, box-shadow 0.1s;
-        }
-        .buzzer-btn:active {
-            transform: scale(0.95);
-            box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
-        }
-        .status { margin-top: 2rem; font-size: 1.2rem; color: #94a3b8; }
-        .name-input {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            padding: 1rem;
-            border-radius: 12px;
-            color: white;
-            font-size: 1.2rem;
-            margin-bottom: 2rem;
-            width: 80%;
-            max-width: 300px;
-        }
+        * { box-sizing: border-box; font-family: 'Outfit', 'Noto Sans TC', sans-serif; }
+        body { margin: 0; background: var(--bg-dark); color: var(--text-main); display: flex; flex-direction: column; min-height: 100vh; }
+        
+        .container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; width: 100%; max-width: 500px; margin: 0 auto; text-align: center; }
+        .logo { display: flex; align-items: center; gap: 0.5rem; color: var(--secondary); margin-bottom: 2rem; }
+        
+        input, button, textarea { width: 100%; padding: 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); font-size: 1.2rem; margin-bottom: 1rem; }
+        input, textarea { background: rgba(0,0,0,0.3); color: white; }
+        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:active { transform: scale(0.95); }
+        .btn-green { background: #10b981; }
+        .btn-red { background: #ef4444; }
+        .btn-blue { background: #3b82f6; }
+
+        /* Sections */
+        .section { display: none; width: 100%; animation: fadeIn 0.3s; }
+        .section.active { display: flex; flex-direction: column; align-items: center; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Buzzer */
+        .buzzer-btn { width: 220px; height: 220px; background: radial-gradient(circle, #f43f5e, #be123c); border-radius: 50%; box-shadow: 0 0 30px rgba(244,63,94,0.5), inset 0 0 20px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; margin: 2rem auto; cursor: pointer; }
+        .buzzer-btn i { width: 80px; height: 80px; color: white; }
+        
+        /* Multiple Choice */
+        .mc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; width: 100%; margin-top: 1rem; }
+        .mc-btn { height: 100px; font-size: 2rem; display: flex; align-items: center; justify-content: center; border-radius: 16px; }
+        .mc-btn.A { background: #ef4444; } .mc-btn.B { background: #3b82f6; }
+        .mc-btn.C { background: #f59e0b; } .mc-btn.D { background: #10b981; }
+
+        /* Loader */
+        .loader { width: 50px; height: 50px; border: 5px solid rgba(255,255,255,0.1); border-top-color: var(--secondary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Whiteboard */
+        #student-canvas { background: white; width: 100%; height: 300px; border-radius: 12px; touch-action: none; margin-bottom: 1rem;}
     </style>
 </head>
 <body>
-    <h1>搶答王者 v.2</h1>
-    <input type="text" id="student-name" class="name-input" placeholder="請輸入你的姓名...">
-    <button class="btn-buzzer buzzer-btn" id="btn-buzz">按下搶答！</button>
-    <p class="status" id="status">準備就緒</p>
+    <div class="container">
+        <!-- 1. Setup / Login -->
+        <div id="sec-login" class="section active">
+            <div class="logo">
+                <i data-lucide="graduation-cap" style="width: 48px; height: 48px;"></i>
+                <h1 style="margin: 0;">學生控制台</h1>
+            </div>
+            <p style="color: #94a3b8; margin-bottom: 2rem;">請輸入資料連線至教室</p>
+            <input type="number" id="inp-seat" placeholder="你的座號 (例如: 5)">
+            <input type="text" id="inp-name" placeholder="你的姓名">
+            <button id="btn-login" style="margin-top: 1rem;">進入教室</button>
+            <p id="login-err" style="color: var(--accent); display: none;">連線失敗，請檢查網路</p>
+        </div>
+
+        <!-- 2. Idle / Waiting -->
+        <div id="sec-idle" class="section">
+            <div class="loader"></div>
+            <h2 style="margin-top: 2rem;">已連線成功！</h2>
+            <p style="color: #94a3b8; font-size: 1.2rem;" id="idle-msg">等待老師開放活動...</p>
+        </div>
+
+        <!-- 3. Buzzer -->
+        <div id="sec-buzzer" class="section">
+            <h2 style="color: var(--accent);">超級搶答王！</h2>
+            <div class="buzzer-btn" id="btn-buzz">
+                <i data-lucide="zap"></i>
+            </div>
+            <h2>按我搶答！</h2>
+        </div>
+
+        <!-- 4. Q&A (Short Answer / Multiple Choice) -->
+        <div id="sec-qa" class="section">
+            <h2 id="qa-title" style="color: var(--secondary);">隨堂測驗</h2>
+            
+            <div id="qa-short" style="display: none; width: 100%;">
+                <textarea id="qa-short-input" rows="4" placeholder="請輸入您的答案..."></textarea>
+                <button class="btn-green" id="btn-submit-short">送出答案</button>
+            </div>
+
+            <div id="qa-mc" style="display: none; width: 100%;">
+                <p style="color: #94a3b8; margin-bottom: 1rem;">請選出一個正確答案</p>
+                <div class="mc-grid">
+                    <div class="mc-btn A" onclick="submitMC('A')">A</div>
+                    <div class="mc-btn B" onclick="submitMC('B')">B</div>
+                    <div class="mc-btn C" onclick="submitMC('C')">C</div>
+                    <div class="mc-btn D" onclick="submitMC('D')">D</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Link Receiver -->
+        <div id="sec-link" class="section">
+            <h2><i data-lucide="link"></i> 老師發送了連結</h2>
+            <div style="background: rgba(255,255,255,0.1); padding: 1.5rem; border-radius: 12px; margin: 1rem 0; width: 100%; word-break: break-all;">
+                <a id="display-link" href="#" target="_blank" style="color: var(--secondary); font-size: 1.2rem; text-decoration: none;">點擊前往</a>
+            </div>
+            <button id="btn-link-done" style="background: transparent; border: 1px solid white;">返回等待區</button>
+        </div>
+
+        <!-- 6. File Uploader -->
+        <div id="sec-file" class="section">
+            <h2><i data-lucide="upload-cloud"></i> 繳交作業/檔案</h2>
+            <input type="file" id="inp-file" style="background: transparent; border: 2px dashed rgba(255,255,255,0.3); padding: 2rem;">
+            <button class="btn-primary" id="btn-upload-file">上傳給老師</button>
+            <button id="btn-file-done" style="background: transparent; border: 1px solid white; display: none;">返回等待區</button>
+        </div>
+
+        <!-- 7. Whiteboard -->
+        <div id="sec-whiteboard" class="section">
+            <h2><i data-lucide="pen-tool"></i> 學生小白板</h2>
+            <canvas id="student-canvas"></canvas>
+            <div style="display: flex; gap: 1rem; width: 100%;">
+                <button class="btn-primary" id="btn-submit-board" style="flex: 2;">送出畫板</button>
+                <button class="btn-red" id="btn-clear-board" style="flex: 1;"><i data-lucide="trash-2"></i></button>
+            </div>
+        </div>
+
+    </div>
 
     <script>
-        const btn = document.getElementById('btn-buzz');
-        const status = document.getElementById('status');
-        const nameInput = document.getElementById('student-name');
+        lucide.createIcons();
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomId = urlParams.get('room');
+        
+        let conn = null;
+        let p2p = null;
+        let myData = { seat: '', name: '' };
 
-        btn.onclick = () => {
-            const name = nameInput.value.trim();
-            if(!name) {
-                alert("請先輸入姓名！");
-                return;
-            }
-            status.textContent = "已搶答！請查看老師螢幕";
-            btn.disabled = true;
-            btn.style.opacity = "0.5";
-            
-            // 此處為靜態展示，實際同步建議使用 Firebase
-            console.log("Buzzed side:", name);
+        const showSec = (id) => {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
         };
+
+        if(!roomId) {
+            document.getElementById('sec-login').innerHTML = '<h2>錯誤：沒有教室代碼，請重新掃描條碼。</h2>';
+        }
+
+        document.getElementById('btn-login').onclick = () => {
+            const seat = document.getElementById('inp-seat').value;
+            const name = document.getElementById('inp-name').value;
+            if(!seat || !name) return alert('請完整輸入座號及姓名！');
+            
+            myData = { seat, name };
+            document.getElementById('btn-login').innerText = '連線中...';
+            
+            p2p = new Peer();
+            p2p.on('open', () => {
+                conn = p2p.connect(roomId);
+                conn.on('open', () => {
+                    // Send join metadata
+                    conn.send({ type: 'JOIN', data: myData });
+                    showSec('sec-idle');
+                });
+                
+                conn.on('data', handleCommand);
+                conn.on('close', () => {
+                    alert('教室已關閉或斷線！');
+                    location.reload();
+                });
+            });
+            p2p.on('error', (err) => {
+                document.getElementById('login-err').style.display = 'block';
+                document.getElementById('btn-login').innerText = '進入教室';
+            });
+        };
+
+        function handleCommand(cmd) {
+            switch(cmd.type) {
+                case 'IDLE':
+                    showSec('sec-idle');
+                    document.getElementById('idle-msg').innerText = cmd.msg || "等待老師開放活動...";
+                    break;
+                case 'BUZZ_START':
+                    showSec('sec-buzzer');
+                    break;
+                case 'BUZZ_RESULT':
+                    showSec('sec-idle');
+                    document.getElementById('idle-msg').innerText = cmd.rank === 1 ? "🥇 你是第 1 名搶答成功！" : `你是第 ${cmd.rank} 名`;
+                    if(cmd.rank === 1) confetti({ particleCount: 150, spread: 80 });
+                    break;
+                case 'LINK':
+                    showSec('sec-link');
+                    const linkEl = document.getElementById('display-link');
+                    linkEl.href = cmd.url;
+                    linkEl.innerText = cmd.url;
+                    break;
+                case 'QA_SHORT':
+                    showSec('sec-qa');
+                    document.getElementById('qa-short').style.display = 'block';
+                    document.getElementById('qa-mc').style.display = 'none';
+                    document.getElementById('qa-short-input').value = '';
+                    break;
+                case 'QA_MC':
+                    showSec('sec-qa');
+                    document.getElementById('qa-short').style.display = 'none';
+                    document.getElementById('qa-mc').style.display = 'block';
+                    break;
+                case 'FILE_REQ':
+                    showSec('sec-file');
+                    document.getElementById('inp-file').value = '';
+                    document.getElementById('btn-file-done').style.display = 'none';
+                    break;
+                case 'WHITEBOARD_REQ':
+                    showSec('sec-whiteboard');
+                    clearBoard();
+                    break;
+            }
+        }
+
+        // Action: Buzzer
+        document.getElementById('btn-buzz').onclick = () => {
+            conn.send({ type: 'BUZZ_ACT', data: myData });
+            document.getElementById('btn-buzz').style.transform = 'scale(0.8)';
+            setTimeout(() => document.getElementById('btn-buzz').style.transform = 'scale(1)', 100);
+        };
+
+        // Action: Link
+        document.getElementById('btn-link-done').onclick = () => showSec('sec-idle');
+
+        // Action: QA
+        document.getElementById('btn-submit-short').onclick = () => {
+            const val = document.getElementById('qa-short-input').value;
+            if(!val) return alert('請填寫答案');
+            conn.send({ type: 'QA_ANS', data: myData, ans: val });
+            showSec('sec-idle');
+            document.getElementById('idle-msg').innerText = "答案已送出！";
+        };
+        window.submitMC = (choice) => {
+            conn.send({ type: 'QA_ANS', data: myData, ans: choice });
+            showSec('sec-idle');
+            document.getElementById('idle-msg').innerText = `已送出答案：${choice}`;
+        };
+
+        // Action: File Upload (Using base64 for simplest P2P transfer)
+        document.getElementById('btn-upload-file').onclick = () => {
+            const file = document.getElementById('inp-file').files[0];
+            if(!file) return alert('請先選擇檔案');
+            if(file.size > 2 * 1024 * 1024) return alert('檔案過大，請限制在 2MB 以內。');
+            
+            const btn = document.getElementById('btn-upload-file');
+            btn.innerText = "上傳中...";
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                conn.send({ type: 'FILE_SUBMIT', data: myData, filename: file.name, fileData: e.target.result });
+                btn.innerText = "上傳成功！";
+                document.getElementById('btn-file-done').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        };
+        document.getElementById('btn-file-done').onclick = () => {
+            showSec('sec-idle');
+            document.getElementById('btn-upload-file').innerText = "上傳給老師";
+        };
+
+        // Action: Whiteboard
+        const canvas = document.getElementById('student-canvas');
+        const ctx = canvas.getContext('2d');
+        let painting = false;
+
+        const resizeBoard = () => {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = 300;
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+        };
+        window.addEventListener('resize', resizeBoard);
+        // Need to run resize after section becomes visible
+        const origShowSec = showSec;
+        window.showSec = (id) => {
+            origShowSec(id);
+            if(id === 'sec-whiteboard') setTimeout(resizeBoard, 10);
+        };
+
+        const startPos = (e) => { painting = true; draw(e); };
+        const endPos = () => { painting = false; ctx.beginPath(); };
+        const draw = (e) => {
+            if(!painting) return;
+            e.preventDefault();
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX || e.touches[0].clientX) - rect.left;
+            const y = (e.clientY || e.touches[0].clientY) - rect.top;
+            ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.lineTo(x,y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(x,y);
+        };
+        
+        canvas.addEventListener('mousedown', startPos); canvas.addEventListener('mouseup', endPos); canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('touchstart', startPos); canvas.addEventListener('touchend', endPos); canvas.addEventListener('touchmove', draw);
+
+        const clearBoard = () => {
+            ctx.fillStyle = 'white'; ctx.fillRect(0,0,canvas.width,canvas.height);
+        };
+        document.getElementById('btn-clear-board').onclick = clearBoard;
+
+        document.getElementById('btn-submit-board').onclick = () => {
+            const dataUrl = canvas.toDataURL('image/png');
+            conn.send({ type: 'WHITEBOARD_SUBMIT', data: myData, imgData: dataUrl });
+            showSec('sec-idle');
+            document.getElementById('idle-msg').innerText = "白板已送出給老師！";
+        };
+
     </script>
 </body>
 </html>

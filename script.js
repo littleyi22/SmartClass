@@ -572,7 +572,10 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('classroom-id-display').textContent = id;
             const qrContainer = document.getElementById('buzzer-qrcode');
             qrContainer.innerHTML = '';
-            const studentUrl = window.location.origin + window.location.pathname + "?mode=student&room=" + id;
+            // Update URL to point to student.html
+            const p = window.location.pathname;
+            const basePath = p.substring(0, p.lastIndexOf('/'));
+            const studentUrl = window.location.origin + basePath + "/student.html?room=" + id;
             new QRCode(qrContainer, { text: studentUrl, width: 250, height: 250 });
         });
 
@@ -581,8 +584,19 @@ document.addEventListener('DOMContentLoaded', () => {
             updateConnectedCount();
             
             conn.on('data', (data) => {
-                if (data.type === 'BUZZ' && isRoundActive) {
-                    processBuzz(data.seat, data.name, conn);
+                const type = data.type;
+                const d = data.data || {};
+                
+                if (type === 'JOIN') {
+                    conn.studentMeta = { seat: d.seat, name: d.name };
+                } else if (type === 'BUZZ_ACT' && isRoundActive) {
+                    processBuzz(d.seat, d.name, conn);
+                } else if (type === 'QA_ANS') {
+                    addQAResult(d.seat, d.name, data.ans);
+                } else if (type === 'FILE_SUBMIT') {
+                    addFileResult(d.seat, d.name, data.filename, data.fileData);
+                } else if (type === 'WHITEBOARD_SUBMIT') {
+                    addWhiteboardResult(d.seat, d.name, data.imgData);
                 }
             });
             
@@ -641,6 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isRoundActive = false;
             document.getElementById('btn-start-buzzer-round').innerHTML = '<i data-lucide="play"></i> 開始新輪次';
             lucide.createIcons();
+            connections.forEach(conn => conn.send({ type: 'IDLE', msg: '搶答結束！' }));
         }, 10000); // 10 second round
     };
 
@@ -650,67 +665,86 @@ document.addEventListener('DOMContentLoaded', () => {
         connections.forEach(conn => conn.send({ type: 'RESET' }));
     };
 
-    // --- Student Mode Logic ---
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('mode') === 'student') {
-        initStudentMode(params.get('room'));
+    // 3b. Broadcast Link
+    const linkModal = document.getElementById('link-modal');
+    document.getElementById('tool-link').onclick = () => linkModal.style.display = 'flex';
+    document.getElementById('btn-send-link').onclick = () => {
+        const url = document.getElementById('inp-broadcast-link').value;
+        if(!url) return alert('請輸入網址');
+        connections.forEach(conn => conn.send({ type: 'LINK', url }));
+        addActivity('推送全班廣播連結');
+        alert(`已推播給 ${connections.length} 位學生`);
+    };
+
+    // 3c. Q&A Tool
+    const qaModal = document.getElementById('qa-modal');
+    const qaResultsList = document.getElementById('qa-results-list');
+    const qaAnsCount = document.getElementById('qa-ans-count');
+    let qaCount = 0;
+
+    document.getElementById('tool-qa').onclick = () => qaModal.style.display = 'flex';
+    document.getElementById('btn-start-qa-short').onclick = () => {
+        qaCount = 0; qaAnsCount.textContent = `(${qaCount} 份)`;
+        qaResultsList.innerHTML = '';
+        connections.forEach(conn => conn.send({ type: 'QA_SHORT' }));
+        addActivity('發布「簡答題」');
+    };
+    document.getElementById('btn-start-qa-mc').onclick = () => {
+        qaCount = 0; qaAnsCount.textContent = `(${qaCount} 份)`;
+        qaResultsList.innerHTML = '';
+        connections.forEach(conn => conn.send({ type: 'QA_MC' }));
+        addActivity('發布「單選題」');
+    };
+    document.getElementById('btn-start-whiteboard').onclick = () => {
+        qaCount = 0; qaAnsCount.textContent = `(${qaCount} 份)`;
+        qaResultsList.innerHTML = '';
+        connections.forEach(conn => conn.send({ type: 'WHITEBOARD_REQ' }));
+        addActivity('發布「小白板」');
+    };
+    document.getElementById('btn-clear-qa-results').onclick = () => {
+        qaCount = 0; qaAnsCount.textContent = `(${qaCount} 份)`;
+        qaResultsList.innerHTML = '<div class="empty-state">等待學生作答送出...</div>';
+        connections.forEach(conn => conn.send({ type: 'IDLE', msg: '測驗已結束，等待下一場活動。' }));
+    };
+
+    function addQAResult(seat, name, ans) {
+        if(qaResultsList.querySelector('.empty-state')) qaResultsList.innerHTML = '';
+        qaCount++; qaAnsCount.textContent = `(${qaCount} 份)`;
+        const div = document.createElement('div');
+        div.style.background = 'rgba(255,255,255,0.1)'; div.style.padding = '1rem'; div.style.borderRadius = '8px';
+        div.innerHTML = `<strong style="color:var(--secondary)">${seat}號 ${name}</strong><div style="margin-top:0.5rem">${ans}</div>`;
+        qaResultsList.prepend(div);
+    }
+    function addWhiteboardResult(seat, name, imgData) {
+        if(qaResultsList.querySelector('.empty-state')) qaResultsList.innerHTML = '';
+        qaCount++; qaAnsCount.textContent = `(${qaCount} 份)`;
+        const div = document.createElement('div');
+        div.style.background = 'rgba(255,255,255,0.1)'; div.style.padding = '1rem'; div.style.borderRadius = '8px';
+        div.innerHTML = `<strong style="color:var(--secondary)">${seat}號 ${name}</strong><img src="${imgData}" style="width:100%; height:auto; border-radius:4px; margin-top:0.5rem; background:white;">`;
+        qaResultsList.prepend(div);
     }
 
-    function initStudentMode(room) {
-        document.getElementById('student-mode-container').style.display = 'flex';
-        const studentPeer = new Peer();
-        let conn = null;
+    // 3d. File Receive
+    const fileModal = document.getElementById('file-modal');
+    const fileResultsList = document.getElementById('file-results-list');
+    const fileRecvCount = document.getElementById('file-recv-count');
+    let fileCount = 0;
 
-        document.getElementById('btn-student-join').onclick = () => {
-            const seat = document.getElementById('student-input-seat').value;
-            const name = document.getElementById('student-input-name').value;
-            if(!seat || !name) return alert('請輸入座號與姓名');
-
-            document.getElementById('student-setup').style.display = 'none';
-            document.getElementById('student-waiting').style.display = 'block';
-            document.getElementById('display-student-name').textContent = name;
-
-            conn = studentPeer.connect(room);
-            conn.on('open', () => {
-                console.log('Connected to classroom: ' + room);
-            });
-
-            conn.on('data', (data) => {
-                if (data.type === 'START_ROUND') {
-                    showBuzzer(true);
-                } else if (data.type === 'RESULT') {
-                    showResult(data.rank);
-                } else if (data.type === 'RESET') {
-                    showBuzzer(false);
-                    document.getElementById('student-result').style.display = 'none';
-                    document.getElementById('student-waiting').style.display = 'block';
-                }
-            });
-        };
-
-        function showBuzzer(active) {
-            document.getElementById('student-waiting').style.display = active ? 'none' : 'block';
-            document.getElementById('student-active').style.display = active ? 'block' : 'none';
-            document.getElementById('student-result').style.display = 'none';
-        }
-
-        function showResult(rank) {
-            document.getElementById('student-active').style.display = 'none';
-            document.getElementById('student-result').style.display = 'block';
-            const msg = rank === 1 ? "恭喜你是第 1 名！🥇" : `你是第 ${rank} 名！`;
-            document.getElementById('result-message').textContent = msg;
-            if(rank === 1) confetti({ particleCount: 150, spread: 70 });
-        }
-
-        document.getElementById('buzzer-button').onclick = () => {
-            const seat = document.getElementById('student-input-seat').value;
-            const name = document.getElementById('student-input-name').value;
-            conn.send({ type: 'BUZZ', seat, name });
-            // Visual feedback
-            const btn = document.getElementById('buzzer-button');
-            btn.style.transform = 'scale(0.9)';
-            setTimeout(() => btn.style.transform = 'scale(1)', 100);
-        };
+    document.getElementById('tool-file').onclick = () => fileModal.style.display = 'flex';
+    document.getElementById('btn-request-files').onclick = () => {
+        fileCount = 0; fileRecvCount.textContent = `(${fileCount} 份)`;
+        fileResultsList.innerHTML = '';
+        connections.forEach(conn => conn.send({ type: 'FILE_REQ' }));
+        addActivity('開放學生檔案上傳通道');
+    };
+    
+    function addFileResult(seat, name, filename, fileData) {
+        if(fileResultsList.querySelector('.empty-state')) fileResultsList.innerHTML = '';
+        fileCount++; fileRecvCount.textContent = `(${fileCount} 份)`;
+        const li = document.createElement('li');
+        li.style.background = 'rgba(255,255,255,0.05)'; li.style.padding = '1rem'; li.style.borderRadius = '8px'; li.style.marginBottom = '0.5rem'; li.style.display = 'flex'; li.style.justifyContent = 'space-between'; li.style.alignItems = 'center';
+        li.innerHTML = `<div><strong style="color:var(--secondary)">${seat}號 ${name}</strong> <span style="margin-left:1rem">${filename}</span></div> <a href="${fileData}" download="${seat}_${name}_${filename}" class="btn-primary" style="text-decoration:none; padding: 0.5rem 1rem;">下載</a>`;
+        fileResultsList.prepend(li);
     }
 
     // 4. Advanced Timer
