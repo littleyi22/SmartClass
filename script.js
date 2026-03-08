@@ -262,9 +262,10 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`;
             group.forEach(sRef => {
                 const s = currClass.students.find(x => x.id === sRef.id) || sRef;
-                html += `<div class="group-member group-member-drag" draggable="true" style="margin-bottom:0.4rem; padding:0.4rem; background:rgba(0,0,0,0.2); border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                html += `<div class="group-member" style="margin-bottom:0.4rem; padding:0.4rem; background:rgba(0,0,0,0.2); border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
                     <div style="font-size:0.95rem;">${s.seatNo}. ${s.name} (<span style="color:var(--success); font-weight:bold;">${s.score}</span>)</div>
                     <div style="display:flex; gap:0.3rem;">
+                        <button onclick="window.moveStudentToGroup(${s.id})" style="padding:2px 6px; background:rgba(255,255,255,0.1); color:white; border:none; border-radius:4px; font-size:0.75rem; cursor:pointer;" title="移動分組">移</button>
                         <button onclick="window.modS(${s.id}, 1)" style="padding:2px 6px; background:var(--success); color:white; border:none; border-radius:4px; font-size:0.8rem; cursor:pointer;">+</button>
                         <button onclick="window.modS(${s.id}, -1)" style="padding:2px 6px; background:var(--danger); color:white; border:none; border-radius:4px; font-size:0.8rem; cursor:pointer;">-</button>
                     </div>
@@ -276,6 +277,27 @@ document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
     }
 
+    window.moveStudentToGroup = (id) => {
+        const currClass = getCurrentClass();
+        const s = currClass.students.find(x => x.id === id);
+        if(!s) return;
+        const target = prompt(`將 ${s.name} 移動到第幾組？(1-${currClass.groups.length})`);
+        const gIdx = parseInt(target) - 1;
+        if(isNaN(gIdx) || gIdx < 0 || gIdx >= currClass.groups.length) return;
+
+        // Remove from old groups
+        currClass.groups.forEach(g => {
+            const idx = g.findIndex(x => x.id === id);
+            if(idx > -1) g.splice(idx, 1);
+        });
+        // Add to new group
+        currClass.groups[gIdx].push(s);
+        renderGroups();
+        renderStudents();
+        saveState();
+        addActivity(`將 ${s.name} 移動至第 ${gIdx+1} 組`);
+    };
+
     // --- Student Logic ---
     const renderStudents = (filter = '') => {
         const currClass = getCurrentClass();
@@ -284,9 +306,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         list.forEach(s => {
             let groupLabel = '';
-            if (currClass.groups) {
-                const gIdx = currClass.groups.findIndex(g => g.find(x => x.id === s.id));
-                if (gIdx !== -1) groupLabel = `<span style="font-size: 0.8rem; background: rgba(255,255,255,0.1); padding: 0.2rem 0.4rem; border-radius: 4px; margin-left: 0.5rem; color: var(--secondary);">第 ${gIdx + 1} 組</span>`;
+            if (currClass.groups && Array.isArray(currClass.groups)) {
+                const gIdx = currClass.groups.findIndex(g => g.find(x => x.id === s.id || (x.seatNo === s.seatNo && x.name === s.name)));
+                if (gIdx !== -1) groupLabel = `<span style="font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 0.2rem 0.4rem; border-radius: 4px; margin-left: 0.5rem; color: var(--secondary); border: 1px solid var(--secondary);">第 ${gIdx + 1} 組</span>`;
             }
 
             const card = document.createElement('div');
@@ -321,8 +343,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (s) {
             s.score += val;
             if (val > 0) confetti({ particleCount: 40, spread: 50, origin: { y: 0.8 } });
-            addActivity(`${s.name} 分數 ${val > 0 ? '+' : ''}${val}`);
+            addActivity(`${s.name} 個人分數 ${val > 0 ? '+' : ''}${val}`);
+            
+            // Sync with group score
+            if (currClass.groups) {
+                const gIdx = currClass.groups.findIndex(g => g.find(x => x.id === id || (x.seatNo === s.seatNo && x.name === s.name)));
+                if (gIdx !== -1) {
+                    if (!currClass.groupScores) currClass.groupScores = [];
+                    currClass.groupScores[gIdx] = (currClass.groupScores[gIdx] || 0) + val;
+                    addActivity(`第 ${gIdx+1} 組 連帶同步 ${val > 0 ? '+' : ''}${val}`);
+                }
+            }
+            
             renderStudents();
+            renderGroups();
             saveState();
         }
     };

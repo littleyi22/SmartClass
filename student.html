@@ -300,56 +300,72 @@
         let painting = false;
 
         const resizeBoard = () => {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = 300;
+            const parent = canvas.parentElement;
+            canvas.width = parent.clientWidth;
+            canvas.height = 350; // Slightly taller
             ctx.fillStyle = 'white';
             ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
         };
         window.addEventListener('resize', resizeBoard);
-        // Need to run resize after section becomes visible
+        
         const origShowSec = showSec;
         window.showSec = (id) => {
             origShowSec(id);
-            if(id === 'sec-whiteboard') setTimeout(resizeBoard, 10);
+            if(id === 'sec-whiteboard') setTimeout(resizeBoard, 50);
         };
 
-        const startPos = (e) => { painting = true; draw(e); };
-        const endPos = (e) => { if(painting) { e.preventDefault(); painting = false; ctx.beginPath(); } };
-        const draw = (e) => {
-            if(!painting) return;
-            e.preventDefault(); // Prevent scrolling on mobile
+        const getPos = (e) => {
             const rect = canvas.getBoundingClientRect();
             let clientX, clientY;
-            
             if (e.touches && e.touches.length > 0) {
                 clientX = e.touches[0].clientX;
                 clientY = e.touches[0].clientY;
-            } else if (e.changedTouches && e.changedTouches.length > 0) {
-                clientX = e.changedTouches[0].clientX;
-                clientY = e.changedTouches[0].clientY;
             } else {
                 clientX = e.clientX;
                 clientY = e.clientY;
             }
-            
-            const x = clientX - rect.left;
-            const y = clientY - rect.top;
-            
-            ctx.lineWidth = 3; ctx.lineCap = 'round'; 
-            ctx.lineTo(x,y); ctx.stroke(); 
-            ctx.beginPath(); ctx.moveTo(x,y);
+            return {
+                x: (clientX - rect.left) * (canvas.width / rect.width),
+                y: (clientY - rect.top) * (canvas.height / rect.height)
+            };
+        };
+
+        const startPos = (e) => {
+            e.preventDefault();
+            painting = true;
+            const pos = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+        };
+        const endPos = (e) => {
+            if(painting) {
+                painting = false;
+                ctx.closePath();
+            }
+        };
+        const draw = (e) => {
+            if(!painting) return;
+            e.preventDefault();
+            const pos = getPos(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
         };
         
         canvas.addEventListener('mousedown', startPos); 
         canvas.addEventListener('mouseup', endPos); 
         canvas.addEventListener('mousemove', draw);
-        // Add passive: false to preventDefault on touch events
         canvas.addEventListener('touchstart', startPos, { passive: false }); 
         canvas.addEventListener('touchend', endPos, { passive: false }); 
         canvas.addEventListener('touchmove', draw, { passive: false });
 
         const clearBoard = () => {
-            ctx.fillStyle = 'white'; ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.beginPath();
         };
         document.getElementById('btn-clear-board').onclick = clearBoard;
 

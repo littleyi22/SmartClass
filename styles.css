@@ -102,6 +102,33 @@
     --text-muted: #d97706;
 }
 
+.theme-macaron-mint {
+    --primary: #4ade80;
+    --bg-dark: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    --bg-sidebar: rgba(255, 255, 255, 0.4);
+    --bg-card: rgba(255, 255, 255, 0.6);
+    --text-main: #166534;
+    --text-muted: #15803d;
+}
+
+.theme-macaron-peach {
+    --primary: #fb923c;
+    --bg-dark: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+    --bg-sidebar: rgba(255, 255, 255, 0.4);
+    --bg-card: rgba(255, 255, 255, 0.6);
+    --text-main: #9a3412;
+    --text-muted: #c2410c;
+}
+
+.theme-macaron-lavender {
+    --primary: #a180ff;
+    --bg-dark: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    --bg-sidebar: rgba(255, 255, 255, 0.4);
+    --bg-card: rgba(255, 255, 255, 0.6);
+    --text-main: #5b21b6;
+    --text-muted: #6d28d9;
+}
+
 * {
     margin: 0;
     padding: 0;
