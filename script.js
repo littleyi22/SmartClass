@@ -305,17 +305,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const list = currClass.students.filter(s => s.name.includes(filter) || s.seatNo.toString().includes(filter));
         
         list.forEach(s => {
-            let groupLabel = '';
-            if (currClass.groups && Array.isArray(currClass.groups)) {
-                const gIdx = currClass.groups.findIndex(g => g.find(x => x.id === s.id || (x.seatNo === s.seatNo && x.name === s.name)));
-                if (gIdx !== -1) groupLabel = `<span style="font-size: 0.8rem; background: rgba(0,0,0,0.2); padding: 0.2rem 0.4rem; border-radius: 4px; margin-left: 0.5rem; color: var(--secondary); border: 1px solid var(--secondary);">第 ${gIdx + 1} 組</span>`;
-            }
-
             const card = document.createElement('div');
             card.className = 'student-card';
             card.innerHTML = `
                 <div class="avatar">${s.name[0]}</div>
-                <h4>${s.name}${groupLabel}</h4>
+                <h4>${s.name}</h4>
                 <div class="seat-no">座號: ${s.seatNo}</div>
                 <div class="badges" style="min-height:24px; margin-top:0.5rem">
                     ${s.missingHW ? '<span class="badge hw" style="color:var(--danger); font-size:0.8rem">⚠ 未交</span>' : ''}
