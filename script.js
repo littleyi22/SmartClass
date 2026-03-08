@@ -820,19 +820,87 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.classList.contains('modal')) e.target.style.display = 'none';
     };
 
+    // --- Google Auth & Cloud Sync ---
+    const CLIENT_ID = '83309907791-j9sqgjm9e7dfeuo20pmcttm91t8ce8e9.apps.googleusercontent.com';
+    const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+
+    let tokenClient;
+    let accessToken = null;
+
+    // Initialize the token client
+    if (window.google && window.google.accounts) {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID,
+            scope: SCOPES,
+            callback: (tokenResponse) => {
+                if(tokenResponse && tokenResponse.access_token) {
+                    accessToken = tokenResponse.access_token;
+                    alert("Google 帳號連結成功！未來的「下課存檔」將會自動上傳備份至您的雲端硬碟。");
+                    const btn = document.getElementById('btn-google-login');
+                    btn.innerHTML = `<i data-lucide="check" style="margin-right:0.5rem;"></i> 已連結 Google 雲端`;
+                    btn.style.background = 'var(--success)';
+                    addActivity("✅ 已成功串接 Google 雲端硬碟");
+                    lucide.createIcons();
+                }
+            },
+        });
+    }
+
     document.getElementById('btn-google-login').onclick = () => {
-        alert("即將請求登入 Google... (尚未綁定實際 ClientID)");
-        const btn = document.getElementById('btn-google-login');
-        btn.innerHTML = `<i data-lucide="check" style="margin-right:0.5rem;"></i> 已連結：奕鈞老師`;
-        btn.style.background = 'var(--success)';
-        addActivity("已設定雲端同步 (Google)");
-        lucide.createIcons();
+        if(tokenClient) {
+            tokenClient.requestAccessToken({prompt: 'consent'});
+        } else {
+            alert("Google 登入服務尚未載入完畢，請重新整理網頁後再試一次。");
+        }
     };
 
-    document.getElementById('btn-end-class').onclick = () => {
-        addActivity("✅ 課後存檔已同步至雲端");
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.3 } });
-        alert("下課囉！資料已自動同步。");
+    document.getElementById('btn-end-class').onclick = async () => {
+        if(!accessToken) {
+            addActivity("下課囉！(目前僅儲存於本地瀏覽器)");
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.3 } });
+            alert("下課囉！資料已安全儲存在您的瀏覽器中。\n\n若您希望將備份同步至 Google 雲端硬碟，請先在「設定」中連結 Google 帳號。");
+            return;
+        }
+
+        const btn = document.getElementById('btn-end-class');
+        btn.innerHTML = `<span>上傳中...</span>`;
+        
+        try {
+            const fileMetadata = {
+                name: `智慧教室資料備份_${new Date().toLocaleDateString()}.json`,
+                mimeType: 'application/json'
+            };
+            
+            const dataStr = JSON.stringify(state);
+            const file = new Blob([dataStr], { type: 'application/json' });
+            
+            const form = new FormData();
+            form.append('metadata', new Blob([JSON.stringify(fileMetadata)], { type: 'application/json' }));
+            form.append('file', file);
+            
+            const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + accessToken
+                },
+                body: form
+            });
+            
+            if(response.ok) {
+                const resData = await response.json();
+                addActivity(`✅ 課後存檔已同步至雲端硬碟！`);
+                confetti({ particleCount: 150, spread: 80, origin: { y: 0.4 } });
+                alert(`太棒了！下課囉！\n\n您今天的全班資料變動已經自動上傳一份獨立的 JSON 備份檔至您的 Google 雲端硬碟了！`);
+            } else {
+                throw new Error('Upload request failed with status ' + response.status);
+            }
+        } catch(err) {
+            console.error('Google Drive Upload Error:', err);
+            alert("上傳雲端硬碟時發生錯誤，但資料已確保儲存於瀏覽器中。\n\n錯誤資訊：" + err.message);
+        } finally {
+            btn.innerHTML = `<i data-lucide="log-out"></i> <span>下課存檔</span>`;
+            lucide.createIcons();
+        }
     };
 
     // --- Initialize ---
