@@ -54,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activities: JSON.parse(localStorage.getItem('sc_v3_activities')) || [],
         brandName: localStorage.getItem('sc_v3_brand') || "SmartClass",
         theme: localStorage.getItem('sc_v3_theme') || "default",
+        linkGroupPoints: localStorage.getItem('sc_v3_link_points') === 'true',
         user: null,
         timer: { seconds: 0, active: false, interval: null }
     };
@@ -100,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('sc_v3_activities', JSON.stringify(state.activities));
         localStorage.setItem('sc_v3_brand', state.brandName);
         localStorage.setItem('sc_v3_theme', state.theme);
+        localStorage.setItem('sc_v3_link_points', state.linkGroupPoints);
         updateDashboard();
     };
 
@@ -135,7 +137,8 @@ document.addEventListener('DOMContentLoaded', () => {
         progInput2: document.getElementById('teaching-progress-input-2'),
         themeBtns: document.querySelectorAll('.theme-btn'),
         body: document.body,
-        brandInput: document.getElementById('settings-brand-name')
+        brandInput: document.getElementById('settings-brand-name'),
+        linkPointsBtn: document.getElementById('btn-toggle-link-points')
     };
 
     // --- Navigation & Classes ---
@@ -238,6 +241,32 @@ document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
     };
 
+    const updateLinkPointsUI = () => {
+        if (!elements.linkPointsBtn) return;
+        if (state.linkGroupPoints) {
+            elements.linkPointsBtn.innerHTML = '<i data-lucide="link-2"></i> <span>分組連動: 開</span>';
+            elements.linkPointsBtn.classList.add('linked');
+            elements.linkPointsBtn.classList.remove('btn-secondary');
+            elements.linkPointsBtn.classList.add('btn-primary');
+        } else {
+            elements.linkPointsBtn.innerHTML = '<i data-lucide="link-2-off"></i> <span>分組連動: 關</span>';
+            elements.linkPointsBtn.classList.remove('linked');
+            elements.linkPointsBtn.classList.remove('btn-primary');
+            elements.linkPointsBtn.classList.add('btn-secondary');
+        }
+        lucide.createIcons();
+    };
+
+    if (elements.linkPointsBtn) {
+        elements.linkPointsBtn.onclick = () => {
+            state.linkGroupPoints = !state.linkGroupPoints;
+            updateLinkPointsUI();
+            saveState();
+            addActivity(`分組連動已${state.linkGroupPoints ? '開啟' : '關閉'}`);
+        };
+    }
+    updateLinkPointsUI();
+
     function renderGroups() {
         const currClass = getCurrentClass();
         const groups = currClass.groups || [];
@@ -339,8 +368,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (val > 0) confetti({ particleCount: 40, spread: 50, origin: { y: 0.8 } });
             addActivity(`${s.name} 個人分數 ${val > 0 ? '+' : ''}${val}`);
             
-            // Sync with group score
-            if (currClass.groups) {
+            // Sync with group score IF linked
+            if (state.linkGroupPoints && currClass.groups) {
                 const gIdx = currClass.groups.findIndex(g => g.find(x => x.id === id || (x.seatNo === s.seatNo && x.name === s.name)));
                 if (gIdx !== -1) {
                     if (!currClass.groupScores) currClass.groupScores = [];
@@ -404,8 +433,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-reset-scores').onclick = () => {
         if(confirm("確定要將全班分數歸零嗎？")) {
-            getCurrentClass().students.forEach(s => s.score = 0);
-            addActivity("已重置全班分數");
+            const currClass = getCurrentClass();
+            currClass.students.forEach(s => s.score = 0);
+            if(currClass.groupScores) currClass.groupScores = [];
+            addActivity("已重置全班分數（含小組）");
             renderStudents();
             saveState();
         }
@@ -695,6 +726,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const currClass = getCurrentClass();
         if(!currClass.groupScores) currClass.groupScores = new Array(currClass.groups ? currClass.groups.length : 10).fill(0);
         currClass.groupScores[gIdx] = (currClass.groupScores[gIdx] || 0) + val;
+        
+        // Sync with all group members IF linked
+        if (state.linkGroupPoints && currClass.groups && currClass.groups[gIdx]) {
+            currClass.groups[gIdx].forEach(sRef => {
+                const s = currClass.students.find(x => x.id === sRef.id);
+                if (s) {
+                    s.score += val;
+                }
+            });
+            renderStudents();
+            addActivity(`第 ${gIdx+1} 組 全員連帶同步 ${val > 0 ? '+' : ''}${val}`);
+        }
+        
         renderGroups();
         saveState();
         addActivity(`第 ${gIdx+1} 組 小組分數 ${val > 0 ? '+' : ''}${val}`);

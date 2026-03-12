@@ -202,10 +202,14 @@
                     showSec('sec-idle');
                     document.getElementById('idle-msg').innerText = cmd.msg || "等待老師開放活動...";
                     break;
-                case 'BUZZ_START':
+                case 'START_ROUND':
                     showSec('sec-buzzer');
                     break;
-                case 'BUZZ_RESULT':
+                case 'TEXT_REQ':
+                    showSec('sec-text');
+                    document.getElementById('text-channel-input').value = '';
+                    break;
+                case 'RESULT':
                     showSec('sec-idle');
                     document.getElementById('idle-msg').innerText = cmd.rank === 1 ? "🥇 你是第 1 名搶答成功！" : `你是第 ${cmd.rank} 名`;
                     if(cmd.rank === 1) confetti({ particleCount: 150, spread: 80 });
