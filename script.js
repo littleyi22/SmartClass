@@ -340,20 +340,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="avatar">${s.name[0]}</div>
                 <h4>${s.name}</h4>
                 <div class="seat-no">座號: ${s.seatNo}</div>
-                <div class="badges" style="min-height:24px; margin-top:0.5rem">
-                    ${s.missingHW ? '<span class="badge hw" style="color:var(--danger); font-size:0.8rem">⚠ 未交</span>' : ''}
-                    ${s.goodBehavior ? '<span class="badge" style="color:var(--success); font-size:0.8rem">★ 優良</span>' : ''}
+                <div class="badges" style="min-height:20px; margin-top:0.3rem; display:flex; flex-wrap:wrap; justify-content:center; gap:2px;">
+                    ${s.missingHW ? '<span class="badge" style="color:var(--danger); font-size:0.75rem">⚠未交</span>' : ''}
+                    ${s.goodBehavior ? '<span class="badge" style="color:var(--success); font-size:0.75rem">★優良</span>' : ''}
+                    ${s.discipline ? '<span class="badge" style="color:var(--primary); font-size:0.75rem">⚖秩序</span>' : ''}
+                    ${s.absent ? '<span class="badge" style="color:var(--warning); font-size:0.75rem">🚪缺席</span>' : ''}
                 </div>
-                <div class="score-line" style="display:flex; justify-content:space-between; align-items:center; margin:1rem 0; background:rgba(0,0,0,0.1); padding:0.5rem; border-radius:12px;">
-                    <button class="btn-secondary" style="padding:0.3rem 0.6rem; border:none; background:var(--danger); color:white" onclick="window.modS(${s.id},-1)">-</button>
-                    <strong style="font-size:1.4rem">${s.score}</strong>
-                    <button class="btn-secondary" style="padding:0.3rem 0.6rem; border:none; background:var(--success); color:white" onclick="window.modS(${s.id},1)">+</button>
+                <div class="score-line" style="display:flex; justify-content:space-between; align-items:center; margin:0.6rem 0; background:rgba(0,0,0,0.1); padding:0.3rem; border-radius:8px;">
+                    <button class="btn-secondary" style="padding:0.2rem 0.5rem; border:none; background:var(--danger); color:white; font-size:0.8rem;" onclick="window.modS(${s.id},-1)">-</button>
+                    <strong style="font-size:1.2rem">${s.score}</strong>
+                    <button class="btn-secondary" style="padding:0.2rem 0.5rem; border:none; background:var(--success); color:white; font-size:0.8rem;" onclick="window.modS(${s.id},1)">+</button>
                 </div>
-                <div class="actions" style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem; margin-bottom:0.5rem;">
-                    <button class="btn-secondary" style="font-size:0.85rem; padding:0.5rem" onclick="window.togS(${s.id},'missingHW')">HW</button>
-                    <button class="btn-secondary" style="font-size:0.85rem; padding:0.5rem" onclick="window.togS(${s.id},'goodBehavior')">加星</button>
+                <div class="actions" style="display:grid; grid-template-columns:1fr 1fr; gap:0.3rem; margin-bottom:0.4rem;">
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'missingHW')">HW</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'goodBehavior')">加星</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'discipline')">秩序</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'absent')">缺席</button>
                 </div>
-                <input type="text" class="custom-select" placeholder="備註..." value="${s.note || ''}" style="margin-top:0.5rem; width:100%; border:none; background:rgba(255,255,255,0.05); color:white; font-size:0.85rem; padding:0.4rem; border-radius:6px;" onchange="window.saveNote(${s.id}, this.value)">
+                <input type="text" class="custom-select" placeholder="備註..." value="${s.note || ''}" style="margin-top:0.3rem; width:100%; border:none; background:rgba(255,255,255,0.05); color:white; font-size:0.75rem; padding:0.3rem; border-radius:6px;" onchange="window.saveNote(${s.id}, this.value)">
             `;
             elements.studentGrid.appendChild(card);
         });
@@ -395,6 +399,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 addActivity(`${s.name} 被標記為 ${s.goodBehavior ? '⭐ 優良' : '一般'}`);
             } else if (field === 'missingHW') {
                 addActivity(`${s.name} 被標記為 ${s.missingHW ? '❌ 功課未交' : '已交功課'}`);
+            } else if (field === 'discipline') {
+                addActivity(`${s.name} 被標記為 ${s.discipline ? '⚖ 秩序維護中' : '取消秩序標記'}`);
+            } else if (field === 'absent') {
+                addActivity(`${s.name} 被標記為 ${s.absent ? '🚪 缺席' : '已出席'}`);
             }
             
             updateDashboard();

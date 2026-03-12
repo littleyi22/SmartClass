@@ -293,7 +293,7 @@ body {
 /* Main Content */
 .main-content {
     flex-grow: 1;
-    padding: 2rem;
+    padding: 1rem 2rem;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -303,7 +303,7 @@ header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
 }
 
 .time-container {
@@ -402,15 +402,15 @@ header {
 
 .student-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(135px, 1fr));
-    gap: 0.8rem;
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 0.6rem;
 }
 
 .student-card {
     background: var(--bg-card);
     backdrop-filter: blur(10px);
-    border-radius: var(--radius);
-    padding: 0.8rem;
+    border-radius: 12px;
+    padding: 0.6rem;
     border: 1px solid rgba(255,255,255,0.05);
     transition: transform 0.2s;
     text-align: center;
@@ -419,20 +419,20 @@ header {
 .student-card:hover { transform: translateY(-3px); border-color: var(--primary); }
 
 .avatar {
-    width: 45px;
-    height: 45px;
+    width: 35px;
+    height: 35px;
     background: var(--primary);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 700;
     color: white;
-    margin: 0 auto 0.5rem;
+    margin: 0 auto 0.4rem;
 }
-.student-card h4 { font-size: 1.1rem; margin-bottom: 0.3rem; }
-.student-card .seat-no { font-size: 0.8rem; color: var(--text-muted); }
+.student-card h4 { font-size: 1rem; margin-bottom: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.student-card .seat-no { font-size: 0.75rem; color: var(--text-muted); }
 
 /* Modern Tables */
 .student-table {
