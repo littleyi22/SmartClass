@@ -204,6 +204,14 @@
                     break;
                 case 'START_ROUND':
                     showSec('sec-buzzer');
+                    const btn = document.getElementById('btn-buzz');
+                    btn.style.position = 'fixed';
+                    const maxW = window.innerWidth - 220;
+                    const maxH = window.innerHeight - 220;
+                    btn.style.left = Math.max(0, Math.floor(Math.random() * maxW)) + 'px';
+                    btn.style.top = Math.max(0, Math.floor(Math.random() * maxH)) + 'px';
+                    btn.style.margin = '0';
+                    btn.style.zIndex = '9999';
                     break;
                 case 'TEXT_REQ':
                     showSec('sec-text');
