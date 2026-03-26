@@ -44,6 +44,10 @@
                     <i data-lucide="users"></i>
                     <span>班級狀態</span>
                 </li>
+                <li data-tab="attendance">
+                    <i data-lucide="clipboard-check"></i>
+                    <span>點名簿</span>
+                </li>
                 <li data-tab="groups">
                     <i data-lucide="users-2"></i>
                     <span>分組</span>
@@ -181,6 +185,23 @@
                     <h2>今日教學進度</h2>
                     <textarea id="teaching-progress-input-2" placeholder="填寫今天的教學進度..."></textarea>
                     <button class="btn-primary" id="btn-save-progress-2" style="margin-top: 10px;">儲存進度</button>
+                </div>
+            </section>
+
+            <!-- Tab: Attendance -->
+            <section id="attendance-tab" class="tab-content">
+                <div class="student-toolbar">
+                    <div class="search-box">
+                        <i data-lucide="search"></i>
+                        <input type="text" id="attendance-search-input" placeholder="搜尋學生...">
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn-secondary" id="btn-export-attendance"><i data-lucide="download"></i> 匯出今日點名 (Excel)</button>
+                        <button class="btn-secondary" id="btn-reset-attendance">重置今日點名</button>
+                    </div>
+                </div>
+                <div class="student-grid" id="attendance-grid">
+                    <!-- Cards will be populated here -->
                 </div>
             </section>
 
@@ -494,6 +515,24 @@
         <div class="modal-content">
             <span class="close" data-modal="settings-modal">&times;</span>
             <h2>系統設置中心</h2>
+            <div class="settings-group">
+                <label>點名簿設定</label>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <div class="input-with-button">
+                        <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">上學遲到時間：</span>
+                        <input type="time" id="settings-arrival-time" style="width: auto;">
+                    </div>
+                    <div class="input-with-button">
+                        <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">自訂標籤 1：</span>
+                        <input type="text" id="settings-custom-tag-1" placeholder="例如: 體溫正常">
+                    </div>
+                    <div class="input-with-button">
+                        <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">自訂標籤 2：</span>
+                        <input type="text" id="settings-custom-tag-2" placeholder="例如: 帶便當盒">
+                    </div>
+                    <button class="btn-secondary" id="btn-apply-attendance-settings">套用點名設定</button>
+                </div>
+            </div>
             <div class="settings-group">
                 <label>修改網頁標題</label>
                 <div class="input-with-button">

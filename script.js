@@ -55,6 +55,9 @@ document.addEventListener('DOMContentLoaded', () => {
         brandName: localStorage.getItem('sc_v3_brand') || "SmartClass",
         theme: localStorage.getItem('sc_v3_theme') || "default",
         linkGroupPoints: localStorage.getItem('sc_v3_link_points') === 'true',
+        arrivalTime: localStorage.getItem('sc_v3_arrival_time') || '08:00',
+        customTag1: localStorage.getItem('sc_v3_custom_tag_1') || '標籤1',
+        customTag2: localStorage.getItem('sc_v3_custom_tag_2') || '標籤2',
         user: null,
         timer: { seconds: 0, active: false, interval: null }
     };
@@ -102,6 +105,9 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('sc_v3_brand', state.brandName);
         localStorage.setItem('sc_v3_theme', state.theme);
         localStorage.setItem('sc_v3_link_points', state.linkGroupPoints);
+        localStorage.setItem('sc_v3_arrival_time', state.arrivalTime);
+        localStorage.setItem('sc_v3_custom_tag_1', state.customTag1);
+        localStorage.setItem('sc_v3_custom_tag_2', state.customTag2);
         updateDashboard();
     };
 
@@ -158,6 +164,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 elements.progInput1.value = currClass.teachingProgress || '';
                 elements.progInput2.value = currClass.teachingProgress || '';
             }
+            if (target === 'attendance') {
+                if (typeof renderAttendance === 'function') renderAttendance();
+            }
         });
     });
 
@@ -177,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addActivity(`切換班級：${getCurrentClass().name}`);
         renderStudents();
         renderGroups();
+        if (typeof renderAttendance === 'function') renderAttendance();
         updateDashboard();
         saveState();
     };
@@ -421,6 +431,140 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     document.getElementById('student-search-input').oninput = (e) => renderStudents(e.target.value);
+
+    // --- Attendance Logic ---
+    window.renderAttendance = (filter = '') => {
+        const currClass = getCurrentClass();
+        const grid = document.getElementById('attendance-grid');
+        if(!grid) return;
+        grid.innerHTML = '';
+        const list = currClass.students.filter(s => s.name.includes(filter) || s.seatNo.toString().includes(filter));
+        
+        list.forEach(s => {
+            const card = document.createElement('div');
+            card.className = 'student-card';
+            
+            let arriveBadge = '';
+            if (s.absent) {
+                arriveBadge = '<span class="badge" style="color:var(--danger); font-size:0.75rem">🚪缺席</span>';
+            } else if (s.arrived) {
+                if (s.arriveTimeStr > state.arrivalTime) {
+                    arriveBadge = `<span class="badge" style="color:var(--warning); font-size:0.75rem">⏰遲到 (${s.arriveTimeStr})</span>`;
+                } else {
+                    arriveBadge = `<span class="badge" style="color:var(--success); font-size:0.75rem">✅已到 (${s.arriveTimeStr})</span>`;
+                }
+            }
+
+            card.innerHTML = `
+                <div class="avatar" style="background:var(--secondary)">${s.name[0]}</div>
+                <h4>${s.name}</h4>
+                <div class="seat-no">座號: ${s.seatNo}</div>
+                <div class="badges" style="min-height:20px; margin-top:0.3rem; display:flex; flex-wrap:wrap; justify-content:center; gap:2px;">
+                    ${arriveBadge}
+                    ${s.brushedTeeth ? '<span class="badge" style="color:var(--primary); font-size:0.75rem">🦷刷牙</span>' : ''}
+                    ${s.custom1 ? '<span class="badge" style="color:var(--accent); font-size:0.75rem">' + state.customTag1 + '</span>' : ''}
+                    ${s.custom2 ? '<span class="badge" style="color:var(--accent); font-size:0.75rem">' + state.customTag2 + '</span>' : ''}
+                </div>
+                
+                <div class="actions" style="display:grid; grid-template-columns:1fr 1fr; gap:0.3rem; margin-top:0.8rem;">
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.arrived ? 'var(--success)' : ''}; color:${s.arrived ? 'white' : ''}" onclick="window.attTog(${s.id},'arrived')">${s.arrived ? '已簽到' : '簽到'}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.absent ? 'var(--danger)' : ''}; color:${s.absent ? 'white' : ''}" onclick="window.togS(${s.id},'absent'); window.renderAttendance();">${s.absent ? '缺席' : '記缺席'}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.brushedTeeth ? 'var(--primary)' : ''}; color:${s.brushedTeeth ? 'white' : ''}" onclick="window.attTog(${s.id},'brushedTeeth')">刷牙</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.custom1 ? 'var(--accent)' : ''}; color:${s.custom1 ? 'white' : ''}" onclick="window.attTog(${s.id},'custom1')">${state.customTag1}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.custom2 ? 'var(--accent)' : ''}; color:${s.custom2 ? 'white' : ''}" onclick="window.attTog(${s.id},'custom2')">${state.customTag2}</button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    };
+
+    window.attTog = (id, field) => {
+        const currClass = getCurrentClass();
+        const s = currClass.students.find(x => x.id === id);
+        if (s) {
+            if (field === 'arrived') {
+                if (!s.arrived) {
+                    s.arrived = true;
+                    if (!s.arriveTimeStr) {
+                        const now = new Date();
+                        s.arriveTimeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+                    }
+                    if(s.absent) {
+                        s.absent = false;
+                    }
+                    if (s.arriveTimeStr > state.arrivalTime) {
+                        addActivity(`${s.name} 簽到 (⏰遲到 - ${s.arriveTimeStr})`);
+                    } else {
+                        addActivity(`${s.name} 簽到 (✅ ${s.arriveTimeStr})`);
+                    }
+                } else {
+                    s.arrived = false;
+                    s.arriveTimeStr = null;
+                    addActivity(`取消 ${s.name} 的簽到`);
+                }
+            } else {
+                s[field] = !s[field];
+                let tagName = field === 'brushedTeeth' ? '刷牙' : (field === 'custom1' ? state.customTag1 : state.customTag2);
+                addActivity(`${s.name} 被標記為 ${s[field] ? tagName : '取消' + tagName}`);
+            }
+            renderAttendance();
+            renderStudents(); 
+            saveState();
+        }
+    };
+
+    document.getElementById('attendance-search-input').oninput = (e) => {
+        if (typeof window.renderAttendance === 'function') window.renderAttendance(e.target.value);
+    };
+
+    document.getElementById('btn-export-attendance').onclick = () => {
+        const currClass = getCurrentClass();
+        const data = [
+            ["座號", "姓名", "出席狀態", "簽到時間", "刷牙", state.customTag1, state.customTag2]
+        ];
+        
+        currClass.students.forEach(s => {
+            let status = "未點名";
+            if (s.absent) status = "缺席";
+            else if (s.arrived) {
+                if (s.arriveTimeStr > state.arrivalTime) status = "遲到";
+                else status = "準時";
+            }
+            data.push([
+                s.seatNo,
+                s.name,
+                status,
+                s.arriveTimeStr || "-",
+                s.brushedTeeth ? "是" : "否",
+                s.custom1 ? "是" : "否",
+                s.custom2 ? "是" : "否"
+            ]);
+        });
+        
+        const worksheet = XLSX.utils.aoa_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "今日點名");
+        XLSX.writeFile(workbook, `${currClass.name}_點名紀錄_${new Date().toLocaleDateString().replace(/\//g, '')}.xlsx`);
+        addActivity("匯出了今日點名紀錄 (Excel)");
+    };
+
+    document.getElementById('btn-reset-attendance').onclick = () => {
+        if(confirm("確定要重置全班今日點名與標籤資料嗎？")) {
+            const currClass = getCurrentClass();
+            currClass.students.forEach(s => {
+                s.arrived = false;
+                s.arriveTimeStr = null;
+                s.absent = false;
+                s.brushedTeeth = false;
+                s.custom1 = false;
+                s.custom2 = false;
+            });
+            addActivity("已重置今日點名資料");
+            renderAttendance();
+            renderStudents();
+            saveState();
+        }
+    };
     
     document.getElementById('btn-add-student').onclick = () => {
         const seatNo = prompt("請輸入座號：");
@@ -1218,6 +1362,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsModal = document.getElementById('settings-modal');
     document.getElementById('btn-settings-toggle').onclick = () => {
         elements.brandInput.value = state.brandName;
+        document.getElementById('settings-arrival-time').value = state.arrivalTime;
+        document.getElementById('settings-custom-tag-1').value = state.customTag1;
+        document.getElementById('settings-custom-tag-2').value = state.customTag2;
         settingsModal.style.display = 'flex';
     };
 
@@ -1231,6 +1378,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const applyTheme = () => {
         elements.body.className = `theme-${state.theme}`;
+    };
+
+    document.getElementById('btn-apply-attendance-settings').onclick = () => {
+        state.arrivalTime = document.getElementById('settings-arrival-time').value || '08:00';
+        state.customTag1 = document.getElementById('settings-custom-tag-1').value || '標籤1';
+        state.customTag2 = document.getElementById('settings-custom-tag-2').value || '標籤2';
+        saveState();
+        if (typeof renderAttendance === 'function') renderAttendance();
+        alert("點名簿設定已更新！");
     };
 
     document.getElementById('btn-apply-brand').onclick = () => {
