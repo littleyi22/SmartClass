@@ -56,8 +56,16 @@ document.addEventListener('DOMContentLoaded', () => {
         theme: localStorage.getItem('sc_v3_theme') || "default",
         linkGroupPoints: localStorage.getItem('sc_v3_link_points') === 'true',
         arrivalTime: localStorage.getItem('sc_v3_arrival_time') || '08:00',
+        arrivalTime: localStorage.getItem('sc_v3_arrival_time') || '08:00',
         customTag1: localStorage.getItem('sc_v3_custom_tag_1') || '標籤1',
         customTag2: localStorage.getItem('sc_v3_custom_tag_2') || '標籤2',
+        classBtn1: localStorage.getItem('sc_v3_cbtn1') || 'HW',
+        classBtn2: localStorage.getItem('sc_v3_cbtn2') || '加星',
+        classBtn3: localStorage.getItem('sc_v3_cbtn3') || '秩序',
+        classBtn4: localStorage.getItem('sc_v3_cbtn4') || '缺席',
+        attBtn1: localStorage.getItem('sc_v3_abtn1') || '簽到',
+        attBtn2: localStorage.getItem('sc_v3_abtn2') || '記缺席',
+        attBtn3: localStorage.getItem('sc_v3_abtn3') || '刷牙',
         user: null,
         timer: { seconds: 0, active: false, interval: null }
     };
@@ -108,6 +116,13 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('sc_v3_arrival_time', state.arrivalTime);
         localStorage.setItem('sc_v3_custom_tag_1', state.customTag1);
         localStorage.setItem('sc_v3_custom_tag_2', state.customTag2);
+        localStorage.setItem('sc_v3_cbtn1', state.classBtn1);
+        localStorage.setItem('sc_v3_cbtn2', state.classBtn2);
+        localStorage.setItem('sc_v3_cbtn3', state.classBtn3);
+        localStorage.setItem('sc_v3_cbtn4', state.classBtn4);
+        localStorage.setItem('sc_v3_abtn1', state.attBtn1);
+        localStorage.setItem('sc_v3_abtn2', state.attBtn2);
+        localStorage.setItem('sc_v3_abtn3', state.attBtn3);
         updateDashboard();
     };
 
@@ -351,10 +366,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h4>${s.name}</h4>
                 <div class="seat-no">座號: ${s.seatNo}</div>
                 <div class="badges" style="min-height:20px; margin-top:0.3rem; display:flex; flex-wrap:wrap; justify-content:center; gap:2px;">
-                    ${s.missingHW ? '<span class="badge" style="color:var(--danger); font-size:0.75rem">⚠未交</span>' : ''}
-                    ${s.goodBehavior ? '<span class="badge" style="color:var(--success); font-size:0.75rem">★優良</span>' : ''}
-                    ${s.discipline ? '<span class="badge" style="color:var(--primary); font-size:0.75rem">⚖秩序</span>' : ''}
-                    ${s.absent ? '<span class="badge" style="color:var(--warning); font-size:0.75rem">🚪缺席</span>' : ''}
+                    ${s.missingHW ? '<span class="badge" style="color:var(--danger); font-size:0.75rem">' + state.classBtn1 + '</span>' : ''}
+                    ${s.goodBehavior ? '<span class="badge" style="color:var(--success); font-size:0.75rem">' + state.classBtn2 + '</span>' : ''}
+                    ${s.discipline ? '<span class="badge" style="color:var(--primary); font-size:0.75rem">' + state.classBtn3 + '</span>' : ''}
+                    ${s.absent ? '<span class="badge" style="color:var(--warning); font-size:0.75rem">' + state.classBtn4 + '</span>' : ''}
                 </div>
                 <div class="score-line" style="display:flex; justify-content:space-between; align-items:center; margin:0.6rem 0; background:rgba(0,0,0,0.1); padding:0.3rem; border-radius:8px;">
                     <button class="btn-secondary" style="padding:0.2rem 0.5rem; border:none; background:var(--danger); color:white; font-size:0.8rem;" onclick="window.modS(${s.id},-1)">-</button>
@@ -362,10 +377,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="btn-secondary" style="padding:0.2rem 0.5rem; border:none; background:var(--success); color:white; font-size:0.8rem;" onclick="window.modS(${s.id},1)">+</button>
                 </div>
                 <div class="actions" style="display:grid; grid-template-columns:1fr 1fr; gap:0.3rem; margin-bottom:0.4rem;">
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'missingHW')">HW</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'goodBehavior')">加星</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'discipline')">秩序</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'absent')">缺席</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'missingHW')">${state.classBtn1}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'goodBehavior')">${state.classBtn2}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'discipline')">${state.classBtn3}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'absent')">${state.classBtn4}</button>
                 </div>
                 <input type="text" class="custom-select" placeholder="備註..." value="${s.note || ''}" style="margin-top:0.3rem; width:100%; border:none; background:rgba(255,255,255,0.05); color:white; font-size:0.75rem; padding:0.3rem; border-radius:6px;" onchange="window.saveNote(${s.id}, this.value)">
             `;
@@ -405,14 +420,14 @@ document.addEventListener('DOMContentLoaded', () => {
             s[field] = !s[field];
             renderStudents();
             
-            if (field === 'goodBehavior') {
-                addActivity(`${s.name} 被標記為 ${s.goodBehavior ? '⭐ 優良' : '一般'}`);
-            } else if (field === 'missingHW') {
-                addActivity(`${s.name} 被標記為 ${s.missingHW ? '❌ 功課未交' : '已交功課'}`);
+            if (field === 'missingHW') {
+                addActivity(`${s.name} 被標記為 ${s.missingHW ? state.classBtn1 : '取消' + state.classBtn1}`);
+            } else if (field === 'goodBehavior') {
+                addActivity(`${s.name} 被標記為 ${s.goodBehavior ? state.classBtn2 : '取消' + state.classBtn2}`);
             } else if (field === 'discipline') {
-                addActivity(`${s.name} 被標記為 ${s.discipline ? '⚖ 秩序維護中' : '取消秩序標記'}`);
+                addActivity(`${s.name} 被標記為 ${s.discipline ? state.classBtn3 : '取消' + state.classBtn3}`);
             } else if (field === 'absent') {
-                addActivity(`${s.name} 被標記為 ${s.absent ? '🚪 缺席' : '已出席'}`);
+                addActivity(`${s.name} 被標記為 ${s.absent ? state.classBtn4 : '取消' + state.classBtn4}`);
             }
             
             updateDashboard();
@@ -461,17 +476,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="seat-no">座號: ${s.seatNo}</div>
                 <div class="badges" style="min-height:20px; margin-top:0.3rem; display:flex; flex-wrap:wrap; justify-content:center; gap:2px;">
                     ${arriveBadge}
-                    ${s.brushedTeeth ? '<span class="badge" style="color:var(--primary); font-size:0.75rem">🦷刷牙</span>' : ''}
+                    ${s.brushedTeeth ? '<span class="badge" style="color:var(--primary); font-size:0.75rem">' + state.attBtn3 + '</span>' : ''}
                     ${s.custom1 ? '<span class="badge" style="color:var(--accent); font-size:0.75rem">' + state.customTag1 + '</span>' : ''}
                     ${s.custom2 ? '<span class="badge" style="color:var(--accent); font-size:0.75rem">' + state.customTag2 + '</span>' : ''}
                 </div>
                 
                 <div class="actions" style="display:grid; grid-template-columns:1fr 1fr; gap:0.3rem; margin-top:0.8rem;">
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.arrived ? 'var(--success)' : ''}; color:${s.arrived ? 'white' : ''}" onclick="window.attTog(${s.id},'arrived')">${s.arrived ? '已簽到' : '簽到'}</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.absent ? 'var(--danger)' : ''}; color:${s.absent ? 'white' : ''}" onclick="window.togS(${s.id},'absent'); window.renderAttendance();">${s.absent ? '缺席' : '記缺席'}</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.brushedTeeth ? 'var(--primary)' : ''}; color:${s.brushedTeeth ? 'white' : ''}" onclick="window.attTog(${s.id},'brushedTeeth')">刷牙</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.custom1 ? 'var(--accent)' : ''}; color:${s.custom1 ? 'white' : ''}" onclick="window.attTog(${s.id},'custom1')">${state.customTag1}</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.custom2 ? 'var(--accent)' : ''}; color:${s.custom2 ? 'white' : ''}" onclick="window.attTog(${s.id},'custom2')">${state.customTag2}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.arrived ? 'var(--success)' : ''}; color:${s.arrived ? 'white' : ''}" onclick="window.attTog(${s.id},'arrived')">${s.arrived ? '✔️' + state.attBtn1 : state.attBtn1}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.absent ? 'var(--danger)' : ''}; color:${s.absent ? 'white' : ''}" onclick="window.togS(${s.id},'absent'); window.renderAttendance();">${s.absent ? '✔️' + state.attBtn2 : state.attBtn2}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.brushedTeeth ? 'var(--primary)' : ''}; color:${s.brushedTeeth ? 'white' : ''}" onclick="window.attTog(${s.id},'brushedTeeth')">${s.brushedTeeth ? '✔️' + state.attBtn3 : state.attBtn3}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.custom1 ? 'var(--accent)' : ''}; color:${s.custom1 ? 'white' : ''}" onclick="window.attTog(${s.id},'custom1')">${s.custom1 ? '✔️' + state.customTag1 : state.customTag1}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.custom2 ? 'var(--accent)' : ''}; color:${s.custom2 ? 'white' : ''}" onclick="window.attTog(${s.id},'custom2')">${s.custom2 ? '✔️' + state.customTag2 : state.customTag2}</button>
                 </div>
             `;
             grid.appendChild(card);
@@ -504,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             } else {
                 s[field] = !s[field];
-                let tagName = field === 'brushedTeeth' ? '刷牙' : (field === 'custom1' ? state.customTag1 : state.customTag2);
+                let tagName = field === 'brushedTeeth' ? state.attBtn3 : (field === 'custom1' ? state.customTag1 : state.customTag2);
                 addActivity(`${s.name} 被標記為 ${s[field] ? tagName : '取消' + tagName}`);
             }
             renderAttendance();
@@ -1365,6 +1380,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('settings-arrival-time').value = state.arrivalTime;
         document.getElementById('settings-custom-tag-1').value = state.customTag1;
         document.getElementById('settings-custom-tag-2').value = state.customTag2;
+        document.getElementById('st-class-btn-1').value = state.classBtn1;
+        document.getElementById('st-class-btn-2').value = state.classBtn2;
+        document.getElementById('st-class-btn-3').value = state.classBtn3;
+        document.getElementById('st-class-btn-4').value = state.classBtn4;
+        document.getElementById('st-att-btn-1').value = state.attBtn1;
+        document.getElementById('st-att-btn-2').value = state.attBtn2;
+        document.getElementById('st-att-btn-3').value = state.attBtn3;
         settingsModal.style.display = 'flex';
     };
 
@@ -1384,9 +1406,17 @@ document.addEventListener('DOMContentLoaded', () => {
         state.arrivalTime = document.getElementById('settings-arrival-time').value || '08:00';
         state.customTag1 = document.getElementById('settings-custom-tag-1').value || '標籤1';
         state.customTag2 = document.getElementById('settings-custom-tag-2').value || '標籤2';
+        state.classBtn1 = document.getElementById('st-class-btn-1').value || 'HW';
+        state.classBtn2 = document.getElementById('st-class-btn-2').value || '加星';
+        state.classBtn3 = document.getElementById('st-class-btn-3').value || '秩序';
+        state.classBtn4 = document.getElementById('st-class-btn-4').value || '缺席';
+        state.attBtn1 = document.getElementById('st-att-btn-1').value || '簽到';
+        state.attBtn2 = document.getElementById('st-att-btn-2').value || '記缺席';
+        state.attBtn3 = document.getElementById('st-att-btn-3').value || '刷牙';
         saveState();
+        renderStudents();
         if (typeof renderAttendance === 'function') renderAttendance();
-        alert("點名簿設定已更新！");
+        alert("按鈕與點名簿設定已更新！");
     };
 
     document.getElementById('btn-apply-brand').onclick = () => {

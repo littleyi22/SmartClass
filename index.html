@@ -516,11 +516,42 @@
             <span class="close" data-modal="settings-modal">&times;</span>
             <h2>系統設置中心</h2>
             <div class="settings-group">
-                <label>點名簿設定</label>
-                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <label>班級狀態與點名簿按鈕設定</label>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                    <p style="color: var(--secondary); font-size: 0.9rem; font-weight: bold; margin-bottom: 0;">班級狀態按鈕自訂：</p>
                     <div class="input-with-button">
-                        <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">上學遲到時間：</span>
+                        <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">按鈕 1：</span>
+                        <input type="text" id="st-class-btn-1" placeholder="預設: HW">
+                    </div>
+                    <div class="input-with-button">
+                        <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">按鈕 2：</span>
+                        <input type="text" id="st-class-btn-2" placeholder="預設: 加星">
+                    </div>
+                    <div class="input-with-button">
+                        <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">按鈕 3：</span>
+                        <input type="text" id="st-class-btn-3" placeholder="預設: 秩序">
+                    </div>
+                    <div class="input-with-button">
+                        <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">按鈕 4：</span>
+                        <input type="text" id="st-class-btn-4" placeholder="預設: 缺席">
+                    </div>
+                    
+                    <p style="color: var(--warning); font-size: 0.9rem; font-weight: bold; margin-top: 0.5rem; margin-bottom: 0;">點名簿按鈕自訂：</p>
+                    <div class="input-with-button">
+                        <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">遲到時間：</span>
                         <input type="time" id="settings-arrival-time" style="width: auto;">
+                    </div>
+                    <div class="input-with-button">
+                        <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">點名 1：</span>
+                        <input type="text" id="st-att-btn-1" placeholder="預設: 簽到">
+                    </div>
+                    <div class="input-with-button">
+                        <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">點名 2：</span>
+                        <input type="text" id="st-att-btn-2" placeholder="預設: 記缺席">
+                    </div>
+                    <div class="input-with-button">
+                        <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">點名 3：</span>
+                        <input type="text" id="st-att-btn-3" placeholder="預設: 刷牙">
                     </div>
                     <div class="input-with-button">
                         <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">自訂標籤 1：</span>
@@ -530,7 +561,7 @@
                         <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">自訂標籤 2：</span>
                         <input type="text" id="settings-custom-tag-2" placeholder="例如: 帶便當盒">
                     </div>
-                    <button class="btn-secondary" id="btn-apply-attendance-settings">套用點名設定</button>
+                    <button class="btn-secondary" id="btn-apply-attendance-settings">套用按鈕與點名設定</button>
                 </div>
             </div>
             <div class="settings-group">
