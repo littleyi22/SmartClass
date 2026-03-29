@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -461,8 +461,17 @@
                                 <p style="color:var(--text-secondary); font-size:0.9rem;">點名1=簽到，點名2=聯絡簿，點名3=缺席。點名欄位的狀態<strong>不會</strong>出現在班級狀態卡片上。</p>
                             </div>
                             <div>
-                                <p style="color:var(--primary); font-weight:bold; margin-bottom:0.5rem;">☁️ Google 雲端同步</p>
-                                <p style="color:var(--text-secondary); font-size:0.9rem;">連結 Google 帳號後，每次「雲端存檔」會自動備份至 Google 雲端硬碟，並同步到指定 Google 試算表。</p>
+                                <p style="color:var(--primary); font-weight:bold; margin-bottom:0.5rem;">☁️ Google 雲端同步 &amp; Sheets ID 取得方式</p>
+                                <p style="color:var(--text-secondary); font-size:0.9rem;">連結 Google 帳號後，每次「雲端存檔」會自動備份。若想啟用 Google 試算表同步，請依照以下步驟取得 Sheets ID：</p>
+                                <ol style="color:var(--text-secondary); font-size:0.875rem; padding-left:1.2rem; line-height:2; margin-top:0.5rem;">
+                                    <li>前往 <strong>Google 試算表</strong>（sheets.google.com），建立或開啟一個試算表。</li>
+                                    <li>查看瀏覽器網址列，網址格式如下：</li>
+                                </ol>
+                                <div style="background:rgba(0,0,0,0.3); border-radius:8px; padding:0.8rem 1rem; margin:0.5rem 0; font-family:monospace; font-size:0.8rem; word-break:break-all; border-left:3px solid var(--primary);">
+                                    <span style="color:var(--text-muted);">https://docs.google.com/spreadsheets/d/</span><span style="color:var(--secondary); font-weight:bold; background:rgba(99,102,241,0.2); padding:1px 4px; border-radius:3px;">【這段就是 Sheets ID】</span><span style="color:var(--text-muted);">/edit</span>
+                                </div>
+                                <p style="color:var(--text-secondary); font-size:0.875rem; margin-top:0.3rem;">例如：網址中 <code style="background:rgba(255,255,255,0.1);padding:1px 5px;border-radius:3px;">1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms</code> 這一段即為 Sheets ID。</p>
+                                <p style="color:var(--text-secondary); font-size:0.875rem; margin-top:0.3rem;">3. 將複製的 Sheets ID 貼入「設置中心 → 雲端同步 → Google Sheets ID」欄位，按「套用同步設定」即完成。</p>
                             </div>
                             <div>
                                 <p style="color:var(--success); font-weight:bold; margin-bottom:0.5rem;">🎨 介面風格</p>

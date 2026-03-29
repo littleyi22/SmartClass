@@ -702,18 +702,13 @@ header {
     letter-spacing: 2px;
 }
 
-/* Vertical writing: upright keeps ALL chars (incl. latin) upright */
+/* Vertical writing: mixed = CJK upright, Latin/digits rotated 90° (natural vertical flow) */
 .blackboard.vertical {
     writing-mode: vertical-rl;
-    text-orientation: upright;
+    text-orientation: mixed;
     height: 100%;
     padding: 40px 20px;
-    letter-spacing: 1px; /* tighter spacing reduces period gap */
-}
-
-/* Latin/digit upright helper within vertical – text-combine-upright for multi-digit */
-.blackboard.vertical span[style*="text-combine-upright"] {
-    display: inline;
+    letter-spacing: 1px;
 }
 
 .blackboard.horizontal {
