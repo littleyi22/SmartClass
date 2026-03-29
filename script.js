@@ -329,10 +329,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const contentDiv = document.getElementById('blackboard-content');
         if (!contentDiv) return;
 
-        // Apply writing mode and font classes
         contentDiv.className = `blackboard ${state.commWritingMode} font-${state.commFont}`;
         
-        // Update UI buttons
         const writingModeBtn = document.getElementById('text-writing-mode');
         const zhuyinBtn = document.getElementById('text-zhuyin');
         const attBtn = document.getElementById('text-comm-attendance');
@@ -343,42 +341,52 @@ document.addEventListener('DOMContentLoaded', () => {
         if(attBtn) attBtn.innerHTML = `<i data-lucide="user-check"></i> 顯示簽到格: ${state.commShowAttendance ? '開' : '關'}`;
         if(attContainer) attContainer.style.display = state.commShowAttendance ? 'flex' : 'none';
         
-        // Sync font select dropdown
         const fontSelector = document.getElementById('select-blackboard-font');
         if (fontSelector) fontSelector.value = state.commFont;
-        
-        const zhuyinToggle = document.getElementById('btn-toggle-zhuyin');
-        if (zhuyinToggle) {
-            if (state.commFont !== 'default') {
-                zhuyinToggle.style.display = 'none'; // Font handles Zhuyin
-            } else {
-                zhuyinToggle.style.display = 'block';
-            }
-        }
 
         if(typeof lucide !== 'undefined') lucide.createIcons();
 
         const rawText = currClass.homework || '尚未輸入功課';
-        
-        // Set content while preserving cursor
+        const isVertical = state.commWritingMode === 'vertical';
+
         if (document.activeElement !== contentDiv) {
-            if (state.commFont !== 'default' || !state.commShowZhuyin) {
-                contentDiv.innerHTML = rawText.replace(/\n/g, '<br>');
+            if (!state.commShowZhuyin) {
+                // No zhuyin: plain text, wrap digits for vertical upright
+                let html = rawText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>');
+                if (isVertical) {
+                    html = html.replace(/(\d{1,2})/g, '<span style="text-combine-upright:all;">$1</span>');
+                }
+                contentDiv.innerHTML = html;
             } else {
                 let html = '';
-                for (let char of rawText) {
-                    if (char === '\n') {
-                        html += '<br>';
-                    } else if (/[\u4e00-\u9fa5]/.test(char)) {
-                        html += `<ruby>${char}<rt></rt></ruby>`;
-                    } else {
-                        html += char;
+                const lines = rawText.split('\n');
+                lines.forEach((line, li) => {
+                    if (li > 0) html += '<br>';
+                    let i = 0;
+                    while (i < line.length) {
+                        const ch = line[i];
+                        if (/\d/.test(ch)) {
+                            // Collect up to 2 consecutive digits
+                            let num = ch;
+                            if (i + 1 < line.length && /\d/.test(line[i+1])) {
+                                num += line[i+1]; i++;
+                            }
+                            html += isVertical
+                                ? `<span style="text-combine-upright:all;">${num}</span>`
+                                : num;
+                        } else if (/[\u4e00-\u9fa5]/.test(ch)) {
+                            html += `<ruby>${ch}<rt></rt></ruby>`;
+                        } else {
+                            html += ch;
+                        }
+                        i++;
                     }
-                }
+                });
                 contentDiv.innerHTML = html;
             }
         }
     }
+
 
     function renderCommAttendance() {
         const currClass = getCurrentClass();

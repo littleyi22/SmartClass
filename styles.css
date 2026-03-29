@@ -639,7 +639,7 @@ header {
 .communication-layout {
     display: flex;
     gap: 2rem;
-    height: calc(100vh - 200px);
+    height: calc(100vh - 155px); /* Taller: no header bar */
 }
 
 .blackboard-container {
@@ -647,6 +647,7 @@ header {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    /* No header; frame takes all height */
 }
 
 .blackboard-header {
@@ -674,8 +675,9 @@ header {
     border-radius: 12px;
     box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.3);
     position: relative;
-    min-height: 400px;
+    min-height: 0;
     display: flex;
+    overflow: hidden;
 }
 
 .blackboard {
@@ -700,11 +702,23 @@ header {
     letter-spacing: 2px;
 }
 
+/* Vertical writing: keep ascii digits upright */
 .blackboard.vertical {
     writing-mode: vertical-rl;
-    text-orientation: upright;
+    text-orientation: mixed; /* CJK upright, latin rotated */
     height: 100%;
     padding: 40px 20px;
+}
+
+/* Use text-combine-upright to show 1-2 digit numbers upright */
+.blackboard.vertical .upright-num,
+.blackboard.vertical span.num {
+    text-combine-upright: all;
+}
+
+/* Global: make single ASCII digits upright in vertical mode */
+.blackboard.vertical {
+    font-feature-settings: 'vert' 1;
 }
 
 .blackboard.horizontal {
@@ -795,13 +809,15 @@ rt {
 
 /* Bopomofo Fonts Classes */
 .blackboard.font-huninn {
-    font-family: 'Bpmf Huninn', sans-serif;
+    font-family: 'Bpmf Huninn', 'Noto Sans TC', sans-serif;
 }
 .blackboard.font-iansui {
-    font-family: 'Iansui', sans-serif;
+    font-family: 'Iansui', 'Bpmf Huninn', sans-serif;
+    /* iansui includes zhuyin; fallback to huninn */
 }
-.blackboard.font-zihi {
-    font-family: 'Bpmf Zihi Kai Std', serif;
+.blackboard.font-edukai {
+    font-family: 'Edu TW Kai', 'Bpmf Huninn', sans-serif;
+    /* Taiwan MOE standard regular script with bopomofo */
 }
 
 /* History Tab Layout */
