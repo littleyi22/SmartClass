@@ -63,8 +63,8 @@ document.addEventListener('DOMContentLoaded', () => {
         classBtn3: localStorage.getItem('sc_v3_cbtn3') || '秩序',
         classBtn4: localStorage.getItem('sc_v3_cbtn4') || '缺席',
         attBtn1: localStorage.getItem('sc_v3_abtn1') || '簽到',
-        attBtn2: localStorage.getItem('sc_v3_abtn2') || '記缺席',
-        attBtn3: localStorage.getItem('sc_v3_abtn3') || '刷牙',
+        attBtn2: localStorage.getItem('sc_v3_abtn2') || '聯絡簿',
+        attBtn3: localStorage.getItem('sc_v3_abtn3') || '功課',
         commWritingMode: localStorage.getItem('sc_v3_comm_mode') || 'horizontal',
         commShowZhuyin: localStorage.getItem('sc_v3_comm_zhuyin') === 'true',
         commShowAttendance: localStorage.getItem('sc_v3_comm_show_att') !== 'false',
@@ -112,7 +112,9 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('sc_v3_comm_font', state.commFont);
         localStorage.setItem('sc_v3_history', JSON.stringify(state.history));
         localStorage.setItem('sc_v3_sheets_id', state.sheetsId);
-    
+        if (typeof updateDashboard === 'function') updateDashboard();
+    }
+
     function applyTheme() {
         if(elements && elements.body) elements.body.className = `theme-${state.theme}`;
     }
@@ -277,9 +279,6 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
     }
 
-    // --- UI Elements ---
-        if (typeof updateDashboard === 'function') updateDashboard();
-    }
 
     function addActivity(msg) {
         const currClass = getCurrentClass();
@@ -1637,8 +1636,8 @@ document.addEventListener('DOMContentLoaded', () => {
         state.classBtn3 = document.getElementById('st-class-btn-3').value || '秩序';
         state.classBtn4 = document.getElementById('st-class-btn-4').value || '缺席';
         state.attBtn1 = document.getElementById('st-att-btn-1').value || '簽到';
-        state.attBtn2 = document.getElementById('st-att-btn-2').value || '記缺席';
-        state.attBtn3 = document.getElementById('st-att-btn-3').value || '刷牙';
+        state.attBtn2 = document.getElementById('st-att-btn-2').value || '聯絡簿';
+        state.attBtn3 = document.getElementById('st-att-btn-3').value || '功課';
         saveState();
         renderStudents();
         if (typeof renderAttendance === 'function') renderAttendance();
