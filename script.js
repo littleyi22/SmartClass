@@ -1,5 +1,5 @@
 /**
- * SmartClass v.6.0 - JavaScript Logic
+ * SmartClass v.6.1 - JavaScript Logic
  * Developed for 奕鈞老師
  */
 
@@ -58,13 +58,13 @@ document.addEventListener('DOMContentLoaded', () => {
         arrivalTime: localStorage.getItem('sc_v3_arrival_time') || '08:00',
         customTag1: localStorage.getItem('sc_v3_custom_tag_1') || '標籤1',
         customTag2: localStorage.getItem('sc_v3_custom_tag_2') || '標籤2',
-        classBtn1: localStorage.getItem('sc_v3_cbtn1') || 'HW',
-        classBtn2: localStorage.getItem('sc_v3_cbtn2') || '加星',
+        classBtn1: localStorage.getItem('sc_v3_cbtn1') || '功課',
+        classBtn2: localStorage.getItem('sc_v3_cbtn2') || '優秀',
         classBtn3: localStorage.getItem('sc_v3_cbtn3') || '秩序',
-        classBtn4: localStorage.getItem('sc_v3_cbtn4') || '缺席',
+        classBtn4: localStorage.getItem('sc_v3_cbtn4') || '',
         attBtn1: localStorage.getItem('sc_v3_abtn1') || '簽到',
         attBtn2: localStorage.getItem('sc_v3_abtn2') || '聯絡簿',
-        attBtn3: localStorage.getItem('sc_v3_abtn3') || '功課',
+        attBtn3: localStorage.getItem('sc_v3_abtn3') || '缺席',
         commWritingMode: localStorage.getItem('sc_v3_comm_mode') || 'horizontal',
         commShowZhuyin: localStorage.getItem('sc_v3_comm_zhuyin') === 'true',
         commShowAttendance: localStorage.getItem('sc_v3_comm_show_att') !== 'false',
@@ -418,6 +418,8 @@ document.addEventListener('DOMContentLoaded', () => {
         list.forEach(s => {
             const card = document.createElement('div');
             card.className = 'student-card';
+            const btn4Html = state.classBtn4 ? `<button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'discipline2')">${state.classBtn4}</button>` : '';
+            const badge4Html = state.classBtn4 && s.discipline2 ? `<span class="badge" style="color:var(--warning); font-size:0.75rem">${state.classBtn4}</span>` : '';
             card.innerHTML = `
                 <div class="avatar">${s.name[0]}</div>
                 <h4>${s.name}</h4>
@@ -426,7 +428,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ${s.missingHW ? '<span class="badge" style="color:var(--danger); font-size:0.75rem">' + state.classBtn1 + '</span>' : ''}
                     ${s.goodBehavior ? '<span class="badge" style="color:var(--success); font-size:0.75rem">' + state.classBtn2 + '</span>' : ''}
                     ${s.discipline ? '<span class="badge" style="color:var(--primary); font-size:0.75rem">' + state.classBtn3 + '</span>' : ''}
-                    ${s.absent ? '<span class="badge" style="color:var(--warning); font-size:0.75rem">' + state.classBtn4 + '</span>' : ''}
+                    ${badge4Html}
                 </div>
                 <div class="score-line" style="display:flex; justify-content:space-between; align-items:center; margin:0.6rem 0; background:rgba(0,0,0,0.1); padding:0.3rem; border-radius:8px;">
                     <button class="btn-secondary" style="padding:0.2rem 0.5rem; border:none; background:var(--danger); color:white; font-size:0.8rem;" onclick="window.modS(${s.id},-1)">-</button>
@@ -437,7 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'missingHW')">${state.classBtn1}</button>
                     <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'goodBehavior')">${state.classBtn2}</button>
                     <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'discipline')">${state.classBtn3}</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'absent')">${state.classBtn4}</button>
+                    ${btn4Html}
                 </div>
                 <input type="text" class="custom-select" placeholder="備註..." value="${s.note || ''}" style="margin-top:0.3rem; width:100%; border:none; background:rgba(255,255,255,0.05); color:white; font-size:0.75rem; padding:0.3rem; border-radius:6px;" onchange="window.saveNote(${s.id}, this.value)">
             `;
@@ -461,7 +463,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             let arriveBadge = '';
             if (s.absent) {
-                arriveBadge = '<span class="badge" style="color:var(--danger); font-size:0.75rem">🚪缺席</span>';
+                arriveBadge = `<span class="badge" style="color:var(--danger); font-size:0.75rem">🚪 ${state.attBtn3}</span>`;
             } else if (s.arrived) {
                 if (s.arriveTimeStr > state.arrivalTime) {
                     arriveBadge = `<span class="badge" style="color:var(--warning); font-size:0.75rem">⏰遲到 (${s.arriveTimeStr})</span>`;
@@ -476,15 +478,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="seat-no">座號: ${s.seatNo}</div>
                 <div class="badges" style="min-height:20px; margin-top:0.3rem; display:flex; flex-wrap:wrap; justify-content:center; gap:2px;">
                     ${arriveBadge}
-                    ${s.brushedTeeth ? '<span class="badge" style="color:var(--primary); font-size:0.75rem">' + state.attBtn3 + '</span>' : ''}
+                    ${s.attTag1 ? '<span class="badge" style="color:var(--primary); font-size:0.75rem">' + state.attBtn2 + '</span>' : ''}
                     ${s.custom1 ? '<span class="badge" style="color:var(--accent); font-size:0.75rem">' + state.customTag1 + '</span>' : ''}
                     ${s.custom2 ? '<span class="badge" style="color:var(--accent); font-size:0.75rem">' + state.customTag2 + '</span>' : ''}
                 </div>
                 
                 <div class="actions" style="display:grid; grid-template-columns:1fr 1fr; gap:0.3rem; margin-top:0.8rem;">
                     <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.arrived ? 'var(--success)' : ''}; color:${s.arrived ? 'white' : ''}" onclick="window.attTog(${s.id},'arrived')">${s.arrived ? '✔️' + state.attBtn1 : state.attBtn1}</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.absent ? 'var(--danger)' : ''}; color:${s.absent ? 'white' : ''}" onclick="window.togS(${s.id},'absent'); window.renderAttendance();">${s.absent ? '✔️' + state.attBtn2 : state.attBtn2}</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.brushedTeeth ? 'var(--primary)' : ''}; color:${s.brushedTeeth ? 'white' : ''}" onclick="window.attTog(${s.id},'brushedTeeth')">${s.brushedTeeth ? '✔️' + state.attBtn3 : state.attBtn3}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.absent ? 'var(--danger)' : ''}; color:${s.absent ? 'white' : ''}" onclick="window.togS(${s.id},'absent'); window.renderAttendance();">${s.absent ? '✔️' + state.attBtn3 : state.attBtn3}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.attTag1 ? 'var(--primary)' : ''}; color:${s.attTag1 ? 'white' : ''}" onclick="window.attTog(${s.id},'attTag1')">${s.attTag1 ? '✔️' + state.attBtn2 : state.attBtn2}</button>
                     <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.custom1 ? 'var(--accent)' : ''}; color:${s.custom1 ? 'white' : ''}" onclick="window.attTog(${s.id},'custom1')">${s.custom1 ? '✔️' + state.customTag1 : state.customTag1}</button>
                     <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.custom2 ? 'var(--accent)' : ''}; color:${s.custom2 ? 'white' : ''}" onclick="window.attTog(${s.id},'custom2')">${s.custom2 ? '✔️' + state.customTag2 : state.customTag2}</button>
                 </div>

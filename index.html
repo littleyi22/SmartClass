@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="main-title-tag">智慧教室助手 v.6.0</title>
+    <title id="main-title-tag">智慧教室助手 v.6.1</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -67,6 +67,10 @@
                 <li data-tab="history">
                     <i data-lucide="history"></i>
                     <span>歷史紀錄</span>
+                </li>
+                <li data-tab="guide">
+                    <i data-lucide="book-marked"></i>
+                    <span>使用說明</span>
                 </li>
             </ul>
 
@@ -356,10 +360,143 @@
                     <div class="empty-state">請選擇日期與班級查看紀錄</div>
                 </div>
             </section>
-            
+
+            <!-- Tab: Guide -->
+            <section id="guide-tab" class="tab-content">
+                <div style="max-width: 900px; margin: 0 auto;">
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding: 1.5rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 16px;">
+                        <i data-lucide="book-marked" style="width:48px; height:48px; color:white; flex-shrink:0;"></i>
+                        <div>
+                            <h2 style="margin:0; color:white; font-size:1.6rem;">SmartClass 使用說明</h2>
+                            <p style="margin:0.3rem 0 0; color:rgba(255,255,255,0.8); font-size:0.95rem;">Version 6.1 ｜ 奕鈞老師製作</p>
+                        </div>
+                    </div>
+
+                    <!-- Quick Start -->
+                    <div class="card" style="margin-bottom:1.5rem;">
+                        <h3 style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="zap" style="color:var(--warning);"></i> 快速上手</h3>
+                        <ol style="padding-left:1.5rem; line-height:2; color:var(--text-secondary);">
+                            <li>點選側欄「班級管理」，建立您的班級</li>
+                            <li>在「班級狀態」點「匯入學生」或手動新增學生</li>
+                            <li>使用頂部選單切換班級</li>
+                            <li>在「設置中心」自訂按鈕名稱與介面風格</li>
+                            <li>課程結束後按「雲端存檔」同步備份</li>
+                        </ol>
+                    </div>
+
+                    <!-- Feature Cards -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.2rem; margin-bottom: 1.5rem;">
+                        <div class="card">
+                            <h4 style="display:flex; align-items:center; gap:0.5rem; color:var(--primary);"><i data-lucide="layout-dashboard"></i> 主控面板</h4>
+                            <ul style="padding-left:1.2rem; line-height:1.9; color:var(--text-secondary); font-size:0.9rem;">
+                                <li>查看班級統計（人數/優秀/功課）</li>
+                                <li>輸入今日功課與教學進度</li>
+                                <li>查看最近 50 筆課堂活動紀錄</li>
+                                <li>頂部快速抽人 & 計時器</li>
+                            </ul>
+                        </div>
+                        <div class="card">
+                            <h4 style="display:flex; align-items:center; gap:0.5rem; color:var(--secondary);"><i data-lucide="users"></i> 班級狀態</h4>
+                            <ul style="padding-left:1.2rem; line-height:1.9; color:var(--text-secondary); font-size:0.9rem;">
+                                <li>每位學生獨立得分卡（+/-）</li>
+                                <li>三個自訂行為按鈕（功課/優秀/秩序）</li>
+                                <li>按鈕4 留空則隱藏，填後才出現</li>
+                                <li>支援搜尋過濾學生</li>
+                                <li>可匯入 Excel 名單</li>
+                            </ul>
+                        </div>
+                        <div class="card">
+                            <h4 style="display:flex; align-items:center; gap:0.5rem; color:var(--success);"><i data-lucide="clipboard-check"></i> 點名簿</h4>
+                            <ul style="padding-left:1.2rem; line-height:1.9; color:var(--text-secondary); font-size:0.9rem;">
+                                <li>簽到（自動記錄時間）</li>
+                                <li>標記缺席（與班級狀態獨立）</li>
+                                <li>聯絡簿 / 功課等自訂欄位</li>
+                                <li>可設定遲到判斷時間</li>
+                                <li>點名狀態不影響班級狀態視圖</li>
+                            </ul>
+                        </div>
+                        <div class="card">
+                            <h4 style="display:flex; align-items:center; gap:0.5rem; color:var(--warning);"><i data-lucide="wrench"></i> 課堂神器</h4>
+                            <ul style="padding-left:1.2rem; line-height:1.9; color:var(--text-secondary); font-size:0.9rem;">
+                                <li>🎲 隨機抽籤（附音效）</li>
+                                <li>🔔 搶答計時器（附音效）</li>
+                                <li>⏱️ 倒數計時（附鈴聲）</li>
+                                <li>📊 噪音計（麥克風）</li>
+                                <li>🖊️ 白板、骰子、連結分享</li>
+                            </ul>
+                        </div>
+                        <div class="card">
+                            <h4 style="display:flex; align-items:center; gap:0.5rem; color:var(--accent);"><i data-lucide="book-open"></i> 聯絡簿</h4>
+                            <ul style="padding-left:1.2rem; line-height:1.9; color:var(--text-secondary); font-size:0.9rem;">
+                                <li>黑板樣式呈現，可直接在上面輸入</li>
+                                <li>支援橫書 / 直書切換</li>
+                                <li>多種注音字體（粉圓、芫荽等）</li>
+                                <li>顯示學生簽到格</li>
+                                <li>編輯內容自動同步儲存</li>
+                            </ul>
+                        </div>
+                        <div class="card">
+                            <h4 style="display:flex; align-items:center; gap:0.5rem; color:var(--primary);"><i data-lucide="history"></i> 歷史紀錄</h4>
+                            <ul style="padding-left:1.2rem; line-height:1.9; color:var(--text-secondary); font-size:0.9rem;">
+                                <li>按日期查詢過去紀錄</li>
+                                <li>查看每日功課、教學進度</li>
+                                <li>查看當日出勤狀況</li>
+                                <li>下課存檔時自動寫入</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Settings Guide -->
+                    <div class="card" style="margin-bottom:1.5rem;">
+                        <h3 style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="settings" style="color:var(--text-muted);"></i> 設置中心說明</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top:1rem;">
+                            <div>
+                                <p style="color:var(--secondary); font-weight:bold; margin-bottom:0.5rem;">🏷️ 班級狀態按鈕</p>
+                                <p style="color:var(--text-secondary); font-size:0.9rem;">按鈕1-3 為常用行為標記，按鈕4 <strong>留空時自動隱藏</strong>，填入名稱後才出現在學生卡片。</p>
+                            </div>
+                            <div>
+                                <p style="color:var(--warning); font-weight:bold; margin-bottom:0.5rem;">📋 點名簿按鈕</p>
+                                <p style="color:var(--text-secondary); font-size:0.9rem;">點名1=簽到，點名2=聯絡簿，點名3=缺席。點名欄位的狀態<strong>不會</strong>出現在班級狀態卡片上。</p>
+                            </div>
+                            <div>
+                                <p style="color:var(--primary); font-weight:bold; margin-bottom:0.5rem;">☁️ Google 雲端同步</p>
+                                <p style="color:var(--text-secondary); font-size:0.9rem;">連結 Google 帳號後，每次「雲端存檔」會自動備份至 Google 雲端硬碟，並同步到指定 Google 試算表。</p>
+                            </div>
+                            <div>
+                                <p style="color:var(--success); font-weight:bold; margin-bottom:0.5rem;">🎨 介面風格</p>
+                                <p style="color:var(--text-secondary); font-size:0.9rem;">提供 5 種深色主題與 8 種馬卡龍漸層風格，可依教室或心情自由切換。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tips -->
+                    <div class="card">
+                        <h3 style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="lightbulb" style="color:var(--warning);"></i> 使用小技巧</h3>
+                        <div style="display:flex; flex-direction:column; gap:0.8rem; margin-top:1rem;">
+                            <div style="display:flex; gap:0.8rem; align-items:flex-start; padding:0.8rem; background:rgba(255,255,255,0.03); border-radius:8px; border-left:3px solid var(--primary);">
+                                <span style="font-size:1.3rem;">💡</span>
+                                <p style="margin:0; color:var(--text-secondary); font-size:0.9rem;">瀏覽器關閉後，所有資料仍保存在本地儲存空間（localStorage），建議定期使用「雲端存檔」備份。</p>
+                            </div>
+                            <div style="display:flex; gap:0.8rem; align-items:flex-start; padding:0.8rem; background:rgba(255,255,255,0.03); border-radius:8px; border-left:3px solid var(--success);">
+                                <span style="font-size:1.3rem;">📱</span>
+                                <p style="margin:0; color:var(--text-secondary); font-size:0.9rem;">手機或平板也可使用！學生可透過「學生連線」功能，用自己的裝置查看分數與資訊。</p>
+                            </div>
+                            <div style="display:flex; gap:0.8rem; align-items:flex-start; padding:0.8rem; background:rgba(255,255,255,0.03); border-radius:8px; border-left:3px solid var(--warning);">
+                                <span style="font-size:1.3rem;">🔊</span>
+                                <p style="margin:0; color:var(--text-secondary); font-size:0.9rem;">抽籤、搶答、計時器均有音效，但部分瀏覽器需要先有使用者互動（如點擊）才能播放音效。</p>
+                            </div>
+                            <div style="display:flex; gap:0.8rem; align-items:flex-start; padding:0.8rem; background:rgba(255,255,255,0.03); border-radius:8px; border-left:3px solid var(--secondary);">
+                                <span style="font-size:1.3rem;">⚙️</span>
+                                <p style="margin:0; color:var(--text-secondary); font-size:0.9rem;">設定完按鈕名稱後，務必按「套用按鈕與點名設定」才會生效並更新各頁面顯示。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Footer Copyright -->
             <footer class="bottom-footer">
-                <p>奕鈞老師製作 © 2026 | Version 5.5 (v.5.5)</p>
+                <p>奕鈞老師製作 © 2026 | Version 6.1</p>
             </footer>
         </main>
     </div>
@@ -606,7 +743,7 @@
                     </div>
                     <div class="input-with-button">
                         <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">按鈕 4：</span>
-                        <input type="text" id="st-class-btn-4" placeholder="預設: 缺席">
+                        <input type="text" id="st-class-btn-4" placeholder="自訂後顯示 (可留空)φ">
                     </div>
                     
                     <p style="color: var(--warning); font-size: 0.9rem; font-weight: bold; margin-top: 0.5rem; margin-bottom: 0;">點名簿按鈕自訂：</p>
@@ -624,7 +761,7 @@
                     </div>
                     <div class="input-with-button">
                         <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">點名 3：</span>
-                        <input type="text" id="st-att-btn-3" placeholder="預設: 功課">
+                        <input type="text" id="st-att-btn-3" placeholder="預設: 缺席">
                     </div>
                     <div class="input-with-button">
                         <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">自訂標籤 1：</span>
@@ -693,11 +830,11 @@
         </div>
     </div>
 
-    <!-- Audio Assets -->
-    <audio id="audio-draw" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3"></audio>
-    <audio id="audio-win" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"></audio>
-    <audio id="audio-buzzer-end" src="https://assets.mixkit.co/active_storage/sfx/1071/1071-preview.mp3"></audio>
-    <audio id="audio-timer-end" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3"></audio>
+    <!-- Audio Assets (better quality CDN) -->
+    <audio id="audio-draw" src="https://www.soundjay.com/misc/sounds/slot-machine-1.mp3" preload="auto"></audio>
+    <audio id="audio-win" src="https://www.soundjay.com/human/sounds/applause-8.mp3" preload="auto"></audio>
+    <audio id="audio-buzzer-end" src="https://www.soundjay.com/misc/sounds/fail-buzzer-01.mp3" preload="auto"></audio>
+    <audio id="audio-timer-end" src="https://www.soundjay.com/bell/sounds/bell-ringing-05.mp3" preload="auto"></audio>
 
     <!-- Scripts -->
     <script src="script.js"></script>
