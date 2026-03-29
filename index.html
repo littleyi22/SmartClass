@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="main-title-tag">智慧教室助手 v.5.5</title>
+    <title id="main-title-tag">智慧教室助手 v.6.0</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -321,7 +321,7 @@
                             <div class="blackboard-title">今日聯絡簿</div>
                         </div>
                         <div class="blackboard-frame">
-                            <div id="blackboard-content" class="blackboard horizontal">
+                            <div id="blackboard-content" class="blackboard horizontal" contenteditable="true" spellcheck="false">
                                 <!-- Content will be populated by JS -->
                             </div>
                         </div>
@@ -333,6 +333,27 @@
                             <!-- Populated by JS -->
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <!-- Tab: History -->
+            <section id="history-tab" class="tab-content">
+                <div class="history-toolbar">
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <div class="input-group">
+                            <label>日期</label>
+                            <input type="date" id="history-date-picker" class="custom-select" style="width: auto;">
+                        </div>
+                        <div class="input-group">
+                            <label>班級</label>
+                            <select id="history-class-select" class="custom-select" style="width: auto;"></select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="history-display-area" style="margin-top: 1.5rem;">
+                    <!-- Data for the selected date/class -->
+                    <div class="empty-state">請選擇日期與班級查看紀錄</div>
                 </div>
             </section>
             
@@ -671,6 +692,12 @@
             </div>
         </div>
     </div>
+
+    <!-- Audio Assets -->
+    <audio id="audio-draw" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3"></audio>
+    <audio id="audio-win" src="https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3"></audio>
+    <audio id="audio-buzzer-end" src="https://assets.mixkit.co/active_storage/sfx/1071/1071-preview.mp3"></audio>
+    <audio id="audio-timer-end" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3"></audio>
 
     <!-- Scripts -->
     <script src="script.js"></script>

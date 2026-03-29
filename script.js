@@ -1,5 +1,5 @@
 /**
- * SmartClass v.2 - JavaScript Logic
+ * SmartClass v.6.0 - JavaScript Logic
  * Developed for 奕鈞老師
  */
 
@@ -56,12 +56,15 @@ document.addEventListener('DOMContentLoaded', () => {
         theme: localStorage.getItem('sc_v3_theme') || "default",
         linkGroupPoints: localStorage.getItem('sc_v3_link_points') === 'true',
         arrivalTime: localStorage.getItem('sc_v3_arrival_time') || '08:00',
-        arrivalTime: localStorage.getItem('sc_v3_arrival_time') || '08:00',
         customTag1: localStorage.getItem('sc_v3_custom_tag_1') || '標籤1',
         customTag2: localStorage.getItem('sc_v3_custom_tag_2') || '標籤2',
         classBtn1: localStorage.getItem('sc_v3_cbtn1') || 'HW',
         classBtn2: localStorage.getItem('sc_v3_cbtn2') || '加星',
         classBtn3: localStorage.getItem('sc_v3_cbtn3') || '秩序',
+        classBtn4: localStorage.getItem('sc_v3_cbtn4') || '缺席',
+        attBtn1: localStorage.getItem('sc_v3_abtn1') || '簽到',
+        attBtn2: localStorage.getItem('sc_v3_abtn2') || '記缺席',
+        attBtn3: localStorage.getItem('sc_v3_abtn3') || '刷牙',
         commWritingMode: localStorage.getItem('sc_v3_comm_mode') || 'horizontal',
         commShowZhuyin: localStorage.getItem('sc_v3_comm_zhuyin') === 'true',
         commShowAttendance: localStorage.getItem('sc_v3_comm_show_att') !== 'false',
@@ -72,43 +75,21 @@ document.addEventListener('DOMContentLoaded', () => {
         timer: { seconds: 0, active: false, interval: null }
     };
 
-    if (!state.currentClassId || !state.classes.find(c => c.id === state.currentClassId)) {
-        state.currentClassId = state.classes[0].id;
+    // --- Sound Effects ---
+    function playSound(id) {
+        const audio = document.getElementById(`audio-${id}`);
+        if (audio) {
+            audio.currentTime = 0;
+            audio.play().catch(e => console.log("Sound play error:", e));
+        }
     }
 
-    const getCurrentClass = () => state.classes.find(c => c.id === state.currentClassId);
-
-    // --- Mobile Sidebar Setup ---
-    const mobileMenuBtn = document.getElementById('btn-mobile-menu');
-    const sidebar = document.querySelector('.sidebar');
-    let overlay = document.querySelector('.mobile-overlay');
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.className = 'mobile-overlay';
-        document.body.appendChild(overlay);
+    // --- Hoisted Functions (Moved up for reliability) ---
+    function getCurrentClass() {
+        return state.classes.find(c => c.id === state.currentClassId);
     }
 
-    if (mobileMenuBtn) {
-        mobileMenuBtn.onclick = () => {
-            sidebar.classList.add('mobile-show');
-            overlay.classList.add('show');
-        };
-        overlay.onclick = () => {
-            sidebar.classList.remove('mobile-show');
-            overlay.classList.remove('show');
-        };
-        document.querySelectorAll('.nav-links li').forEach(li => {
-            li.addEventListener('click', () => {
-                if (window.innerWidth <= 768) {
-                    sidebar.classList.remove('mobile-show');
-                    overlay.classList.remove('show');
-                }
-            });
-        });
-    }
-
-    // --- Core Functions ---
-    const saveState = () => {
+    function saveState() {
         localStorage.setItem('sc_v3_classes', JSON.stringify(state.classes));
         localStorage.setItem('sc_v3_curr_class', state.currentClassId);
         localStorage.setItem('sc_v3_activities', JSON.stringify(state.activities));
@@ -131,21 +112,427 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('sc_v3_comm_font', state.commFont);
         localStorage.setItem('sc_v3_history', JSON.stringify(state.history));
         localStorage.setItem('sc_v3_sheets_id', state.sheetsId);
-        updateDashboard();
-    };
+    
+    function applyTheme() {
+        if(elements && elements.body) elements.body.className = `theme-${state.theme}`;
+    }
 
-    const addActivity = (msg) => {
+    function initWhiteboard() {
+        const c = document.getElementById('whiteboard-canvas');
+        if(!c) return;
+        const ctx = c.getContext('2d');
+        
+        const rect = c.getBoundingClientRect();
+        c.width = rect.width;
+        c.height = rect.height;
+
+        let painting = false;
+        let color = 'black';
+
+        const startPos = e => { 
+            painting = true; 
+            draw(e); 
+        };
+        const endPos = () => { 
+            painting = false; 
+            ctx.beginPath(); 
+        };
+        const draw = e => {
+            if(!painting) return;
+            const currentRect = c.getBoundingClientRect();
+            const scaleX = c.width / currentRect.width;
+            const scaleY = c.height / currentRect.height;
+
+            const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
+
+            const x = (clientX - currentRect.left) * scaleX;
+            const y = (clientY - currentRect.top) * scaleY;
+
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = color;
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        };
+
+        c.onmousedown = startPos;
+        c.onmouseup = endPos;
+        c.onmousemove = draw;
+        c.ontouchstart = e => { e.preventDefault(); startPos(e); };
+        c.ontouchend = e => { e.preventDefault(); endPos(); };
+        c.ontouchmove = e => { e.preventDefault(); draw(e); };
+
+        const cBlack = document.getElementById('color-black');
+        const cRed = document.getElementById('color-red');
+        const cBlue = document.getElementById('color-blue');
+        const cEraser = document.getElementById('color-eraser');
+        const cClear = document.getElementById('btn-clear-board');
+
+        if(cBlack) cBlack.onclick = () => color='black';
+        if(cRed) cRed.onclick = () => color='red';
+        if(cBlue) cBlue.onclick = () => color='blue';
+        if(cEraser) cEraser.onclick = () => color='white';
+        if(cClear) cClear.onclick = () => ctx.clearRect(0,0,c.width,c.height);
+    }
+
+    function saveDailyRecord() {
+        const now = new Date();
+        const dateKey = now.toISOString().split('T')[0];
+        const currClass = getCurrentClass();
+        if (!currClass) return;
+
+        if (!state.history[dateKey]) state.history[dateKey] = {};
+        state.history[dateKey][currClass.id] = {
+            className: currClass.name,
+            homework: currClass.homework || '',
+            teachingProgress: currClass.teachingProgress || '',
+            attendance: currClass.students.map(s => ({
+                seat: s.seatNo,
+                name: s.name,
+                status: s.absent ? '缺席' : (s.arrived ? (s.arriveTimeStr > state.arrivalTime ? '遲到' : '已到') : '未到')
+            }))
+        };
+        saveState();
+    }
+
+    async function syncToGoogleSheets() {
+        if (!accessToken || !state.sheetsId) return;
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('zh-TW');
+        const currClass = getCurrentClass();
+        try {
+            if (!window.gapi || !window.gapi.client) {
+                await new Promise((resolve, reject) => {
+                    gapi.load('client', {callback: resolve, onerror: reject});
+                });
+            }
+            if (!gapi.client.sheets) {
+                await gapi.client.init({
+                    discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
+                });
+            }
+            const range = 'Sheet1!A:E';
+            const values = [
+                [dateStr, currClass.name, currClass.homework || '', currClass.teachingProgress || '', currClass.students.filter(s => s.arrived).length + '/' + currClass.students.length]
+            ];
+            await gapi.client.sheets.spreadsheets.values.append({
+                spreadsheetId: state.sheetsId,
+                range: range,
+                valueInputOption: 'USER_ENTERED',
+                resource: { values: values },
+            });
+            addActivity("✅ 資料已同步至 Google 試算表");
+        } catch (err) {
+            console.error('Sheets Sync Error:', err);
+            addActivity("❌ 試算表同步失敗：" + (err.result?.error?.message || "請檢查權限及 ID"));
+        }
+    }
+
+    function renderHistory() {
+        const datePicker = document.getElementById('history-date-picker');
+        const classSelector = document.getElementById('history-class-select');
+        const displayArea = document.getElementById('history-display-area');
+        if (!datePicker || !classSelector || !displayArea) return;
+        if (!datePicker.value) datePicker.value = new Date().toISOString().split('T')[0];
+        const selectedDate = datePicker.value;
+        const classesOnDate = state.history[selectedDate] || {};
+        const prevSelectedClass = classSelector.value;
+        classSelector.innerHTML = '';
+        Object.keys(classesOnDate).forEach(id => {
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = classesOnDate[id].className;
+            classSelector.appendChild(opt);
+        });
+        if (prevSelectedClass && classesOnDate[prevSelectedClass]) classSelector.value = prevSelectedClass;
+        const selectedClassId = classSelector.value;
+        const data = classesOnDate[selectedClassId];
+        if (!data) {
+            displayArea.innerHTML = '<div class="empty-state">該日期尚無紀錄</div>';
+            return;
+        }
+        displayArea.innerHTML = `
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <h3>今日功課</h3>
+                <div style="white-space: pre-wrap; margin-top: 0.5rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px;">${data.homework || '無紀錄'}</div>
+            </div>
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <h3>教學進度</h3>
+                <div style="white-space: pre-wrap; margin-top: 0.5rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px;">${data.teachingProgress || '無紀錄'}</div>
+            </div>
+            <div class="card">
+                <h3>出勤狀況</h3>
+                <div style="margin-top: 1rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.5rem;">
+                    ${data.attendance.map(s => `
+                        <div style="padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; justify-content: space-between;">
+                            <span>${s.seat}. ${s.name}</span>
+                            <span style="color: ${s.status === '缺席' ? 'var(--danger)' : (s.status.includes('遲到') ? 'var(--warning)' : 'var(--success)')}">${s.status}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+
+    // --- UI Elements ---
+        if (typeof updateDashboard === 'function') updateDashboard();
+    }
+
+    function addActivity(msg) {
         const currClass = getCurrentClass();
         if(!currClass) return;
         if (!currClass.activities) currClass.activities = [];
         const time = new Date().toLocaleTimeString('zh-TW', { hour12: false });
         currClass.activities.unshift({ time, msg });
         if (currClass.activities.length > 50) currClass.activities.pop();
-        renderActivities();
+        if (typeof renderActivities === 'function') renderActivities();
         saveState();
-    };
+    }
 
-    // --- UI Elements ---
+    function updateDashboard() {
+        const currClass = getCurrentClass();
+        if(!currClass) return;
+        
+        const totalEl = document.getElementById('stat-total-students');
+        const goodEl = document.getElementById('stat-good-behavior');
+        const missingEl = document.getElementById('stat-missing-hw');
+        
+        if(totalEl) totalEl.textContent = currClass.students.length;
+        if(goodEl) goodEl.textContent = currClass.students.filter(s => s.goodBehavior).length;
+        if(missingEl) missingEl.textContent = currClass.students.filter(s => s.missingHW).length;
+        
+        if(elements && elements.brandName) elements.brandName.textContent = state.brandName;
+        
+        if(elements && elements.hwInput) elements.hwInput.value = currClass.homework || '';
+        if(elements && elements.progInput1) elements.progInput1.value = currClass.teachingProgress || '';
+        if(elements && elements.progInput2) elements.progInput2.value = currClass.teachingProgress || '';
+        
+        renderActivities();
+    }
+
+    function renderActivities() {
+        const listContainer = document.getElementById('activity-list');
+        if (!listContainer) return;
+        const currClass = getCurrentClass();
+        if(!currClass) return;
+        const acts = currClass.activities || [];
+        listContainer.innerHTML = acts.length ? 
+            acts.map(a => `<div style="padding:0.5rem 0; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between;"><span>${a.msg}</span><small style="color:var(--text-muted)">${a.time}</small></div>`).join('') :
+            '<div class="empty-state">尚無活動紀錄</div>';
+    }
+
+    function renderCommunicationBook() {
+        const currClass = getCurrentClass();
+        if(!currClass) return;
+        const contentDiv = document.getElementById('blackboard-content');
+        if (!contentDiv) return;
+
+        // Apply writing mode and font classes
+        contentDiv.className = `blackboard ${state.commWritingMode} font-${state.commFont}`;
+        
+        // Update UI buttons
+        const writingModeBtn = document.getElementById('text-writing-mode');
+        const zhuyinBtn = document.getElementById('text-zhuyin');
+        const attBtn = document.getElementById('text-comm-attendance');
+        const attContainer = document.getElementById('comm-attendance-container');
+
+        if(writingModeBtn) writingModeBtn.innerHTML = state.commWritingMode === 'horizontal' ? '<i data-lucide="type"></i> 切換直書' : '<i data-lucide="type"></i> 切換橫書';
+        if(zhuyinBtn) zhuyinBtn.innerHTML = `<i data-lucide="languages"></i> 附加注音: ${state.commShowZhuyin ? '開' : '關'}`;
+        if(attBtn) attBtn.innerHTML = `<i data-lucide="user-check"></i> 顯示簽到格: ${state.commShowAttendance ? '開' : '關'}`;
+        if(attContainer) attContainer.style.display = state.commShowAttendance ? 'flex' : 'none';
+        
+        // Sync font select dropdown
+        const fontSelector = document.getElementById('select-blackboard-font');
+        if (fontSelector) fontSelector.value = state.commFont;
+        
+        const zhuyinToggle = document.getElementById('btn-toggle-zhuyin');
+        if (zhuyinToggle) {
+            if (state.commFont !== 'default') {
+                zhuyinToggle.style.display = 'none'; // Font handles Zhuyin
+            } else {
+                zhuyinToggle.style.display = 'block';
+            }
+        }
+
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+
+        const rawText = currClass.homework || '尚未輸入功課';
+        
+        // Set content while preserving cursor
+        if (document.activeElement !== contentDiv) {
+            if (state.commFont !== 'default' || !state.commShowZhuyin) {
+                contentDiv.innerHTML = rawText.replace(/\n/g, '<br>');
+            } else {
+                let html = '';
+                for (let char of rawText) {
+                    if (char === '\n') {
+                        html += '<br>';
+                    } else if (/[\u4e00-\u9fa5]/.test(char)) {
+                        html += `<ruby>${char}<rt></rt></ruby>`;
+                    } else {
+                        html += char;
+                    }
+                }
+                contentDiv.innerHTML = html;
+            }
+        }
+    }
+
+    function renderCommAttendance() {
+        const currClass = getCurrentClass();
+        if(!currClass) return;
+        const grid = document.getElementById('comm-attendance-grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        currClass.students.forEach(s => {
+            const box = document.createElement('div');
+            box.className = `comm-student-box ${s.arrived ? 'arrived' : ''} ${s.absent ? 'absent' : ''}`;
+            box.innerHTML = `
+                <span class="seat-no">${s.seatNo}</span>
+                <span class="name">${s.name}</span>
+            `;
+            box.onclick = () => {
+                if (!s.arrived && !s.absent) {
+                    window.attTog(s.id, 'arrived');
+                } else if (s.arrived) {
+                    window.attTog(s.id, 'arrived');
+                    window.togS(s.id, 'absent');
+                } else {
+                    window.togS(s.id, 'absent');
+                }
+                renderCommAttendance();
+            };
+            grid.appendChild(box);
+        });
+    }
+
+    function renderStudents(filter = '') {
+        const currClass = getCurrentClass();
+        if(!currClass || !elements.studentGrid) return;
+        elements.studentGrid.innerHTML = '';
+        const list = currClass.students.filter(s => s.name.includes(filter) || s.seatNo.toString().includes(filter));
+        
+        list.forEach(s => {
+            const card = document.createElement('div');
+            card.className = 'student-card';
+            card.innerHTML = `
+                <div class="avatar">${s.name[0]}</div>
+                <h4>${s.name}</h4>
+                <div class="seat-no">座號: ${s.seatNo}</div>
+                <div class="badges" style="min-height:20px; margin-top:0.3rem; display:flex; flex-wrap:wrap; justify-content:center; gap:2px;">
+                    ${s.missingHW ? '<span class="badge" style="color:var(--danger); font-size:0.75rem">' + state.classBtn1 + '</span>' : ''}
+                    ${s.goodBehavior ? '<span class="badge" style="color:var(--success); font-size:0.75rem">' + state.classBtn2 + '</span>' : ''}
+                    ${s.discipline ? '<span class="badge" style="color:var(--primary); font-size:0.75rem">' + state.classBtn3 + '</span>' : ''}
+                    ${s.absent ? '<span class="badge" style="color:var(--warning); font-size:0.75rem">' + state.classBtn4 + '</span>' : ''}
+                </div>
+                <div class="score-line" style="display:flex; justify-content:space-between; align-items:center; margin:0.6rem 0; background:rgba(0,0,0,0.1); padding:0.3rem; border-radius:8px;">
+                    <button class="btn-secondary" style="padding:0.2rem 0.5rem; border:none; background:var(--danger); color:white; font-size:0.8rem;" onclick="window.modS(${s.id},-1)">-</button>
+                    <strong style="font-size:1.2rem">${s.score}</strong>
+                    <button class="btn-secondary" style="padding:0.2rem 0.5rem; border:none; background:var(--success); color:white; font-size:0.8rem;" onclick="window.modS(${s.id},1)">+</button>
+                </div>
+                <div class="actions" style="display:grid; grid-template-columns:1fr 1fr; gap:0.3rem; margin-bottom:0.4rem;">
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'missingHW')">${state.classBtn1}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'goodBehavior')">${state.classBtn2}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'discipline')">${state.classBtn3}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'absent')">${state.classBtn4}</button>
+                </div>
+                <input type="text" class="custom-select" placeholder="備註..." value="${s.note || ''}" style="margin-top:0.3rem; width:100%; border:none; background:rgba(255,255,255,0.05); color:white; font-size:0.75rem; padding:0.3rem; border-radius:6px;" onchange="window.saveNote(${s.id}, this.value)">
+            `;
+            elements.studentGrid.appendChild(card);
+        });
+        const groupsTab = document.getElementById('groups-tab');
+        if(groupsTab && groupsTab.classList.contains('active')) renderGroups();
+    }
+
+    function renderAttendance(filter = '') {
+        const currClass = getCurrentClass();
+        if(!currClass) return;
+        const grid = document.getElementById('attendance-grid');
+        if(!grid) return;
+        grid.innerHTML = '';
+        const list = currClass.students.filter(s => s.name.includes(filter) || s.seatNo.toString().includes(filter));
+        
+        list.forEach(s => {
+            const card = document.createElement('div');
+            card.className = 'student-card';
+            
+            let arriveBadge = '';
+            if (s.absent) {
+                arriveBadge = '<span class="badge" style="color:var(--danger); font-size:0.75rem">🚪缺席</span>';
+            } else if (s.arrived) {
+                if (s.arriveTimeStr > state.arrivalTime) {
+                    arriveBadge = `<span class="badge" style="color:var(--warning); font-size:0.75rem">⏰遲到 (${s.arriveTimeStr})</span>`;
+                } else {
+                    arriveBadge = `<span class="badge" style="color:var(--success); font-size:0.75rem">✅已到 (${s.arriveTimeStr})</span>`;
+                }
+            }
+
+            card.innerHTML = `
+                <div class="avatar" style="background:var(--secondary)">${s.name[0]}</div>
+                <h4>${s.name}</h4>
+                <div class="seat-no">座號: ${s.seatNo}</div>
+                <div class="badges" style="min-height:20px; margin-top:0.3rem; display:flex; flex-wrap:wrap; justify-content:center; gap:2px;">
+                    ${arriveBadge}
+                    ${s.brushedTeeth ? '<span class="badge" style="color:var(--primary); font-size:0.75rem">' + state.attBtn3 + '</span>' : ''}
+                    ${s.custom1 ? '<span class="badge" style="color:var(--accent); font-size:0.75rem">' + state.customTag1 + '</span>' : ''}
+                    ${s.custom2 ? '<span class="badge" style="color:var(--accent); font-size:0.75rem">' + state.customTag2 + '</span>' : ''}
+                </div>
+                
+                <div class="actions" style="display:grid; grid-template-columns:1fr 1fr; gap:0.3rem; margin-top:0.8rem;">
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.arrived ? 'var(--success)' : ''}; color:${s.arrived ? 'white' : ''}" onclick="window.attTog(${s.id},'arrived')">${s.arrived ? '✔️' + state.attBtn1 : state.attBtn1}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.absent ? 'var(--danger)' : ''}; color:${s.absent ? 'white' : ''}" onclick="window.togS(${s.id},'absent'); window.renderAttendance();">${s.absent ? '✔️' + state.attBtn2 : state.attBtn2}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.brushedTeeth ? 'var(--primary)' : ''}; color:${s.brushedTeeth ? 'white' : ''}" onclick="window.attTog(${s.id},'brushedTeeth')">${s.brushedTeeth ? '✔️' + state.attBtn3 : state.attBtn3}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.custom1 ? 'var(--accent)' : ''}; color:${s.custom1 ? 'white' : ''}" onclick="window.attTog(${s.id},'custom1')">${s.custom1 ? '✔️' + state.customTag1 : state.customTag1}</button>
+                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.custom2 ? 'var(--accent)' : ''}; color:${s.custom2 ? 'white' : ''}" onclick="window.attTog(${s.id},'custom2')">${s.custom2 ? '✔️' + state.customTag2 : state.customTag2}</button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function renderGroups() {
+        const currClass = getCurrentClass();
+        if(!currClass) return;
+        const groups = currClass.groups || [];
+        const container = document.getElementById('groups-container');
+        if(!container) return;
+        
+        container.innerHTML = '';
+        if(groups.length === 0) {
+            container.innerHTML = '<div class="empty-state">設定組數後開始分組</div>';
+            return;
+        }
+        groups.forEach((group, idx) => {
+            const groupScore = currClass.groupScores ? (currClass.groupScores[idx] || 0) : 0;
+            const gDiv = document.createElement('div');
+            gDiv.className = 'group-box';
+            let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:0.5rem;">
+                <h4 style="color:var(--secondary); margin:0;">第 ${idx + 1} 組 (共${group.length}人) <span style="color:var(--warning); margin-left:1rem;">總分: ${groupScore}</span></h4>
+                <div style="display:flex; gap:0.5rem;">
+                    <button class="btn-secondary" onclick="window.modGroupS(${idx}, 1)" style="padding:0.2rem 0.5rem; background:var(--success); color:white; border:none; border-radius:4px; font-size:0.8rem; cursor:pointer;">+小組分</button>
+                    <button class="btn-secondary" onclick="window.modGroupS(${idx}, -1)" style="padding:0.2rem 0.5rem; background:var(--danger); color:white; border:none; border-radius:4px; font-size:0.8rem; cursor:pointer;">-小組分</button>
+                </div>
+            </div>`;
+            group.forEach(sRef => {
+                const s = currClass.students.find(x => x.id === sRef.id) || sRef;
+                html += `<div class="group-member" style="margin-bottom:0.4rem; padding:0.4rem; background:rgba(0,0,0,0.2); border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-size:0.95rem;">${s.seatNo}. ${s.name} (<span style="color:var(--success); font-weight:bold;">${s.score}</span>)</div>
+                    <div style="display:flex; gap:0.3rem;">
+                        <button onclick="window.moveStudentToGroup(${s.id})" style="padding:2px 6px; background:rgba(255,255,255,0.1); color:white; border:none; border-radius:4px; font-size:0.75rem; cursor:pointer;" title="移動分組">移</button>
+                        <button onclick="window.modS(${s.id}, 1)" style="padding:2px 6px; background:var(--success); color:white; border:none; border-radius:4px; font-size:0.8rem; cursor:pointer;">+</button>
+                        <button onclick="window.modS(${s.id}, -1)" style="padding:2px 6px; background:var(--danger); color:white; border:none; border-radius:4px; font-size:0.8rem; cursor:pointer;">-</button>
+                    </div>
+                </div>`;
+            });
+            gDiv.innerHTML = html;
+            container.appendChild(gDiv);
+        });
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
     const elements = {
         tabs: document.querySelectorAll('.nav-links li'),
         tabContents: document.querySelectorAll('.tab-content'),
@@ -200,7 +587,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    const renderClassSelect = () => {
+    function renderClassSelect() {
         elements.classSelect.innerHTML = '';
         state.classes.forEach(c => {
             const opt = document.createElement('option');
@@ -209,7 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (c.id === state.currentClassId) opt.selected = true;
             elements.classSelect.appendChild(opt);
         });
-    };
+    }
 
     elements.classSelect.onchange = (e) => {
         state.currentClassId = e.target.value;
@@ -281,7 +668,7 @@ document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
     };
 
-    const updateLinkPointsUI = () => {
+    function updateLinkPointsUI() {
         if (!elements.linkPointsBtn) return;
         if (state.linkGroupPoints) {
             elements.linkPointsBtn.innerHTML = '<i data-lucide="link-2"></i> <span>分組連動: 開</span>';
@@ -295,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.linkPointsBtn.classList.add('btn-secondary');
         }
         lucide.createIcons();
-    };
+    }
 
     if (elements.linkPointsBtn) {
         elements.linkPointsBtn.onclick = () => {
@@ -307,44 +694,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     updateLinkPointsUI();
 
-    function renderGroups() {
-        const currClass = getCurrentClass();
-        const groups = currClass.groups || [];
-        const container = document.getElementById('groups-container');
-        if(!container) return;
-        
-        container.innerHTML = '';
-        if(groups.length === 0) {
-            container.innerHTML = '<div class="empty-state">設定組數後開始分組</div>';
-            return;
-        }
-        groups.forEach((group, idx) => {
-            const groupScore = currClass.groupScores ? (currClass.groupScores[idx] || 0) : 0;
-            const gDiv = document.createElement('div');
-            gDiv.className = 'group-box';
-            let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:0.5rem;">
-                <h4 style="color:var(--secondary); margin:0;">第 ${idx + 1} 組 (共${group.length}人) <span style="color:var(--warning); margin-left:1rem;">總分: ${groupScore}</span></h4>
-                <div style="display:flex; gap:0.5rem;">
-                    <button class="btn-secondary" onclick="window.modGroupS(${idx}, 1)" style="padding:0.2rem 0.5rem; background:var(--success); color:white; border:none; border-radius:4px; font-size:0.8rem; cursor:pointer;">+小組分</button>
-                    <button class="btn-secondary" onclick="window.modGroupS(${idx}, -1)" style="padding:0.2rem 0.5rem; background:var(--danger); color:white; border:none; border-radius:4px; font-size:0.8rem; cursor:pointer;">-小組分</button>
-                </div>
-            </div>`;
-            group.forEach(sRef => {
-                const s = currClass.students.find(x => x.id === sRef.id) || sRef;
-                html += `<div class="group-member" style="margin-bottom:0.4rem; padding:0.4rem; background:rgba(0,0,0,0.2); border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-                    <div style="font-size:0.95rem;">${s.seatNo}. ${s.name} (<span style="color:var(--success); font-weight:bold;">${s.score}</span>)</div>
-                    <div style="display:flex; gap:0.3rem;">
-                        <button onclick="window.moveStudentToGroup(${s.id})" style="padding:2px 6px; background:rgba(255,255,255,0.1); color:white; border:none; border-radius:4px; font-size:0.75rem; cursor:pointer;" title="移動分組">移</button>
-                        <button onclick="window.modS(${s.id}, 1)" style="padding:2px 6px; background:var(--success); color:white; border:none; border-radius:4px; font-size:0.8rem; cursor:pointer;">+</button>
-                        <button onclick="window.modS(${s.id}, -1)" style="padding:2px 6px; background:var(--danger); color:white; border:none; border-radius:4px; font-size:0.8rem; cursor:pointer;">-</button>
-                    </div>
-                </div>`;
-            });
-            gDiv.innerHTML = html;
-            container.appendChild(gDiv);
-        });
-        lucide.createIcons();
-    }
 
     window.moveStudentToGroup = (id) => {
         const currClass = getCurrentClass();
@@ -365,43 +714,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderStudents();
         saveState();
         addActivity(`將 ${s.name} 移動至第 ${gIdx+1} 組`);
-    };
-
-    // --- Student Logic ---
-    const renderStudents = (filter = '') => {
-        const currClass = getCurrentClass();
-        elements.studentGrid.innerHTML = '';
-        const list = currClass.students.filter(s => s.name.includes(filter) || s.seatNo.toString().includes(filter));
-        
-        list.forEach(s => {
-            const card = document.createElement('div');
-            card.className = 'student-card';
-            card.innerHTML = `
-                <div class="avatar">${s.name[0]}</div>
-                <h4>${s.name}</h4>
-                <div class="seat-no">座號: ${s.seatNo}</div>
-                <div class="badges" style="min-height:20px; margin-top:0.3rem; display:flex; flex-wrap:wrap; justify-content:center; gap:2px;">
-                    ${s.missingHW ? '<span class="badge" style="color:var(--danger); font-size:0.75rem">' + state.classBtn1 + '</span>' : ''}
-                    ${s.goodBehavior ? '<span class="badge" style="color:var(--success); font-size:0.75rem">' + state.classBtn2 + '</span>' : ''}
-                    ${s.discipline ? '<span class="badge" style="color:var(--primary); font-size:0.75rem">' + state.classBtn3 + '</span>' : ''}
-                    ${s.absent ? '<span class="badge" style="color:var(--warning); font-size:0.75rem">' + state.classBtn4 + '</span>' : ''}
-                </div>
-                <div class="score-line" style="display:flex; justify-content:space-between; align-items:center; margin:0.6rem 0; background:rgba(0,0,0,0.1); padding:0.3rem; border-radius:8px;">
-                    <button class="btn-secondary" style="padding:0.2rem 0.5rem; border:none; background:var(--danger); color:white; font-size:0.8rem;" onclick="window.modS(${s.id},-1)">-</button>
-                    <strong style="font-size:1.2rem">${s.score}</strong>
-                    <button class="btn-secondary" style="padding:0.2rem 0.5rem; border:none; background:var(--success); color:white; font-size:0.8rem;" onclick="window.modS(${s.id},1)">+</button>
-                </div>
-                <div class="actions" style="display:grid; grid-template-columns:1fr 1fr; gap:0.3rem; margin-bottom:0.4rem;">
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'missingHW')">${state.classBtn1}</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'goodBehavior')">${state.classBtn2}</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'discipline')">${state.classBtn3}</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'absent')">${state.classBtn4}</button>
-                </div>
-                <input type="text" class="custom-select" placeholder="備註..." value="${s.note || ''}" style="margin-top:0.3rem; width:100%; border:none; background:rgba(255,255,255,0.05); color:white; font-size:0.75rem; padding:0.3rem; border-radius:6px;" onchange="window.saveNote(${s.id}, this.value)">
-            `;
-            elements.studentGrid.appendChild(card);
-        });
-        if(document.getElementById('groups-tab').classList.contains('active')) renderGroups();
     };
 
     window.modS = (id, val) => {
@@ -462,53 +774,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('student-search-input').oninput = (e) => renderStudents(e.target.value);
 
-    // --- Attendance Logic ---
-    window.renderAttendance = (filter = '') => {
-        const currClass = getCurrentClass();
-        const grid = document.getElementById('attendance-grid');
-        if(!grid) return;
-        grid.innerHTML = '';
-        const list = currClass.students.filter(s => s.name.includes(filter) || s.seatNo.toString().includes(filter));
-        
-        list.forEach(s => {
-            const card = document.createElement('div');
-            card.className = 'student-card';
-            
-            let arriveBadge = '';
-            if (s.absent) {
-                arriveBadge = '<span class="badge" style="color:var(--danger); font-size:0.75rem">🚪缺席</span>';
-            } else if (s.arrived) {
-                if (s.arriveTimeStr > state.arrivalTime) {
-                    arriveBadge = `<span class="badge" style="color:var(--warning); font-size:0.75rem">⏰遲到 (${s.arriveTimeStr})</span>`;
-                } else {
-                    arriveBadge = `<span class="badge" style="color:var(--success); font-size:0.75rem">✅已到 (${s.arriveTimeStr})</span>`;
-                }
-            }
+    window.renderAttendance = renderAttendance;
 
-            card.innerHTML = `
-                <div class="avatar" style="background:var(--secondary)">${s.name[0]}</div>
-                <h4>${s.name}</h4>
-                <div class="seat-no">座號: ${s.seatNo}</div>
-                <div class="badges" style="min-height:20px; margin-top:0.3rem; display:flex; flex-wrap:wrap; justify-content:center; gap:2px;">
-                    ${arriveBadge}
-                    ${s.brushedTeeth ? '<span class="badge" style="color:var(--primary); font-size:0.75rem">' + state.attBtn3 + '</span>' : ''}
-                    ${s.custom1 ? '<span class="badge" style="color:var(--accent); font-size:0.75rem">' + state.customTag1 + '</span>' : ''}
-                    ${s.custom2 ? '<span class="badge" style="color:var(--accent); font-size:0.75rem">' + state.customTag2 + '</span>' : ''}
-                </div>
-                
-                <div class="actions" style="display:grid; grid-template-columns:1fr 1fr; gap:0.3rem; margin-top:0.8rem;">
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.arrived ? 'var(--success)' : ''}; color:${s.arrived ? 'white' : ''}" onclick="window.attTog(${s.id},'arrived')">${s.arrived ? '✔️' + state.attBtn1 : state.attBtn1}</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.absent ? 'var(--danger)' : ''}; color:${s.absent ? 'white' : ''}" onclick="window.togS(${s.id},'absent'); window.renderAttendance();">${s.absent ? '✔️' + state.attBtn2 : state.attBtn2}</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.brushedTeeth ? 'var(--primary)' : ''}; color:${s.brushedTeeth ? 'white' : ''}" onclick="window.attTog(${s.id},'brushedTeeth')">${s.brushedTeeth ? '✔️' + state.attBtn3 : state.attBtn3}</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.custom1 ? 'var(--accent)' : ''}; color:${s.custom1 ? 'white' : ''}" onclick="window.attTog(${s.id},'custom1')">${s.custom1 ? '✔️' + state.customTag1 : state.customTag1}</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.custom2 ? 'var(--accent)' : ''}; color:${s.custom2 ? 'white' : ''}" onclick="window.attTog(${s.id},'custom2')">${s.custom2 ? '✔️' + state.customTag2 : state.customTag2}</button>
-                </div>
-            `;
-            grid.appendChild(card);
-        });
-    };
-
-    window.attTog = (id, field) => {
+    function attTog(id, field) {
         const currClass = getCurrentClass();
         const s = currClass.students.find(x => x.id === id);
         if (s) {
@@ -541,7 +809,8 @@ document.addEventListener('DOMContentLoaded', () => {
             renderStudents(); 
             saveState();
         }
-    };
+    }
+    window.attTog = attTog;
 
     document.getElementById('attendance-search-input').oninput = (e) => {
         if (typeof window.renderAttendance === 'function') window.renderAttendance(e.target.value);
@@ -860,6 +1129,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 pickerAnim.textContent = finalLabel;
                 pickerRes.textContent = `${labelPrefix}：${finalLabel}！`;
                 addActivity(`${labelPrefix}：${finalLabel}`);
+                playSound('win');
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
                 
                 // Keep references for "Pick Again"
@@ -871,6 +1141,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(onWin) onWin(winnerObj);
             }
         }, 100);
+        playSound('draw');
     };
 
     startPickBtn.onclick = () => {
@@ -1089,6 +1360,7 @@ document.addEventListener('DOMContentLoaded', () => {
             isRoundActive = false;
             document.getElementById('btn-start-buzzer-round').innerHTML = '<i data-lucide="play"></i> 開始新輪次';
             lucide.createIcons();
+            playSound('buzzer-end');
             connections.forEach(conn => conn.send({ type: 'IDLE', msg: '搶答結束！' }));
         }, 10000); // 10 second round
     };
@@ -1229,6 +1501,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if(advSeconds <= 0) {
                 clearInterval(advTimerInt);
                 advDisplay.textContent = "時間到！";
+                playSound('timer-end');
                 confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
             }
         }, 1000);
@@ -1305,64 +1578,6 @@ document.addEventListener('DOMContentLoaded', () => {
         initWhiteboard();
     };
 
-    function initWhiteboard() {
-        const c = document.getElementById('whiteboard-canvas');
-        if(!c) return;
-        const ctx = c.getContext('2d');
-        
-        // 取得畫布當下實際被撐開的大小，並以此設定真實解析度
-        const rect = c.getBoundingClientRect();
-        c.width = rect.width;
-        c.height = rect.height;
-
-        let painting = false;
-        let color = 'black';
-
-        const startPos = e => { 
-            painting = true; 
-            draw(e); 
-        };
-        const endPos = () => { 
-            painting = false; 
-            ctx.beginPath(); 
-        };
-        const draw = e => {
-            if(!painting) return;
-            const currentRect = c.getBoundingClientRect();
-            const scaleX = c.width / currentRect.width;
-            const scaleY = c.height / currentRect.height;
-
-            const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
-
-            const x = (clientX - currentRect.left) * scaleX;
-            const y = (clientY - currentRect.top) * scaleY;
-
-            ctx.lineWidth = 4;
-            ctx.lineCap = 'round';
-            ctx.strokeStyle = color;
-            ctx.lineTo(x, y);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-        };
-
-        c.onmousedown = startPos;
-        c.onmouseup = endPos;
-        c.onmousemove = draw;
-        // Basic touch
-        c.ontouchstart = e => { e.preventDefault(); startPos(e); };
-        c.ontouchend = e => { e.preventDefault(); endPos(); };
-        c.ontouchmove = e => { e.preventDefault(); draw(e); };
-
-        document.getElementById('color-black').onclick = () => color='black';
-        document.getElementById('color-red').onclick = () => color='red';
-        document.getElementById('color-blue').onclick = () => color='blue';
-        const eraserBtn = document.getElementById('color-eraser');
-        if(eraserBtn) eraserBtn.onclick = () => color='white';
-        document.getElementById('btn-clear-board').onclick = () => ctx.clearRect(0,0,c.width,c.height);
-    }
-
     // 7. Dice
     const diceModal = document.getElementById('dice-modal');
     const diceDisplay = document.getElementById('dice-display');
@@ -1413,10 +1628,6 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     });
 
-    const applyTheme = () => {
-        elements.body.className = `theme-${state.theme}`;
-    };
-
     document.getElementById('btn-apply-attendance-settings').onclick = () => {
         state.arrivalTime = document.getElementById('settings-arrival-time').value || '08:00';
         state.customTag1 = document.getElementById('settings-custom-tag-1').value || '標籤1';
@@ -1447,127 +1658,13 @@ document.addEventListener('DOMContentLoaded', () => {
         alert("試算表同步設定已更新！");
     };
 
-    const saveDailyRecord = () => {
-        const now = new Date();
-        const dateKey = now.toISOString().split('T')[0];
-        const currClass = getCurrentClass();
-        if (!currClass) return;
 
-        if (!state.history[dateKey]) state.history[dateKey] = {};
-        state.history[dateKey][currClass.id] = {
-            className: currClass.name,
-            homework: currClass.homework || '',
-            teachingProgress: currClass.teachingProgress || '',
-            attendance: currClass.students.map(s => ({
-                seat: s.seatNo,
-                name: s.name,
-                status: s.absent ? '缺席' : (s.arrived ? (s.arriveTimeStr > state.arrivalTime ? '遲到' : '已到') : '未到')
-            }))
-        };
-        saveState();
-    };
-
-    const syncToGoogleSheets = async () => {
-        if (!accessToken || !state.sheetsId) return;
-        
-        const now = new Date();
-        const dateStr = now.toLocaleDateString('zh-TW');
-        const currClass = getCurrentClass();
-        
-        try {
-            // Check if gapi client is loaded
-            if (!window.gapi || !window.gapi.client) {
-                // Try load
-                await new Promise((resolve, reject) => {
-                    gapi.load('client', {callback: resolve, onerror: reject});
-                });
-            }
-            
-            if (!gapi.client.sheets) {
-                await gapi.client.init({
-                    discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
-                });
-            }
-
-            const range = 'Sheet1!A:E'; // Assuming Sheet1, change if needed
-            const values = [
-                [dateStr, currClass.name, currClass.homework || '', currClass.teachingProgress || '', currClass.students.filter(s => s.arrived).length + '/' + currClass.students.length]
-            ];
-            
-            await gapi.client.sheets.spreadsheets.values.append({
-                spreadsheetId: state.sheetsId,
-                range: range,
-                valueInputOption: 'USER_ENTERED',
-                resource: { values: values },
-            });
-            
-            addActivity("✅ 資料已同步至 Google 試算表");
-        } catch (err) {
-            console.error('Sheets Sync Error:', err);
-            addActivity("❌ 試算表同步失敗：" + (err.result?.error?.message || "請檢查權限及 ID"));
-        }
-    };
-
-    // --- History Tab Logic ---
-    const renderHistory = () => {
-        const datePicker = document.getElementById('history-date-picker');
-        const classSelector = document.getElementById('history-class-select');
-        const displayArea = document.getElementById('history-display-area');
-        
-        if (!datePicker.value) {
-            datePicker.value = new Date().toISOString().split('T')[0];
-        }
-
-        // Populate class selector from history dates
-        const selectedDate = datePicker.value;
-        const classesOnDate = state.history[selectedDate] || {};
-        
-        const prevSelectedClass = classSelector.value;
-        classSelector.innerHTML = '';
-        Object.keys(classesOnDate).forEach(id => {
-            const opt = document.createElement('option');
-            opt.value = id;
-            opt.textContent = classesOnDate[id].className;
-            classSelector.appendChild(opt);
-        });
-        
-        if (prevSelectedClass && classesOnDate[prevSelectedClass]) {
-            classSelector.value = prevSelectedClass;
-        }
-
-        const selectedClassId = classSelector.value;
-        const data = classesOnDate[selectedClassId];
-
-        if (!data) {
-            displayArea.innerHTML = '<div class="empty-state">該日期尚無紀錄</div>';
-            return;
-        }
-
-        displayArea.innerHTML = `
-            <div class="card" style="margin-bottom: 1.5rem;">
-                <h3>今日功課</h3>
-                <div style="white-space: pre-wrap; margin-top: 0.5rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px;">${data.homework || '無紀錄'}</div>
-            </div>
-            <div class="card" style="margin-bottom: 1.5rem;">
-                <h3>教學進度</h3>
-                <div style="white-space: pre-wrap; margin-top: 0.5rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px;">${data.teachingProgress || '無紀錄'}</div>
-            </div>
-            <div class="card">
-                <h3>出勤狀況</h3>
-                <div style="margin-top: 1rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.5rem;">
-                    ${data.attendance.map(s => `
-                        <div style="padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; justify-content: space-between;">
-                            <span>${s.seat}. ${s.name}</span>
-                            <span style="color: ${s.status === '缺席' ? 'var(--danger)' : (s.status.includes('遲到') ? 'var(--warning)' : 'var(--success)')}">${s.status}</span>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    };
-
-    document.getElementById('history-date-picker').onchange = renderHistory;
-    document.getElementById('history-class-select').onchange = renderHistory;
+    if (document.getElementById('history-date-picker')) {
+        document.getElementById('history-date-picker').onchange = renderHistory;
+    }
+    if (document.getElementById('history-class-select')) {
+        document.getElementById('history-class-select').onchange = renderHistory;
+    }
 
     document.getElementById('btn-clear-all').onclick = () => {
         if(confirm("警告：這將會清除所有班級的資料！您確定嗎？")){
@@ -1587,108 +1684,20 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('功課已儲存');
     };
 
-    // --- Dashboard Stats ---
-    const updateDashboard = () => {
-        const currClass = getCurrentClass();
-        document.getElementById('stat-total-students').textContent = currClass.students.length;
-        document.getElementById('stat-good-behavior').textContent = currClass.students.filter(s => s.goodBehavior).length;
-        document.getElementById('stat-missing-hw').textContent = currClass.students.filter(s => s.missingHW).length;
-        
-        elements.brandName.textContent = state.brandName;
-        
-        if(elements.hwInput) elements.hwInput.value = currClass.homework || '';
-        if(elements.progInput1) elements.progInput1.value = currClass.teachingProgress || '';
-        if(elements.progInput2) elements.progInput2.value = currClass.teachingProgress || '';
-        
-        renderActivities();
-    };
+    // --- Blackboard Input ---
+    const blackboardContent = document.getElementById('blackboard-content');
+    if (blackboardContent) {
+        blackboardContent.oninput = (e) => {
+            const currClass = getCurrentClass();
+            if (!currClass) return;
+            const text = e.target.innerText;
+            currClass.homework = text;
+            saveState();
+            saveDailyRecord();
+        };
+    }
 
-    const renderActivities = () => {
-        if (!elements.activityList) return;
-        const currClass = getCurrentClass();
-        const acts = currClass.activities || [];
-        elements.activityList.innerHTML = acts.length ? 
-            acts.map(a => `<div style="padding:0.5rem 0; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between;"><span>${a.msg}</span><small style="color:var(--text-muted)">${a.time}</small></div>`).join('') :
-            '<div class="empty-state">尚無活動紀錄</div>';
-    };
-
-    // --- Communication Book Logic ---
-    const renderCommunicationBook = () => {
-        const currClass = getCurrentClass();
-        const contentDiv = document.getElementById('blackboard-content');
-        if (!contentDiv) return;
-
-        // Apply writing mode and font classes
-        contentDiv.className = `blackboard ${state.commWritingMode} font-${state.commFont}`;
-        
-        // Update UI buttons
-        document.getElementById('text-writing-mode').innerHTML = state.commWritingMode === 'horizontal' ? '<i data-lucide="type"></i> 切換直書' : '<i data-lucide="type"></i> 切換橫書';
-        document.getElementById('text-zhuyin').innerHTML = `<i data-lucide="languages"></i> 附加注音: ${state.commShowZhuyin ? '開' : '關'}`;
-        document.getElementById('text-comm-attendance').innerHTML = `<i data-lucide="user-check"></i> 顯示簽到格: ${state.commShowAttendance ? '開' : '關'}`;
-        document.getElementById('comm-attendance-container').style.display = state.commShowAttendance ? 'flex' : 'none';
-        
-        // Sync font select dropdown
-        const fontSelector = document.getElementById('select-blackboard-font');
-        if (fontSelector) fontSelector.value = state.commFont;
-        if (state.commFont !== 'default') {
-            document.getElementById('btn-toggle-zhuyin').style.display = 'none'; // Font font handles Zhuyin
-        } else {
-            document.getElementById('btn-toggle-zhuyin').style.display = 'block';
-        }
-
-        lucide.createIcons();
-
-        const rawText = currClass.homework || '尚未輸入功課';
-        
-        if (state.commFont !== 'default') {
-            // These fonts handle Zhuyin naturally if designed that way
-            contentDiv.innerHTML = rawText.replace(/\n/g, '<br>');
-        } else if (!state.commShowZhuyin) {
-            contentDiv.innerHTML = rawText.replace(/\n/g, '<br>');
-        } else {
-            // Ruby wrapper for default font
-            let html = '';
-            for (let char of rawText) {
-                if (char === '\n') {
-                    html += '<br>';
-                } else if (/[\u4e00-\u9fa5]/.test(char)) {
-                    html += `<ruby>${char}<rt></rt></ruby>`;
-                } else {
-                    html += char;
-                }
-            }
-            contentDiv.innerHTML = html;
-        }
-    };
-
-    const renderCommAttendance = () => {
-        const currClass = getCurrentClass();
-        const grid = document.getElementById('comm-attendance-grid');
-        if (!grid) return;
-        grid.innerHTML = '';
-
-        currClass.students.forEach(s => {
-            const box = document.createElement('div');
-            box.className = `comm-student-box ${s.arrived ? 'arrived' : ''} ${s.absent ? 'absent' : ''}`;
-            box.innerHTML = `
-                <span class="seat-no">${s.seatNo}</span>
-                <span class="name">${s.name}</span>
-            `;
-            box.onclick = () => {
-                // Toggle attendance quickly from this view too
-                if (!s.arrived && !s.absent) {
-                    window.attTog(s.id, 'arrived');
-                } else if (s.arrived) {
-                    window.attTog(s.id, 'arrived');
-                    window.togS(s.id, 'absent');
-                } else {
-                    window.togS(s.id, 'absent');
-                }
-                renderCommAttendance();
-            };
-            grid.appendChild(box);
-        });
-    };
+    // --- Blackboard Input ---
 
     // Communication Book Controls
     document.getElementById('btn-toggle-writing-mode').onclick = () => {
@@ -1746,7 +1755,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Google Auth & Cloud Sync ---
     const CLIENT_ID = '83309907791-j9sqgjm9e7dfeuo20pmcttm91t8ce8e9.apps.googleusercontent.com';
-    const SCOPES = 'https://www.googleapis.com/auth/drive.file';
+    const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
     let tokenClient;
     let accessToken = null;
@@ -1863,11 +1872,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- Initialize ---
+    // --- Mobile Sidebar Setup ---
+    const mobileMenuBtn = document.getElementById('btn-mobile-menu');
+    const sidebar = document.querySelector('.sidebar');
+    let overlay = document.querySelector('.mobile-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'mobile-overlay';
+        document.body.appendChild(overlay);
+    }
+
+    if (mobileMenuBtn) {
+        mobileMenuBtn.onclick = () => {
+            sidebar.classList.add('mobile-show');
+            overlay.classList.add('show');
+        };
+        overlay.onclick = () => {
+            sidebar.classList.remove('mobile-show');
+            overlay.classList.remove('show');
+        };
+        document.querySelectorAll('.nav-links li').forEach(li => {
+            li.addEventListener('click', () => {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove('mobile-show');
+                    overlay.classList.remove('show');
+                }
+            });
+        });
+    }
+
+    // --- Final Initialization ---
+
     renderClassSelect();
     renderStudents();
     renderActivities();
     updateDashboard();
     applyTheme();
+    updateLinkPointsUI();
     lucide.createIcons();
 });
