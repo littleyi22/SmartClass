@@ -702,23 +702,18 @@ header {
     letter-spacing: 2px;
 }
 
-/* Vertical writing: keep ascii digits upright */
+/* Vertical writing: upright keeps ALL chars (incl. latin) upright */
 .blackboard.vertical {
     writing-mode: vertical-rl;
-    text-orientation: mixed; /* CJK upright, latin rotated */
+    text-orientation: upright;
     height: 100%;
     padding: 40px 20px;
+    letter-spacing: 1px; /* tighter spacing reduces period gap */
 }
 
-/* Use text-combine-upright to show 1-2 digit numbers upright */
-.blackboard.vertical .upright-num,
-.blackboard.vertical span.num {
-    text-combine-upright: all;
-}
-
-/* Global: make single ASCII digits upright in vertical mode */
-.blackboard.vertical {
-    font-feature-settings: 'vert' 1;
+/* Latin/digit upright helper within vertical – text-combine-upright for multi-digit */
+.blackboard.vertical span[style*="text-combine-upright"] {
+    display: inline;
 }
 
 .blackboard.horizontal {
@@ -807,17 +802,16 @@ rt {
     font-weight: 600;
 }
 
-/* Bopomofo Fonts Classes */
+/* Bopomofo / CJK Font Classes */
 .blackboard.font-huninn {
     font-family: 'Bpmf Huninn', 'Noto Sans TC', sans-serif;
 }
 .blackboard.font-iansui {
     font-family: 'Iansui', 'Bpmf Huninn', sans-serif;
-    /* iansui includes zhuyin; fallback to huninn */
 }
-.blackboard.font-edukai {
-    font-family: 'Edu TW Kai', 'Bpmf Huninn', sans-serif;
-    /* Taiwan MOE standard regular script with bopomofo */
+.blackboard.font-kaiti {
+    /* Standard Kai (BiauKai on Mac, DFKai-SB on Windows) */
+    font-family: 'BiauKai', 'DFKai-SB', '標楷體', 'DFKai-SB', serif;
 }
 
 /* History Tab Layout */

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
@@ -9,13 +9,12 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
-    <!-- Bopomofo Fonts -->
+    <!-- Bopomofo / CJK Fonts -->
     <!-- 粉圓: Bpmf Huninn (full zhuyin support) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/bpmf-huninn/index.css">
-    <!-- 芫茸: Iansui via fontsource -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/iansui@5.0.2/index.css">
-    <!-- 台灣教育部標準楷書（含注音） via Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Edu+TW+Kai:wght@400;700&display=swap" rel="stylesheet">
+    <!-- 芫茸: Iansui - load all subsets for zhuyin -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/iansui/chinese-traditional.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/iansui/index.css">
     <!-- Libraries -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -312,7 +311,6 @@
                                 <!-- Content will be populated by JS -->
                             </div>
                         </div>
-                        <!-- Controls moved below blackboard -->
                         <div class="blackboard-controls" style="margin-top: 0.8rem; display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
                             <button class="btn-secondary btn-sm" id="btn-toggle-writing-mode">
                                 <i data-lucide="type"></i> <span id="text-writing-mode">切換直書</span>
@@ -323,11 +321,14 @@
                             <button class="btn-secondary btn-sm" id="btn-toggle-comm-attendance">
                                 <i data-lucide="user-check"></i> <span id="text-comm-attendance">顯示簽到格: 開</span>
                             </button>
+                            <button class="btn-secondary btn-sm" id="btn-insert-numbered-list" title="插入編號清單">
+                                <i data-lucide="list-ordered"></i> 編號清單
+                            </button>
                             <select id="select-blackboard-font" class="custom-select btn-sm" style="width: auto;">
                                 <option value="default">預設字體</option>
                                 <option value="huninn">粉圓注音體</option>
                                 <option value="iansui">芫荽注音體</option>
-                                <option value="edukai">台灣楷書注音體</option>
+                                <option value="kaiti">標楷體</option>
                             </select>
                         </div>
                     </div>

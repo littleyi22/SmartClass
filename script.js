@@ -347,46 +347,35 @@ document.addEventListener('DOMContentLoaded', () => {
         if(typeof lucide !== 'undefined') lucide.createIcons();
 
         const rawText = currClass.homework || '尚未輸入功課';
-        const isVertical = state.commWritingMode === 'vertical';
 
         if (document.activeElement !== contentDiv) {
             if (!state.commShowZhuyin) {
-                // No zhuyin: plain text, wrap digits for vertical upright
-                let html = rawText.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br>');
-                if (isVertical) {
-                    html = html.replace(/(\d{1,2})/g, '<span style="text-combine-upright:all;">$1</span>');
-                }
-                contentDiv.innerHTML = html;
+                // Plain: just convert newlines to <br>
+                const escapedHtml = rawText
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/\n/g, '<br>');
+                contentDiv.innerHTML = escapedHtml;
             } else {
+                // With zhuyin ruby annotation on CJK
                 let html = '';
                 const lines = rawText.split('\n');
                 lines.forEach((line, li) => {
                     if (li > 0) html += '<br>';
-                    let i = 0;
-                    while (i < line.length) {
-                        const ch = line[i];
-                        if (/\d/.test(ch)) {
-                            // Collect up to 2 consecutive digits
-                            let num = ch;
-                            if (i + 1 < line.length && /\d/.test(line[i+1])) {
-                                num += line[i+1]; i++;
-                            }
-                            html += isVertical
-                                ? `<span style="text-combine-upright:all;">${num}</span>`
-                                : num;
-                        } else if (/[\u4e00-\u9fa5]/.test(ch)) {
+                    for (const ch of line) {
+                        if (/[\u4e00-\u9fa5\u3400-\u4dbf]/.test(ch)) {
                             html += `<ruby>${ch}<rt></rt></ruby>`;
                         } else {
-                            html += ch;
+                            // Escape special chars
+                            html += ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch;
                         }
-                        i++;
                     }
                 });
                 contentDiv.innerHTML = html;
             }
         }
     }
-
 
     function renderCommAttendance() {
         const currClass = getCurrentClass();
@@ -1732,6 +1721,21 @@ document.addEventListener('DOMContentLoaded', () => {
         saveState();
         renderCommunicationBook();
     };
+
+    // Numbered list button
+    const insertListBtn = document.getElementById('btn-insert-numbered-list');
+    if (insertListBtn) {
+        insertListBtn.onclick = () => {
+            const currClass = getCurrentClass();
+            if (!currClass) return;
+            const listText = '1.\n2.\n3.\n4.\n5.';
+            currClass.homework = (currClass.homework || '').trim()
+                ? currClass.homework + '\n' + listText
+                : listText;
+            saveState();
+            renderCommunicationBook();
+        };
+    }
 
     const saveLocalBtn = document.getElementById('btn-save-local');
     if (saveLocalBtn) {
