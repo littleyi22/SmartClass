@@ -56,6 +56,10 @@
                     <i data-lucide="wrench"></i>
                     <span>課堂神器</span>
                 </li>
+                <li data-tab="communication">
+                    <i data-lucide="book-open"></i>
+                    <span>聯絡簿</span>
+                </li>
             </ul>
 
             <div class="sidebar-footer">
@@ -280,6 +284,40 @@
                         <div class="tool-icon" style="color: #f59e0b;"><i data-lucide="upload-cloud"></i></div>
                         <h3>收取檔案</h3>
                         <p>學生專屬上傳通道</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab: Communication Book -->
+            <section id="communication-tab" class="tab-content">
+                <div class="communication-layout">
+                    <div class="blackboard-container">
+                        <div class="blackboard-header">
+                            <div class="blackboard-controls">
+                                <button class="btn-secondary btn-sm" id="btn-toggle-writing-mode">
+                                    <i data-lucide="type"></i> <span id="text-writing-mode">切換直書</span>
+                                </button>
+                                <button class="btn-secondary btn-sm" id="btn-toggle-zhuyin">
+                                    <i data-lucide="languages"></i> <span id="text-zhuyin">附加注音: 開</span>
+                                </button>
+                                <button class="btn-secondary btn-sm" id="btn-toggle-comm-attendance">
+                                    <i data-lucide="user-check"></i> <span id="text-comm-attendance">顯示簽到格: 開</span>
+                                </button>
+                            </div>
+                            <div class="blackboard-title">今日聯絡簿</div>
+                        </div>
+                        <div class="blackboard-frame">
+                            <div id="blackboard-content" class="blackboard horizontal">
+                                <!-- Content will be populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="attendance-grid-container" id="comm-attendance-container">
+                        <h3>學生上學簽到</h3>
+                        <div class="comm-attendance-grid" id="comm-attendance-grid">
+                            <!-- Populated by JS -->
+                        </div>
                     </div>
                 </div>
             </section>

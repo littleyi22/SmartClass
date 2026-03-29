@@ -66,6 +66,10 @@ document.addEventListener('DOMContentLoaded', () => {
         attBtn1: localStorage.getItem('sc_v3_abtn1') || '簽到',
         attBtn2: localStorage.getItem('sc_v3_abtn2') || '記缺席',
         attBtn3: localStorage.getItem('sc_v3_abtn3') || '刷牙',
+        // Communication Book Settings
+        commWritingMode: localStorage.getItem('sc_v3_comm_mode') || 'horizontal',
+        commShowZhuyin: localStorage.getItem('sc_v3_comm_zhuyin') === 'true',
+        commShowAttendance: localStorage.getItem('sc_v3_comm_show_att') !== 'false',
         user: null,
         timer: { seconds: 0, active: false, interval: null }
     };
@@ -123,6 +127,9 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('sc_v3_abtn1', state.attBtn1);
         localStorage.setItem('sc_v3_abtn2', state.attBtn2);
         localStorage.setItem('sc_v3_abtn3', state.attBtn3);
+        localStorage.setItem('sc_v3_comm_mode', state.commWritingMode);
+        localStorage.setItem('sc_v3_comm_zhuyin', state.commShowZhuyin);
+        localStorage.setItem('sc_v3_comm_show_att', state.commShowAttendance);
         updateDashboard();
     };
 
@@ -181,6 +188,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (target === 'attendance') {
                 if (typeof renderAttendance === 'function') renderAttendance();
+            }
+            if (target === 'communication') {
+                renderCommunicationBook();
+                renderCommAttendance();
             }
         });
     });
@@ -1466,6 +1477,95 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.activityList.innerHTML = acts.length ? 
             acts.map(a => `<div style="padding:0.5rem 0; border-bottom:1px solid rgba(255,255,255,0.05); display:flex; justify-content:space-between;"><span>${a.msg}</span><small style="color:var(--text-muted)">${a.time}</small></div>`).join('') :
             '<div class="empty-state">尚無活動紀錄</div>';
+    };
+
+    // --- Communication Book Logic ---
+    const renderCommunicationBook = () => {
+        const currClass = getCurrentClass();
+        const contentDiv = document.getElementById('blackboard-content');
+        if (!contentDiv) return;
+
+        // Apply writing mode class
+        contentDiv.className = `blackboard ${state.commWritingMode}`;
+        
+        // Update UI buttons
+        document.getElementById('text-writing-mode').innerHTML = state.commWritingMode === 'horizontal' ? '<i data-lucide="type"></i> 切換直書' : '<i data-lucide="type"></i> 切換橫書';
+        document.getElementById('text-zhuyin').innerHTML = `<i data-lucide="languages"></i> 附加注音: ${state.commShowZhuyin ? '開' : '關'}`;
+        document.getElementById('text-comm-attendance').innerHTML = `<i data-lucide="user-check"></i> 顯示簽到格: ${state.commShowAttendance ? '開' : '關'}`;
+        document.getElementById('comm-attendance-container').style.display = state.commShowAttendance ? 'flex' : 'none';
+        
+        lucide.createIcons();
+
+        const rawText = currClass.homework || '尚未輸入功課';
+        
+        if (!state.commShowZhuyin) {
+            contentDiv.innerHTML = rawText.replace(/\n/g, '<br>');
+        } else {
+            // Very basic Zhuyin wrapper (real use would need a dictionary)
+            // Here we just wrap each Chinese character in a ruby tag for layout demonstration
+            // In a real app, you'd use a library like pinyin-zhuyin
+            let html = '';
+            for (let char of rawText) {
+                if (char === '\n') {
+                    html += '<br>';
+                } else if (/[\u4e00-\u9fa5]/.test(char)) {
+                    // Mock Zhuyin - in reality this would be dynamic
+                    // We'll leave the RT empty or with a placeholder if we don't have a library
+                    html += `<ruby>${char}<rt></rt></ruby>`;
+                } else {
+                    html += char;
+                }
+            }
+            contentDiv.innerHTML = html;
+        }
+    };
+
+    const renderCommAttendance = () => {
+        const currClass = getCurrentClass();
+        const grid = document.getElementById('comm-attendance-grid');
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        currClass.students.forEach(s => {
+            const box = document.createElement('div');
+            box.className = `comm-student-box ${s.arrived ? 'arrived' : ''} ${s.absent ? 'absent' : ''}`;
+            box.innerHTML = `
+                <span class="seat-no">${s.seatNo}</span>
+                <span class="name">${s.name}</span>
+            `;
+            box.onclick = () => {
+                // Toggle attendance quickly from this view too
+                if (!s.arrived && !s.absent) {
+                    window.attTog(s.id, 'arrived');
+                } else if (s.arrived) {
+                    window.attTog(s.id, 'arrived');
+                    window.togS(s.id, 'absent');
+                } else {
+                    window.togS(s.id, 'absent');
+                }
+                renderCommAttendance();
+            };
+            grid.appendChild(box);
+        });
+    };
+
+    // Communication Book Controls
+    document.getElementById('btn-toggle-writing-mode').onclick = () => {
+        state.commWritingMode = state.commWritingMode === 'horizontal' ? 'vertical' : 'horizontal';
+        saveState();
+        renderCommunicationBook();
+    };
+
+    document.getElementById('btn-toggle-zhuyin').onclick = () => {
+        state.commShowZhuyin = !state.commShowZhuyin;
+        saveState();
+        renderCommunicationBook();
+    };
+
+    document.getElementById('btn-toggle-comm-attendance').onclick = () => {
+        state.commShowAttendance = !state.commShowAttendance;
+        saveState();
+        renderCommunicationBook();
     };
 
     const saveLocalBtn = document.getElementById('btn-save-local');

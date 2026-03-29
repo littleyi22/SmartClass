@@ -635,8 +635,177 @@ header {
 .mobile-overlay.show { display: block; }
 
 
-/* Buzzer Specific */
-.winner-item { padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 1rem; border-left: 4px solid var(--secondary); animation: slideIn 0.3s ease-out; }
-@keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-.winner-rank { width: 30px; height: 30px; background: var(--secondary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+/* Communication Book (Blackboard) */
+.communication-layout {
+    display: flex;
+    gap: 2rem;
+    height: calc(100vh - 200px);
+}
+
+.blackboard-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.blackboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.blackboard-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--secondary);
+}
+
+.blackboard-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.blackboard-frame {
+    flex: 1;
+    background: #5d4037; /* Wood frame */
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.3);
+    position: relative;
+    min-height: 400px;
+    display: flex;
+}
+
+.blackboard {
+    flex: 1;
+    background: #1b3022; /* Blackboard green */
+    border-radius: 4px;
+    padding: 40px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.8rem;
+    line-height: 2;
+    overflow: auto;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+    /* Chalk texture effect */
+    background-image: 
+        radial-gradient(circle at 50% 50%, rgba(255,255,255,0.02) 0%, transparent 80%),
+        url("https://www.transparenttextures.com/patterns/black-paper.png");
+}
+
+/* Blackboard chalk text style */
+.blackboard {
+    text-shadow: 0 0 1px rgba(255,255,255,0.3);
+    letter-spacing: 2px;
+}
+
+.blackboard.vertical {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    height: 100%;
+    padding: 40px 20px;
+}
+
+.blackboard.horizontal {
+    writing-mode: horizontal-tb;
+}
+
+/* Ruby / Zhuyin styles */
+ruby {
+    ruby-position: over;
+    ruby-align: center;
+}
+
+rt {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.6);
+    user-select: none;
+}
+
+.blackboard.vertical rt {
+    ruby-position: right;
+    margin-right: 0.2em;
+}
+
+/* Communication Attendance Grid */
+.attendance-grid-container {
+    width: 320px;
+    background: var(--bg-card);
+    padding: 1.5rem;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex;
+    flex-direction: column;
+}
+
+.attendance-grid-container h3 {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    color: var(--secondary);
+    text-align: center;
+}
+
+.comm-attendance-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    overflow-y: auto;
+}
+
+.comm-student-box {
+    aspect-ratio: 1;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.comm-student-box:hover {
+    background: rgba(255,255,255,0.1);
+    transform: scale(1.05);
+}
+
+.comm-student-box.arrived {
+    background: var(--success);
+    border-color: #059669;
+    color: white;
+}
+
+.comm-student-box.absent {
+    background: var(--danger);
+    border-color: #dc2626;
+    color: white;
+}
+
+.comm-student-box .seat-no {
+    font-size: 0.7rem;
+    opacity: 0.7;
+}
+
+.comm-student-box .name {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+@media (max-width: 1200px) {
+    .communication-layout {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .attendance-grid-container {
+        width: 100%;
+        margin-top: 2rem;
+    }
+    
+    .comm-attendance-grid {
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+    }
+}
 
