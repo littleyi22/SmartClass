@@ -843,3 +843,29 @@ rt {
     }
 }
 
+/* Dynamic Border Visibility Fix for Light/Macaron Themes */
+body {
+    --border-color: rgba(255, 255, 255, 0.08); /* Default for dark mode */
+}
+
+body.theme-light, 
+body[class*="theme-macaron-"] {
+    --border-color: rgba(0, 0, 0, 0.15); /* Stronger border for light/macaron modes */
+}
+
+/* Apply new border color to all card-like elements */
+.tool-card, 
+.student-card, 
+.stat-card, 
+.card, 
+.history-toolbar, 
+.attendance-grid-container {
+    border: 1px solid var(--border-color) !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.tool-card:hover, 
+.student-card:hover {
+    border-color: var(--primary) !important;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}

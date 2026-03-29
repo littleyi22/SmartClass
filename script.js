@@ -1799,28 +1799,48 @@ document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
     };
 
-    // Initialize the token client
-    if (window.google && window.google.accounts) {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: CLIENT_ID,
-            scope: SCOPES,
-            callback: (tokenResponse) => {
-                if(tokenResponse && tokenResponse.access_token) {
-                    accessToken = tokenResponse.access_token;
-                    updateGoogleStatus(true);
-                    addActivity("✅ 已成功串接 Google 雲端硬碟");
-                    alert("Google 帳號連結成功！未來的「下課存檔」將會自動上傳備份至您的雲端硬碟。");
-                }
-            },
-        });
+    // Initialize the token client - try immediately, and also lazily on button click
+    function initGoogleTokenClient() {
+        if (tokenClient) return true; // already initialized
+        if (window.google && window.google.accounts && window.google.accounts.oauth2) {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID,
+                scope: SCOPES,
+                callback: (tokenResponse) => {
+                    if(tokenResponse && tokenResponse.access_token) {
+                        accessToken = tokenResponse.access_token;
+                        updateGoogleStatus(true);
+                        addActivity("✅ 已成功串接 Google 雲端硬碟");
+                        alert("Google 帳號連結成功！未來的「下課存檔」將會自動上傳備份至您的雲端硬碟。");
+                    }
+                },
+            });
+            return true;
+        }
+        return false; // GIS not ready yet
     }
+    initGoogleTokenClient(); // try right now
 
     document.getElementById('btn-google-login').onclick = () => {
-        if(tokenClient) {
-            tokenClient.requestAccessToken({prompt: 'consent'});
-        } else {
-            alert("Google 登入服務尚未載入完畢，請重新整理網頁後再試一次。");
+        if (window.location.protocol === 'file:') {
+            alert("⚠️ 安全性限制：您目前是直接點擊兩下開啟網頁（file://）。\nGoogle 雲端同步功能必須在網路伺服器（如 GitHub Pages、Live Server）環境下才能運作。\n若要測試此功能，請使用 VScode 的 Live Server 或將檔案上傳至網路。");
+            return;
         }
+        
+        if (!initGoogleTokenClient()) {
+            alert("Google 登入服務尚未載入完畢，請稍候 2 秒後再試一次，或確認目前網路無阻擋。");
+            // Auto-retry after 2 seconds
+            setTimeout(() => {
+                if (initGoogleTokenClient()) {
+                    tokenClient.requestAccessToken({prompt: 'consent'});
+                } else {
+                    console.error("Google API failed to load.");
+                    alert("Google 服務載入失敗。若您在學校，可能被學術網路擋住，或請重新整理網頁。");
+                }
+            }, 2000);
+            return;
+        }
+        tokenClient.requestAccessToken({prompt: 'consent'});
     };
 
     document.getElementById('btn-header-google-logout').onclick = () => {
