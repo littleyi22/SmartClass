@@ -793,6 +793,35 @@ rt {
     font-weight: 600;
 }
 
+/* Bopomofo Fonts Classes */
+.blackboard.font-huninn {
+    font-family: 'Bpmf Huninn', sans-serif;
+}
+.blackboard.font-iansui {
+    font-family: 'Iansui', sans-serif;
+}
+.blackboard.font-zihi {
+    font-family: 'Bpmf Zihi Kai Std', serif;
+}
+
+/* History Tab Layout */
+.history-toolbar {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--bg-card);
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+#history-display-area {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
 @media (max-width: 1200px) {
     .communication-layout {
         flex-direction: column;

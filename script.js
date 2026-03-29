@@ -62,14 +62,12 @@ document.addEventListener('DOMContentLoaded', () => {
         classBtn1: localStorage.getItem('sc_v3_cbtn1') || 'HW',
         classBtn2: localStorage.getItem('sc_v3_cbtn2') || '加星',
         classBtn3: localStorage.getItem('sc_v3_cbtn3') || '秩序',
-        classBtn4: localStorage.getItem('sc_v3_cbtn4') || '缺席',
-        attBtn1: localStorage.getItem('sc_v3_abtn1') || '簽到',
-        attBtn2: localStorage.getItem('sc_v3_abtn2') || '記缺席',
-        attBtn3: localStorage.getItem('sc_v3_abtn3') || '刷牙',
-        // Communication Book Settings
         commWritingMode: localStorage.getItem('sc_v3_comm_mode') || 'horizontal',
         commShowZhuyin: localStorage.getItem('sc_v3_comm_zhuyin') === 'true',
         commShowAttendance: localStorage.getItem('sc_v3_comm_show_att') !== 'false',
+        commFont: localStorage.getItem('sc_v3_comm_font') || 'default',
+        history: JSON.parse(localStorage.getItem('sc_v3_history')) || {},
+        sheetsId: localStorage.getItem('sc_v3_sheets_id') || '',
         user: null,
         timer: { seconds: 0, active: false, interval: null }
     };
@@ -130,6 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('sc_v3_comm_mode', state.commWritingMode);
         localStorage.setItem('sc_v3_comm_zhuyin', state.commShowZhuyin);
         localStorage.setItem('sc_v3_comm_show_att', state.commShowAttendance);
+        localStorage.setItem('sc_v3_comm_font', state.commFont);
+        localStorage.setItem('sc_v3_history', JSON.stringify(state.history));
+        localStorage.setItem('sc_v3_sheets_id', state.sheetsId);
         updateDashboard();
     };
 
@@ -192,6 +193,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target === 'communication') {
                 renderCommunicationBook();
                 renderCommAttendance();
+            }
+            if (target === 'history') {
+                renderHistory();
             }
         });
     });
@@ -1437,6 +1441,134 @@ document.addEventListener('DOMContentLoaded', () => {
         alert("標題已更新！");
     };
 
+    document.getElementById('btn-apply-sheets-id').onclick = () => {
+        state.sheetsId = document.getElementById('settings-sheets-id').value.trim();
+        saveState();
+        alert("試算表同步設定已更新！");
+    };
+
+    const saveDailyRecord = () => {
+        const now = new Date();
+        const dateKey = now.toISOString().split('T')[0];
+        const currClass = getCurrentClass();
+        if (!currClass) return;
+
+        if (!state.history[dateKey]) state.history[dateKey] = {};
+        state.history[dateKey][currClass.id] = {
+            className: currClass.name,
+            homework: currClass.homework || '',
+            teachingProgress: currClass.teachingProgress || '',
+            attendance: currClass.students.map(s => ({
+                seat: s.seatNo,
+                name: s.name,
+                status: s.absent ? '缺席' : (s.arrived ? (s.arriveTimeStr > state.arrivalTime ? '遲到' : '已到') : '未到')
+            }))
+        };
+        saveState();
+    };
+
+    const syncToGoogleSheets = async () => {
+        if (!accessToken || !state.sheetsId) return;
+        
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('zh-TW');
+        const currClass = getCurrentClass();
+        
+        try {
+            // Check if gapi client is loaded
+            if (!window.gapi || !window.gapi.client) {
+                // Try load
+                await new Promise((resolve, reject) => {
+                    gapi.load('client', {callback: resolve, onerror: reject});
+                });
+            }
+            
+            if (!gapi.client.sheets) {
+                await gapi.client.init({
+                    discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
+                });
+            }
+
+            const range = 'Sheet1!A:E'; // Assuming Sheet1, change if needed
+            const values = [
+                [dateStr, currClass.name, currClass.homework || '', currClass.teachingProgress || '', currClass.students.filter(s => s.arrived).length + '/' + currClass.students.length]
+            ];
+            
+            await gapi.client.sheets.spreadsheets.values.append({
+                spreadsheetId: state.sheetsId,
+                range: range,
+                valueInputOption: 'USER_ENTERED',
+                resource: { values: values },
+            });
+            
+            addActivity("✅ 資料已同步至 Google 試算表");
+        } catch (err) {
+            console.error('Sheets Sync Error:', err);
+            addActivity("❌ 試算表同步失敗：" + (err.result?.error?.message || "請檢查權限及 ID"));
+        }
+    };
+
+    // --- History Tab Logic ---
+    const renderHistory = () => {
+        const datePicker = document.getElementById('history-date-picker');
+        const classSelector = document.getElementById('history-class-select');
+        const displayArea = document.getElementById('history-display-area');
+        
+        if (!datePicker.value) {
+            datePicker.value = new Date().toISOString().split('T')[0];
+        }
+
+        // Populate class selector from history dates
+        const selectedDate = datePicker.value;
+        const classesOnDate = state.history[selectedDate] || {};
+        
+        const prevSelectedClass = classSelector.value;
+        classSelector.innerHTML = '';
+        Object.keys(classesOnDate).forEach(id => {
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = classesOnDate[id].className;
+            classSelector.appendChild(opt);
+        });
+        
+        if (prevSelectedClass && classesOnDate[prevSelectedClass]) {
+            classSelector.value = prevSelectedClass;
+        }
+
+        const selectedClassId = classSelector.value;
+        const data = classesOnDate[selectedClassId];
+
+        if (!data) {
+            displayArea.innerHTML = '<div class="empty-state">該日期尚無紀錄</div>';
+            return;
+        }
+
+        displayArea.innerHTML = `
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <h3>今日功課</h3>
+                <div style="white-space: pre-wrap; margin-top: 0.5rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px;">${data.homework || '無紀錄'}</div>
+            </div>
+            <div class="card" style="margin-bottom: 1.5rem;">
+                <h3>教學進度</h3>
+                <div style="white-space: pre-wrap; margin-top: 0.5rem; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 8px;">${data.teachingProgress || '無紀錄'}</div>
+            </div>
+            <div class="card">
+                <h3>出勤狀況</h3>
+                <div style="margin-top: 1rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.5rem;">
+                    ${data.attendance.map(s => `
+                        <div style="padding: 0.5rem; background: rgba(255,255,255,0.05); border-radius: 6px; display: flex; justify-content: space-between;">
+                            <span>${s.seat}. ${s.name}</span>
+                            <span style="color: ${s.status === '缺席' ? 'var(--danger)' : (s.status.includes('遲到') ? 'var(--warning)' : 'var(--success)')}">${s.status}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    };
+
+    document.getElementById('history-date-picker').onchange = renderHistory;
+    document.getElementById('history-class-select').onchange = renderHistory;
+
     document.getElementById('btn-clear-all').onclick = () => {
         if(confirm("警告：這將會清除所有班級的資料！您確定嗎？")){
             localStorage.clear();
@@ -1450,6 +1582,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currClass.homework = elements.hwInput.value;
         updateDashboard();
         addActivity(`更新了 ${currClass.name} 的課堂功課`);
+        saveDailyRecord(); // Auto-save for history
         saveState();
         alert('功課已儲存');
     };
@@ -1485,8 +1618,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const contentDiv = document.getElementById('blackboard-content');
         if (!contentDiv) return;
 
-        // Apply writing mode class
-        contentDiv.className = `blackboard ${state.commWritingMode}`;
+        // Apply writing mode and font classes
+        contentDiv.className = `blackboard ${state.commWritingMode} font-${state.commFont}`;
         
         // Update UI buttons
         document.getElementById('text-writing-mode').innerHTML = state.commWritingMode === 'horizontal' ? '<i data-lucide="type"></i> 切換直書' : '<i data-lucide="type"></i> 切換橫書';
@@ -1494,23 +1627,31 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('text-comm-attendance').innerHTML = `<i data-lucide="user-check"></i> 顯示簽到格: ${state.commShowAttendance ? '開' : '關'}`;
         document.getElementById('comm-attendance-container').style.display = state.commShowAttendance ? 'flex' : 'none';
         
+        // Sync font select dropdown
+        const fontSelector = document.getElementById('select-blackboard-font');
+        if (fontSelector) fontSelector.value = state.commFont;
+        if (state.commFont !== 'default') {
+            document.getElementById('btn-toggle-zhuyin').style.display = 'none'; // Font font handles Zhuyin
+        } else {
+            document.getElementById('btn-toggle-zhuyin').style.display = 'block';
+        }
+
         lucide.createIcons();
 
         const rawText = currClass.homework || '尚未輸入功課';
         
-        if (!state.commShowZhuyin) {
+        if (state.commFont !== 'default') {
+            // These fonts handle Zhuyin naturally if designed that way
+            contentDiv.innerHTML = rawText.replace(/\n/g, '<br>');
+        } else if (!state.commShowZhuyin) {
             contentDiv.innerHTML = rawText.replace(/\n/g, '<br>');
         } else {
-            // Very basic Zhuyin wrapper (real use would need a dictionary)
-            // Here we just wrap each Chinese character in a ruby tag for layout demonstration
-            // In a real app, you'd use a library like pinyin-zhuyin
+            // Ruby wrapper for default font
             let html = '';
             for (let char of rawText) {
                 if (char === '\n') {
                     html += '<br>';
                 } else if (/[\u4e00-\u9fa5]/.test(char)) {
-                    // Mock Zhuyin - in reality this would be dynamic
-                    // We'll leave the RT empty or with a placeholder if we don't have a library
                     html += `<ruby>${char}<rt></rt></ruby>`;
                 } else {
                     html += char;
@@ -1564,6 +1705,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-toggle-comm-attendance').onclick = () => {
         state.commShowAttendance = !state.commShowAttendance;
+        saveState();
+        renderCommunicationBook();
+    };
+
+    document.getElementById('select-blackboard-font').onchange = (e) => {
+        state.commFont = e.target.value;
         saveState();
         renderCommunicationBook();
     };
@@ -1700,8 +1847,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if(response.ok) {
                 const resData = await response.json();
                 addActivity(`✅ 課後存檔已同步至雲端硬碟！`);
+                saveDailyRecord(); // Save to local history
+                await syncToGoogleSheets(); // Sync to Google Sheets
                 confetti({ particleCount: 150, spread: 80, origin: { y: 0.4 } });
-                alert(`太棒了！下課囉！\n\n您今天的全班資料變動已經自動上傳一份獨立的 JSON 備份檔至您的 Google 雲端硬碟了！`);
+                alert(`太棒了！下課囉！\n\n您的班級資料已備份至雲端硬碟，今日紀錄也同步到 Google 試算表了！`);
             } else {
                 throw new Error('Upload request failed with status ' + response.status);
             }

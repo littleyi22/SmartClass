@@ -9,6 +9,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Bopomofo Fonts -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/bpmf-huninn/index.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/iansui/index.css">
+    <!-- Zihi Kai usually needs manual hosting or specific path, using Huninn as fallback if not found -->
     <!-- Libraries -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -59,6 +63,10 @@
                 <li data-tab="communication">
                     <i data-lucide="book-open"></i>
                     <span>聯絡簿</span>
+                </li>
+                <li data-tab="history">
+                    <i data-lucide="history"></i>
+                    <span>歷史紀錄</span>
                 </li>
             </ul>
 
@@ -303,6 +311,12 @@
                                 <button class="btn-secondary btn-sm" id="btn-toggle-comm-attendance">
                                     <i data-lucide="user-check"></i> <span id="text-comm-attendance">顯示簽到格: 開</span>
                                 </button>
+                                <select id="select-blackboard-font" class="custom-select btn-sm" style="width: auto;">
+                                    <option value="default">預設字體</option>
+                                    <option value="huninn">粉圓注音體</option>
+                                    <option value="iansui">芫荽注音體</option>
+                                    <option value="zihi">字嗨注音體</option>
+                                </select>
                             </div>
                             <div class="blackboard-title">今日聯絡簿</div>
                         </div>
@@ -640,8 +654,13 @@
             </div>
             <div class="settings-group">
                 <label>雲端同步</label>
-                <div class="data-actions">
+                <div class="data-actions" style="display: flex; flex-direction: column; gap: 0.5rem;">
                     <button class="btn-primary" id="btn-google-login" style="width: 100%;"><i data-lucide="log-in" style="margin-right:0.5rem;"></i> 連結 Google 帳號</button>
+                    <div class="input-with-button">
+                        <span style="flex:1; color:var(--text-muted); line-height: 2.5rem; font-size: 0.85rem;">Google Sheets ID：</span>
+                        <input type="text" id="settings-sheets-id" placeholder="填入試算表 ID 啟用自動同步">
+                    </div>
+                    <button class="btn-secondary" id="btn-apply-sheets-id">套用同步設定</button>
                 </div>
             </div>
             <div class="settings-group">
