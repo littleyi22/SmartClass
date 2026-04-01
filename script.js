@@ -1835,6 +1835,34 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    // --- Blackboard Text Colour Buttons ---
+    function applyBlackboardColor(color) {
+        const board = document.getElementById('blackboard-content');
+        if (!board) return;
+        board.focus();
+        const sel = window.getSelection();
+        if (!sel || sel.isCollapsed) {
+            alert('請先在黑板上選取要上色的文字。');
+            return;
+        }
+        document.execCommand('foreColor', false, color);
+        // Persist the innerText (plain text) to homework state
+        const currClass = getCurrentClass();
+        if (currClass) {
+            currClass.homework = board.innerText;
+            saveState();
+            saveDailyRecord();
+        }
+    }
+
+    const btnColorRed = document.getElementById('btn-color-red');
+    const btnColorYellow = document.getElementById('btn-color-yellow');
+    const btnColorReset = document.getElementById('btn-color-reset');
+
+    if (btnColorRed) btnColorRed.onclick = () => applyBlackboardColor('#e8192c');
+    if (btnColorYellow) btnColorYellow.onclick = () => applyBlackboardColor('#ffd600');
+    if (btnColorReset) btnColorReset.onclick = () => applyBlackboardColor('rgba(255,255,255,0.9)');
+
     // --- Export/Import ---
     document.getElementById('btn-export-data').onclick = () => {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));

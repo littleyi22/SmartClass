@@ -337,6 +337,12 @@
                                 <option value="huninn">粉圓注音體</option>
                                 <option value="kaiti">標楷體</option>
                             </select>
+                            <!-- Text colour buttons -->
+                            <div style="display:flex; gap:0.2rem; align-items:center; border-left:1px solid rgba(255,255,255,0.2); padding-left:0.3rem;">
+                                <button class="btn-icon-sm" id="btn-color-red" title="紅色文字" style="background:#e8192c; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.78rem; padding:0.3rem 0.55rem;">A</button>
+                                <button class="btn-icon-sm" id="btn-color-yellow" title="黃色文字" style="background:#ffd600; color:#333; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.78rem; padding:0.3rem 0.55rem;">A</button>
+                                <button class="btn-icon-sm" id="btn-color-reset" title="恢復預設色" style="background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.3); border-radius:6px; cursor:pointer; font-size:0.72rem; padding:0.3rem 0.45rem;">黑</button>
+                            </div>
                         </div>
                     </div>
                     
@@ -348,6 +354,10 @@
                         <div class="comm-f11-note">
                             <i data-lucide="info" style="width: 12px; height: 12px; vertical-align: middle; flex-shrink:0;"></i>
                             按 F11 全螢幕可增加黑板長寬。
+                        </div>
+                        <div class="comm-f11-note" style="margin-top:0.3rem;">
+                            <i data-lucide="pencil" style="width: 12px; height: 12px; vertical-align: middle; flex-shrink:0;"></i>
+                            建議：先橫書打字再轉直書。連接符請用「~」，勿用「-」以免誤判為英數字。
                         </div>
                     </div>
                 </div>
@@ -446,6 +456,9 @@
                                 <li>多種注音字體（粉圓、芫荽等）</li>
                                 <li>顯示學生簽到格</li>
                                 <li>編輯內容自動同步儲存</li>
+                                <li>💡 <strong>建議：先橫書打字</strong>，輸入完成再切換直書</li>
+                                <li>❗ 連接符請用「~」，勿用「-」以免被誤判為英數字</li>
+                                <li>🎨 可選取文字設定鮮紅 / 鮮黃強調色</li>
                             </ul>
                         </div>
                         <div class="card">
@@ -510,6 +523,10 @@
                             <div style="display:flex; gap:0.8rem; align-items:flex-start; padding:0.8rem; background:rgba(255,255,255,0.03); border-radius:8px; border-left:3px solid var(--secondary);">
                                 <span style="font-size:1.3rem;">⚙️</span>
                                 <p style="margin:0; color:var(--text-secondary); font-size:0.9rem;">設定完按鈕名稱後，務必按「套用按鈕與點名設定」才會生效並更新各頁面顯示。</p>
+                            </div>
+                            <div style="display:flex; gap:0.8rem; align-items:flex-start; padding:0.8rem; background:rgba(255,255,255,0.03); border-radius:8px; border-left:3px solid var(--accent);">
+                                <span style="font-size:1.3rem;">📝</span>
+                                <p style="margin:0; color:var(--text-secondary); font-size:0.9rem;">聯絡簿建議：<strong>先橫書打字</strong>，輸入完成再點「切換直書」。連接符請用「~」，勿用「-」（-會被誤判為英數字導致直書失效）。</p>
                             </div>
                         </div>
                     </div>
