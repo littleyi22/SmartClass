@@ -207,7 +207,37 @@ body {
     width: 100%;
 }
 
+/* Fix: date selector always readable regardless of theme */
+#global-date-select {
+    background: rgba(0,0,0,0.45) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255,255,255,0.35) !important;
+    font-weight: bold;
+    width: auto;
+    padding: 0.2rem 0.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+select.custom-select option {
+    background-color: #1e293b;
+    color: #f8fafc;
+}
+
 .btn-sm { padding: 0.4rem; justify-content: center; }
+
+/* Compact icon-only button for blackboard controls */
+.btn-icon-sm {
+    padding: 0.3rem 0.45rem;
+    font-size: 0.78rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 8px;
+}
+.btn-icon-sm i { width: 14px; height: 14px; flex-shrink: 0; }
+/* Short text label inside icon button - only for toggles */
+.btn-icon-label { font-size: 0.72rem; white-space: nowrap; }
 
 .user-status-dot {
     width: 10px;
@@ -635,11 +665,44 @@ header {
 .mobile-overlay.show { display: block; }
 
 
-/* Communication Book (Blackboard) */
+/* Communication Book Layout */
+/* Tab-level header: title + date/time on the right */
+.comm-tab-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.6rem;
+}
+.comm-tab-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--secondary);
+    margin: 0;
+    white-space: nowrap;
+}
+.comm-datetime-block {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-left: 0.5rem;
+}
+.comm-date {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+.comm-time {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary);
+    white-space: nowrap;
+    min-width: 60px;
+}
+
 .communication-layout {
     display: flex;
-    gap: 2rem;
-    height: calc(100vh - 155px); /* Taller: no header bar */
+    gap: 1.5rem;
+    height: calc(100vh - 185px);
 }
 
 .blackboard-container {
@@ -670,10 +733,10 @@ header {
 
 .blackboard-frame {
     flex: 1;
-    background: #5d4037; /* Wood frame */
+    background: linear-gradient(135deg, #a16b4a 0%, #8d5538 100%); /* Lighter brown gradient */
     padding: 20px;
     border-radius: 12px;
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.5), 0 10px 20px rgba(0,0,0,0.3);
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.4), 0 10px 20px rgba(0,0,0,0.3);
     position: relative;
     min-height: 0;
     display: flex;
@@ -713,6 +776,11 @@ header {
 
 .blackboard.horizontal {
     writing-mode: horizontal-tb;
+}
+
+/* For upright combined alphanumeric text */
+.tcy {
+    text-combine-upright: all;
 }
 
 /* Ruby / Zhuyin styles */
@@ -760,7 +828,7 @@ rt {
 .comm-student-box {
     aspect-ratio: 1;
     background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1.5px solid rgba(255,255,255,0.25);
     border-radius: 8px;
     display: flex;
     flex-direction: column;
@@ -787,6 +855,19 @@ rt {
     color: white;
 }
 
+/* F11 note below the attendance grid */
+.comm-f11-note {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    line-height: 1.3;
+    opacity: 0.8;
+    padding: 0 0.2rem;
+}
+
 .comm-student-box .seat-no {
     font-size: 0.7rem;
     opacity: 0.7;
@@ -800,9 +881,6 @@ rt {
 /* Bopomofo / CJK Font Classes */
 .blackboard.font-huninn {
     font-family: 'Bpmf Huninn', 'Noto Sans TC', sans-serif;
-}
-.blackboard.font-iansui {
-    font-family: 'Iansui', 'Bpmf Huninn', sans-serif;
 }
 .blackboard.font-kaiti {
     /* Standard Kai (BiauKai on Mac, DFKai-SB on Windows) */

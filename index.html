@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="main-title-tag">智慧教室助手 v.6.1</title>
+    <title id="main-title-tag">智慧教室助手 v.6.2</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,9 +12,6 @@
     <!-- Bopomofo / CJK Fonts -->
     <!-- 粉圓: Bpmf Huninn (full zhuyin support) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/bpmf-huninn/index.css">
-    <!-- 芫茸: Iansui - load all subsets for zhuyin -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/iansui/chinese-traditional.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/iansui/index.css">
     <!-- Libraries -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -96,8 +93,8 @@
                     <button id="btn-mobile-menu" class="btn-secondary" style="display: none; padding: 0.5rem;"><i data-lucide="menu"></i></button>
                     <div>
                         <h1 id="header-page-title">主控面板</h1>
-                        <div class="time-container">
-                            <p id="current-date">---</p>
+                        <div class="time-container" style="align-items: center;">
+                            <select id="global-date-select" class="custom-select" style="background: rgba(255,255,255,0.1); border: none; color: white; font-weight: bold; width: auto; padding: 0.2rem 0.5rem; border-radius: 8px; cursor: pointer;"></select>
                             <p id="current-time">00:00:00</p>
                         </div>
                     </div>
@@ -304,6 +301,14 @@
 
             <!-- Tab: Communication Book -->
             <section id="communication-tab" class="tab-content">
+                <!-- Communication Tab Header: title + date/time -->
+                <div class="comm-tab-header">
+                    <h2 class="comm-tab-title">聯絡簿</h2>
+                    <div class="comm-datetime-block">
+                        <span id="comm-date-display" class="comm-date"></span>
+                        <span id="comm-time-display" class="comm-time"></span>
+                    </div>
+                </div>
                 <div class="communication-layout">
                     <div class="blackboard-container">
                         <div class="blackboard-frame">
@@ -311,23 +316,33 @@
                                 <!-- Content will be populated by JS -->
                             </div>
                         </div>
-                        <div class="blackboard-controls" style="margin-top: 0.8rem; display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center;">
-                            <button class="btn-secondary btn-sm" id="btn-toggle-writing-mode">
-                                <i data-lucide="type"></i> <span id="text-writing-mode">切換直書</span>
+                        <div class="blackboard-controls" style="margin-top: 0.5rem; display:flex; gap:0.3rem; flex-wrap:wrap; align-items:center;">
+                            <button class="btn-secondary btn-icon-sm" id="btn-toggle-writing-mode" title="切換橫書/直書">
+                                <i data-lucide="type"></i><span id="text-writing-mode" class="btn-icon-label">切換橫書</span>
                             </button>
-                            <button class="btn-secondary btn-sm" id="btn-toggle-zhuyin">
-                                <i data-lucide="languages"></i> <span id="text-zhuyin">附加注音: 開</span>
+                            <button class="btn-secondary btn-icon-sm" id="btn-toggle-zhuyin" title="附加注音">
+                                <i data-lucide="languages"></i><span id="text-zhuyin" class="btn-icon-label">注音:關</span>
                             </button>
-                            <button class="btn-secondary btn-sm" id="btn-toggle-comm-attendance">
-                                <i data-lucide="user-check"></i> <span id="text-comm-attendance">顯示簽到格: 開</span>
+                            <button class="btn-secondary btn-icon-sm" id="btn-toggle-comm-attendance" title="顯示簽到格">
+                                <i data-lucide="user-check"></i><span id="text-comm-attendance" class="btn-icon-label">簽到:開</span>
                             </button>
-                            <button class="btn-secondary btn-sm" id="btn-insert-numbered-list" title="插入編號清單">
-                                <i data-lucide="list-ordered"></i> 編號清單
+                            <button class="btn-secondary btn-icon-sm" id="btn-insert-numbered-list" title="插入編號清單">
+                                <i data-lucide="list-ordered"></i>
                             </button>
-                            <select id="select-blackboard-font" class="custom-select btn-sm" style="width: auto;">
+                            <button class="btn-secondary btn-icon-sm" id="btn-insert-bullet-list" title="插入項目符號">
+                                <i data-lucide="list"></i>
+                            </button>
+                            <div style="display: flex; gap: 0.2rem; align-items: center; border-left: 1px solid rgba(255,255,255,0.2); padding-left: 0.3rem;">
+                                <button class="btn-secondary btn-icon-sm" id="btn-decrease-font" title="縮小字體">
+                                    <i data-lucide="zoom-out"></i>
+                                </button>
+                                <button class="btn-secondary btn-icon-sm" id="btn-increase-font" title="放大字體">
+                                    <i data-lucide="zoom-in"></i>
+                                </button>
+                            </div>
+                            <select id="select-blackboard-font" class="custom-select btn-icon-sm" style="width: auto; padding: 0.25rem 0.4rem; font-size: 0.8rem;">
                                 <option value="default">預設字體</option>
                                 <option value="huninn">粉圓注音體</option>
-                                <option value="iansui">芫荽注音體</option>
                                 <option value="kaiti">標楷體</option>
                             </select>
                         </div>
@@ -337,6 +352,10 @@
                         <h3>學生上學簽到</h3>
                         <div class="comm-attendance-grid" id="comm-attendance-grid">
                             <!-- Populated by JS -->
+                        </div>
+                        <div class="comm-f11-note">
+                            <i data-lucide="info" style="width: 12px; height: 12px; vertical-align: middle; flex-shrink:0;"></i>
+                            按 F11 全螢幕可增加黑板長寬。
                         </div>
                     </div>
                 </div>
@@ -370,7 +389,7 @@
                         <i data-lucide="book-marked" style="width:48px; height:48px; color:white; flex-shrink:0;"></i>
                         <div>
                             <h2 style="margin:0; color:white; font-size:1.6rem;">SmartClass 使用說明</h2>
-                            <p style="margin:0.3rem 0 0; color:rgba(255,255,255,0.8); font-size:0.95rem;">Version 6.1 ｜ 奕鈞老師製作</p>
+                            <p style="margin:0.3rem 0 0; color:rgba(255,255,255,0.8); font-size:0.95rem;">Version 6.2 ｜ 奕鈞老師製作</p>
                         </div>
                     </div>
 
@@ -507,7 +526,7 @@
 
             <!-- Footer Copyright -->
             <footer class="bottom-footer">
-                <p>奕鈞老師製作 © 2026 | Version 6.1</p>
+                <p>奕鈞老師製作 © 2026 | Version 6.2</p>
             </footer>
         </main>
     </div>

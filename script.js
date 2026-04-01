@@ -1,5 +1,5 @@
 /**
- * SmartClass v.6.1 - JavaScript Logic
+ * SmartClass v.6.2 - JavaScript Logic
  * Developed for 奕鈞老師
  */
 
@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
         commShowZhuyin: localStorage.getItem('sc_v3_comm_zhuyin') === 'true',
         commShowAttendance: localStorage.getItem('sc_v3_comm_show_att') !== 'false',
         commFont: localStorage.getItem('sc_v3_comm_font') || 'default',
+        commFontSize: parseFloat(localStorage.getItem('sc_v3_comm_font_size')) || 1.8,
         history: JSON.parse(localStorage.getItem('sc_v3_history')) || {},
         sheetsId: localStorage.getItem('sc_v3_sheets_id') || '',
         user: null,
@@ -110,9 +111,37 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('sc_v3_comm_zhuyin', state.commShowZhuyin);
         localStorage.setItem('sc_v3_comm_show_att', state.commShowAttendance);
         localStorage.setItem('sc_v3_comm_font', state.commFont);
+        localStorage.setItem('sc_v3_comm_font_size', state.commFontSize);
         localStorage.setItem('sc_v3_history', JSON.stringify(state.history));
         localStorage.setItem('sc_v3_sheets_id', state.sheetsId);
         if (typeof updateDashboard === 'function') updateDashboard();
+    }
+
+    function loadDataForDate(dateStr) {
+        const currClass = getCurrentClass();
+        if (!currClass) return;
+        
+        // Ensure history structure exists
+        if (!state.history[dateStr]) state.history[dateStr] = {};
+        
+        // If the date is actually today, use current class data as defaults instead of empty
+        const isToday = dateStr === new Date().toLocaleDateString('en-CA');
+        
+        if (!state.history[dateStr][currClass.id]) {
+            state.history[dateStr][currClass.id] = {
+                className: currClass.name,
+                homework: isToday ? currClass.homework : '',
+                teachingProgress: isToday ? currClass.teachingProgress : '',
+                attendance: []
+            };
+        }
+        
+        const hData = state.history[dateStr][currClass.id];
+        currClass.homework = hData.homework || '';
+        currClass.teachingProgress = hData.teachingProgress || '';
+        
+        updateDashboard();
+        if (typeof renderCommunicationBook === 'function') renderCommunicationBook();
     }
 
     function applyTheme() {
@@ -181,21 +210,31 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function saveDailyRecord() {
-        const now = new Date();
-        const dateKey = now.toISOString().split('T')[0];
+        // Fallback to today string if undefined
+        const todayStr = new Date().toLocaleDateString('en-CA');
+        const dateKey = window.currentEditDate || todayStr;
         const currClass = getCurrentClass();
         if (!currClass) return;
 
         if (!state.history[dateKey]) state.history[dateKey] = {};
+        
+        const existingData = state.history[dateKey][currClass.id] || {};
+        let attendanceData = existingData.attendance || [];
+        
+        // Automatically populate attendance if this is today and it's empty
+        if (dateKey === todayStr && attendanceData.length === 0) {
+            attendanceData = currClass.students.map(s => ({
+                seat: s.seatNo,
+                name: s.name,
+                status: s.absent ? '缺席' : (s.arrived ? (s.arriveTimeStr > state.arrivalTime ? '遲到' : '已到') : '未到')
+            }));
+        }
+
         state.history[dateKey][currClass.id] = {
             className: currClass.name,
             homework: currClass.homework || '',
             teachingProgress: currClass.teachingProgress || '',
-            attendance: currClass.students.map(s => ({
-                seat: s.seatNo,
-                name: s.name,
-                status: s.absent ? '缺席' : (s.arrived ? (s.arriveTimeStr > state.arrivalTime ? '遲到' : '已到') : '未到')
-            }))
+            attendance: attendanceData
         };
         saveState();
     }
@@ -336,10 +375,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const attBtn = document.getElementById('text-comm-attendance');
         const attContainer = document.getElementById('comm-attendance-container');
 
-        if(writingModeBtn) writingModeBtn.innerHTML = state.commWritingMode === 'horizontal' ? '<i data-lucide="type"></i> 切換直書' : '<i data-lucide="type"></i> 切換橫書';
-        if(zhuyinBtn) zhuyinBtn.innerHTML = `<i data-lucide="languages"></i> 附加注音: ${state.commShowZhuyin ? '開' : '關'}`;
-        if(attBtn) attBtn.innerHTML = `<i data-lucide="user-check"></i> 顯示簽到格: ${state.commShowAttendance ? '開' : '關'}`;
+        if(writingModeBtn) writingModeBtn.querySelector('.btn-icon-label').textContent = state.commWritingMode === 'horizontal' ? '切換直書' : '切換橫書';
+        if(zhuyinBtn) zhuyinBtn.querySelector('.btn-icon-label').textContent = `注音:${state.commShowZhuyin ? '開' : '關'}`;
+        if(attBtn) attBtn.querySelector('.btn-icon-label').textContent = `簽到:${state.commShowAttendance ? '開' : '關'}`;
         if(attContainer) attContainer.style.display = state.commShowAttendance ? 'flex' : 'none';
+        
+        // Update comm tab date/time
+        const commDate = document.getElementById('comm-date-display');
+        const commTime = document.getElementById('comm-time-display');
+        if (commDate) commDate.textContent = new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+        if (commTime) commTime.textContent = new Date().toLocaleTimeString('zh-TW', { hour12: false });
         
         const fontSelector = document.getElementById('select-blackboard-font');
         if (fontSelector) fontSelector.value = state.commFont;
@@ -349,26 +394,37 @@ document.addEventListener('DOMContentLoaded', () => {
         const rawText = currClass.homework || '尚未輸入功課';
 
         if (document.activeElement !== contentDiv) {
+            contentDiv.style.fontSize = `${state.commFontSize}rem`;
             if (!state.commShowZhuyin) {
-                // Plain: just convert newlines to <br>
-                const escapedHtml = rawText
+                // Plain HTML escaping and wrap alphanumeric with .tcy
+                let escapedHtml = rawText
                     .replace(/&/g, '&amp;')
                     .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/\n/g, '<br>');
+                    .replace(/>/g, '&gt;');
+                    
+                escapedHtml = escapedHtml.replace(/([A-Za-z0-9.\-\/]+)/g, '<span class="tcy">$1</span>');
+                escapedHtml = escapedHtml.replace(/\n/g, '<br>');
                 contentDiv.innerHTML = escapedHtml;
             } else {
-                // With zhuyin ruby annotation on CJK
+                // With zhuyin ruby annotation on CJK mapping
                 let html = '';
                 const lines = rawText.split('\n');
                 lines.forEach((line, li) => {
                     if (li > 0) html += '<br>';
-                    for (const ch of line) {
-                        if (/[\u4e00-\u9fa5\u3400-\u4dbf]/.test(ch)) {
-                            html += `<ruby>${ch}<rt></rt></ruby>`;
+                    let i = 0;
+                    while(i < line.length) {
+                        const m = line.substring(i).match(/^([A-Za-z0-9.\-\/]+)/);
+                        if (m) {
+                            html += `<span class="tcy">${m[1]}</span>`;
+                            i += m[1].length;
                         } else {
-                            // Escape special chars
-                            html += ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch;
+                            const ch = line[i];
+                            if (/[\u4e00-\u9fa5\u3400-\u4dbf]/.test(ch)) {
+                                html += `<ruby>${ch}<rt></rt></ruby>`;
+                            } else {
+                                html += ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch;
+                            }
+                            i++;
                         }
                     }
                 });
@@ -599,6 +655,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.classSelect.onchange = (e) => {
         state.currentClassId = e.target.value;
         addActivity(`切換班級：${getCurrentClass().name}`);
+        if(window.currentEditDate) loadDataForDate(window.currentEditDate);
         renderStudents();
         renderGroups();
         if (typeof renderAttendance === 'function') renderAttendance();
@@ -629,8 +686,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Clock & Timer ---
     const updateClock = () => {
         const now = new Date();
-        elements.curDate.textContent = now.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
-        elements.curTime.textContent = now.toLocaleTimeString('zh-TW', { hour12: false });
+        if(elements.curDate) elements.curDate.textContent = now.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+        if(elements.curTime) elements.curTime.textContent = now.toLocaleTimeString('zh-TW', { hour12: false });
+        // Also update comm tab time display if visible
+        const commTime = document.getElementById('comm-time-display');
+        if (commTime) commTime.textContent = now.toLocaleTimeString('zh-TW', { hour12: false });
     };
     setInterval(updateClock, 1000);
     updateClock();
@@ -1693,6 +1753,9 @@ document.addEventListener('DOMContentLoaded', () => {
             saveState();
             saveDailyRecord();
         };
+        blackboardContent.onblur = () => {
+            renderCommunicationBook();
+        };
     }
 
     // --- Blackboard Input ---
@@ -1732,6 +1795,40 @@ document.addEventListener('DOMContentLoaded', () => {
             currClass.homework = (currClass.homework || '').trim()
                 ? currClass.homework + '\n' + listText
                 : listText;
+            saveState();
+            saveDailyRecord();
+            renderCommunicationBook();
+        };
+    }
+
+    const insertBulletBtn = document.getElementById('btn-insert-bullet-list');
+    if (insertBulletBtn) {
+        insertBulletBtn.onclick = () => {
+            const currClass = getCurrentClass();
+            if (!currClass) return;
+            const listText = '• \n• \n• \n• \n• ';
+            currClass.homework = (currClass.homework || '').trim()
+                ? currClass.homework + '\n' + listText
+                : listText;
+            saveState();
+            saveDailyRecord();
+            renderCommunicationBook();
+        };
+    }
+
+    const btnIncFont = document.getElementById('btn-increase-font');
+    if (btnIncFont) {
+        btnIncFont.onclick = () => {
+            state.commFontSize = Math.min(4.0, state.commFontSize + 0.2);
+            saveState();
+            renderCommunicationBook();
+        };
+    }
+
+    const btnDecFont = document.getElementById('btn-decrease-font');
+    if (btnDecFont) {
+        btnDecFont.onclick = () => {
+            state.commFontSize = Math.max(1.0, state.commFontSize - 0.2);
             saveState();
             renderCommunicationBook();
         };
@@ -1936,7 +2033,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Final Initialization ---
 
+    const globalDateSelect = document.getElementById('global-date-select');
+    if (globalDateSelect) {
+        const today = new Date();
+        for (let i = -10; i <= 10; i++) {
+            const d = new Date(today);
+            d.setDate(today.getDate() + i);
+            const opt = document.createElement('option');
+            opt.value = d.toLocaleDateString('en-CA'); // YYYY-MM-DD local format
+            
+            const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+            const displayStr = `${d.getMonth() + 1}/${d.getDate()} (${weekdays[d.getDay()]})`;
+            
+            opt.textContent = i === 0 ? `今天 ${displayStr}` : displayStr;
+            if (i === 0) opt.selected = true;
+            globalDateSelect.appendChild(opt);
+        }
+
+        window.currentEditDate = globalDateSelect.value;
+        globalDateSelect.onchange = (e) => {
+            window.currentEditDate = e.target.value;
+            loadDataForDate(window.currentEditDate);
+        };
+    }
+
     renderClassSelect();
+    if(window.currentEditDate) loadDataForDate(window.currentEditDate);
     renderStudents();
     renderActivities();
     updateDashboard();
