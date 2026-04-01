@@ -702,7 +702,7 @@ header {
 .communication-layout {
     display: flex;
     gap: 1.5rem;
-    height: calc(100vh - 185px);
+    height: calc(100vh - 155px);
 }
 
 .blackboard-container {
@@ -765,22 +765,33 @@ header {
     letter-spacing: 2px;
 }
 
-/* Vertical writing: mixed = CJK upright, Latin/digits rotated 90° (natural vertical flow) */
+/* Vertical writing: upright = ALL chars (incl. Latin/digits) display upright */
 .blackboard.vertical {
     writing-mode: vertical-rl;
-    text-orientation: mixed;
+    text-orientation: upright;
     height: 100%;
     padding: 40px 20px;
     letter-spacing: 1px;
+}
+
+/* In vertical mode, .tcy wraps short alphanumeric strings for combined-upright */
+/* With text-orientation: upright, individual chars are already upright,
+   .tcy only needed for 2+ char groupings like "P.5" to keep them together */
+.blackboard.vertical .tcy {
+    text-combine-upright: all;
 }
 
 .blackboard.horizontal {
     writing-mode: horizontal-tb;
 }
 
-/* For upright combined alphanumeric text */
+/* For upright combined alphanumeric text (horizontal mode or short groups) */
 .tcy {
     text-combine-upright: all;
+}
+/* In horizontal mode tcy is no-op visually, only active in vertical */
+.blackboard.horizontal .tcy {
+    text-combine-upright: none;
 }
 
 /* Ruby / Zhuyin styles */
@@ -869,13 +880,20 @@ rt {
 }
 
 .comm-student-box .seat-no {
-    font-size: 0.7rem;
-    opacity: 0.7;
+    font-size: 0.68rem;
+    opacity: 0.75;
+    line-height: 1;
 }
 
 .comm-student-box .name {
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     font-weight: 600;
+    text-align: center;
+    line-height: 1.2;
+    word-break: break-all;
+    padding: 0 2px;
+    display: block;
+    max-width: 100%;
 }
 
 /* Bopomofo / CJK Font Classes */
@@ -946,4 +964,21 @@ body[class*="theme-macaron-"] {
 .student-card:hover {
     border-color: var(--primary) !important;
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Student card action buttons - add borders for visibility */
+.student-card .actions button,
+.student-card .score-line button {
+    border: 1.5px solid rgba(255,255,255,0.3) !important;
+}
+.student-card .actions button:hover,
+.student-card .score-line button:hover {
+    border-color: rgba(255,255,255,0.7) !important;
+}
+/* Light/macaron theme: darker borders for student buttons */
+body.theme-light .student-card .actions button,
+body.theme-light .student-card .score-line button,
+body[class*="theme-macaron-"] .student-card .actions button,
+body[class*="theme-macaron-"] .student-card .score-line button {
+    border: 1.5px solid rgba(0,0,0,0.25) !important;
 }

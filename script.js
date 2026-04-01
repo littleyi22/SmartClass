@@ -370,21 +370,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         contentDiv.className = `blackboard ${state.commWritingMode} font-${state.commFont}`;
         
-        const writingModeBtn = document.getElementById('text-writing-mode');
-        const zhuyinBtn = document.getElementById('text-zhuyin');
-        const attBtn = document.getElementById('text-comm-attendance');
+        // Update button labels via the button elements (use btn id, then find inner span)
+        const writingModeBtn = document.getElementById('btn-toggle-writing-mode');
+        const zhuyinBtn = document.getElementById('btn-toggle-zhuyin');
+        const attBtn = document.getElementById('btn-toggle-comm-attendance');
         const attContainer = document.getElementById('comm-attendance-container');
 
-        if(writingModeBtn) writingModeBtn.querySelector('.btn-icon-label').textContent = state.commWritingMode === 'horizontal' ? '切換直書' : '切換橫書';
-        if(zhuyinBtn) zhuyinBtn.querySelector('.btn-icon-label').textContent = `注音:${state.commShowZhuyin ? '開' : '關'}`;
-        if(attBtn) attBtn.querySelector('.btn-icon-label').textContent = `簽到:${state.commShowAttendance ? '開' : '關'}`;
+        if(writingModeBtn) { const lbl = writingModeBtn.querySelector('.btn-icon-label'); if(lbl) lbl.textContent = state.commWritingMode === 'horizontal' ? '切換直書' : '切換橫書'; }
+        if(zhuyinBtn) { const lbl = zhuyinBtn.querySelector('.btn-icon-label'); if(lbl) lbl.textContent = `注音:${state.commShowZhuyin ? '開' : '關'}`; }
+        if(attBtn) { const lbl = attBtn.querySelector('.btn-icon-label'); if(lbl) lbl.textContent = `簽到:${state.commShowAttendance ? '開' : '關'}`; }
         if(attContainer) attContainer.style.display = state.commShowAttendance ? 'flex' : 'none';
-        
-        // Update comm tab date/time
-        const commDate = document.getElementById('comm-date-display');
-        const commTime = document.getElementById('comm-time-display');
-        if (commDate) commDate.textContent = new Date().toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
-        if (commTime) commTime.textContent = new Date().toLocaleTimeString('zh-TW', { hour12: false });
         
         const fontSelector = document.getElementById('select-blackboard-font');
         if (fontSelector) fontSelector.value = state.commFont;
@@ -688,9 +683,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const now = new Date();
         if(elements.curDate) elements.curDate.textContent = now.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
         if(elements.curTime) elements.curTime.textContent = now.toLocaleTimeString('zh-TW', { hour12: false });
-        // Also update comm tab time display if visible
-        const commTime = document.getElementById('comm-time-display');
-        if (commTime) commTime.textContent = now.toLocaleTimeString('zh-TW', { hour12: false });
     };
     setInterval(updateClock, 1000);
     updateClock();
