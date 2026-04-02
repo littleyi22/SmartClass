@@ -1,5 +1,5 @@
 /**
- * SmartClass v.6.2 - JavaScript Logic
+ * SmartClass v.6.3 - JavaScript Logic
  * Developed for 奕鈞老師
  */
 
@@ -399,6 +399,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     
                 escapedHtml = escapedHtml.replace(/([A-Za-z0-9.\-\/]+)/g, '<span class="tcy">$1</span>');
                 escapedHtml = escapedHtml.replace(/\n/g, '<br>');
+                
+                escapedHtml = escapedHtml.replace(/🔴([\s\S]*?)🔴/g, '<span style="color:#e8192c; font-weight:bold;">$1</span>');
+                escapedHtml = escapedHtml.replace(/🟡([\s\S]*?)🟡/g, '<span style="color:#ffd600; font-weight:bold;">$1</span>');
+                
                 contentDiv.innerHTML = escapedHtml;
             } else {
                 // With zhuyin ruby annotation on CJK mapping
@@ -414,7 +418,9 @@ document.addEventListener('DOMContentLoaded', () => {
                             i += m[1].length;
                         } else {
                             const ch = line[i];
-                            if (/[\u4e00-\u9fa5\u3400-\u4dbf]/.test(ch)) {
+                            if (ch === '🔴' || ch === '🟡') {
+                                html += ch;
+                            } else if (/[\u4e00-\u9fa5\u3400-\u4dbf]/.test(ch)) {
                                 html += `<ruby>${ch}<rt></rt></ruby>`;
                             } else {
                                 html += ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch;
@@ -423,6 +429,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     }
                 });
+                
+                html = html.replace(/🔴([\s\S]*?)🔴/g, '<span style="color:#e8192c; font-weight:bold;">$1</span>');
+                html = html.replace(/🟡([\s\S]*?)🟡/g, '<span style="color:#ffd600; font-weight:bold;">$1</span>');
+                
                 contentDiv.innerHTML = html;
             }
         }
@@ -677,6 +687,33 @@ document.addEventListener('DOMContentLoaded', () => {
             addActivity(`新增班級：${name}`);
         }
     };
+
+    const btnDeleteClass = document.getElementById('btn-delete-class');
+    if (btnDeleteClass) {
+        btnDeleteClass.onclick = () => {
+            const currClass = getCurrentClass();
+            if (!currClass) return;
+            if (state.classes.length <= 1) {
+                alert('這是最後一個班級，無法刪除。若需清空請使用下方「清除所有資料」！');
+                return;
+            }
+            if (confirm(`⚠️ 警告：確定要刪除「${currClass.name}」及其所有學生資料嗎？此動作將無法復原！`)) {
+                state.classes = state.classes.filter(c => c.id !== currClass.id);
+                state.currentClassId = state.classes[0].id;
+                
+                renderClassSelect();
+                if(window.currentEditDate) loadDataForDate(window.currentEditDate);
+                renderStudents();
+                renderGroups();
+                if (typeof renderAttendance === 'function') renderAttendance();
+                updateDashboard();
+                saveState();
+                
+                alert(`已刪除班級：${currClass.name}`);
+                document.getElementById('settings-modal').style.display = 'none';
+            }
+        };
+    }
 
     // --- Clock & Timer ---
     const updateClock = () => {
@@ -1667,6 +1704,12 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('st-att-btn-1').value = state.attBtn1;
         document.getElementById('st-att-btn-2').value = state.attBtn2;
         document.getElementById('st-att-btn-3').value = state.attBtn3;
+        
+        const currentClassLabel = document.getElementById('settings-current-class-name');
+        if (currentClassLabel && getCurrentClass()) {
+            currentClassLabel.textContent = getCurrentClass().name;
+        }
+        
         settingsModal.style.display = 'flex';
     };
 
@@ -1836,22 +1879,33 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Blackboard Text Colour Buttons ---
-    function applyBlackboardColor(color) {
+    function applyBlackboardColor(colorType) {
         const board = document.getElementById('blackboard-content');
         if (!board) return;
-        board.focus();
+        
         const sel = window.getSelection();
         if (!sel || sel.isCollapsed) {
             alert('請先在黑板上選取要上色的文字。');
             return;
         }
-        document.execCommand('foreColor', false, color);
-        // Persist the innerText (plain text) to homework state
+        
+        const text = sel.toString();
+        let cleanText = text.replace(/[🔴🟡]/g, '');
+        let wrappedText = cleanText;
+        if (colorType === 'red') {
+            wrappedText = `🔴${cleanText}🔴`;
+        } else if (colorType === 'yellow') {
+            wrappedText = `🟡${cleanText}🟡`;
+        }
+        
+        document.execCommand('insertText', false, wrappedText);
+        
         const currClass = getCurrentClass();
         if (currClass) {
             currClass.homework = board.innerText;
             saveState();
             saveDailyRecord();
+            renderCommunicationBook();
         }
     }
 
@@ -1859,9 +1913,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnColorYellow = document.getElementById('btn-color-yellow');
     const btnColorReset = document.getElementById('btn-color-reset');
 
-    if (btnColorRed) btnColorRed.onclick = () => applyBlackboardColor('#e8192c');
-    if (btnColorYellow) btnColorYellow.onclick = () => applyBlackboardColor('#ffd600');
-    if (btnColorReset) btnColorReset.onclick = () => applyBlackboardColor('rgba(255,255,255,0.9)');
+    if (btnColorRed) {
+        btnColorRed.onmousedown = (e) => { e.preventDefault(); applyBlackboardColor('red'); };
+        btnColorRed.onclick = null;
+    }
+    if (btnColorYellow) {
+        btnColorYellow.onmousedown = (e) => { e.preventDefault(); applyBlackboardColor('yellow'); };
+        btnColorYellow.onclick = null;
+    }
+    if (btnColorReset) {
+        btnColorReset.onmousedown = (e) => { e.preventDefault(); applyBlackboardColor('reset'); };
+        btnColorReset.onclick = null;
+    }
 
     // --- Export/Import ---
     document.getElementById('btn-export-data').onclick = () => {

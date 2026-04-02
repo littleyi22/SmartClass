@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="main-title-tag">智慧教室助手 v.6.2</title>
+    <title id="main-title-tag">智慧教室助手 v.6.3</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -391,7 +391,7 @@
                         <i data-lucide="book-marked" style="width:48px; height:48px; color:white; flex-shrink:0;"></i>
                         <div>
                             <h2 style="margin:0; color:white; font-size:1.6rem;">SmartClass 使用說明</h2>
-                            <p style="margin:0.3rem 0 0; color:rgba(255,255,255,0.8); font-size:0.95rem;">Version 6.2 ｜ 奕鈞老師製作</p>
+                            <p style="margin:0.3rem 0 0; color:rgba(255,255,255,0.8); font-size:0.95rem;">Version 6.3 ｜ 奕鈞老師製作</p>
                         </div>
                     </div>
 
@@ -535,7 +535,7 @@
 
             <!-- Footer Copyright -->
             <footer class="bottom-footer">
-                <p>奕鈞老師製作 © 2026 | Version 6.2</p>
+                <p>奕鈞老師製作 © 2026 | Version 6.3</p>
             </footer>
         </main>
     </div>
@@ -844,9 +844,10 @@
                 </div>
             </div>
             <div class="settings-group">
-                <label>班級管理</label>
-                <div class="data-actions">
-                    <button class="btn-primary" id="btn-add-class" style="width: 100%;">+ 新增班級</button>
+                <label>班級管理 (目前所在：<span id="settings-current-class-name" style="color:var(--warning);font-weight:bold;">未選擇</span>)</label>
+                <div class="data-actions" style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                    <button class="btn-primary" id="btn-add-class" style="flex: 1;">+ 新增班級</button>
+                    <button class="btn-danger" id="btn-delete-class" style="flex: 1;"><i data-lucide="trash-2"></i> 刪除當前班級</button>
                 </div>
             </div>
             <div class="settings-group">
