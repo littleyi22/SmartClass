@@ -303,10 +303,11 @@
             <section id="communication-tab" class="tab-content">
                 <div class="communication-layout">
                     <div class="blackboard-container">
-                        <div class="blackboard-frame">
-                            <div id="blackboard-content" class="blackboard horizontal" contenteditable="true" spellcheck="false">
+                        <div class="blackboard-frame" style="position: relative;">
+                            <div id="blackboard-content" class="blackboard horizontal" contenteditable="true" spellcheck="false" style="position: relative; z-index: 1;">
                                 <!-- Content will be populated by JS -->
                             </div>
+                            <canvas id="comm-draw-canvas" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 2; border-radius: 12px;"></canvas>
                         </div>
                         <div class="blackboard-controls" style="margin-top: 0.5rem; display:flex; gap:0.3rem; flex-wrap:wrap; align-items:center;">
                             <button class="btn-secondary btn-icon-sm" id="btn-toggle-writing-mode" title="切換橫書/直書">
@@ -337,18 +338,30 @@
                                 <option value="huninn">粉圓注音體</option>
                                 <option value="kaiti">標楷體</option>
                             </select>
-                            <!-- Text colour buttons -->
+                            <!-- Text format buttons -->
                             <div style="display:flex; gap:0.2rem; align-items:center; border-left:1px solid rgba(255,255,255,0.2); padding-left:0.3rem;">
-                                <button class="btn-icon-sm" id="btn-color-red" title="紅色文字" style="background:#e8192c; color:#fff; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.78rem; padding:0.3rem 0.55rem;">A</button>
-                                <button class="btn-icon-sm" id="btn-color-yellow" title="黃色文字" style="background:#ffd600; color:#333; border:none; border-radius:6px; cursor:pointer; font-weight:bold; font-size:0.78rem; padding:0.3rem 0.55rem;">A</button>
-                                <button class="btn-icon-sm" id="btn-color-reset" title="恢復預設色" style="background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.3); border-radius:6px; cursor:pointer; font-size:0.72rem; padding:0.3rem 0.45rem;">黑</button>
+                                <button class="btn-secondary btn-icon-sm" id="btn-text-bold" title="粗體">
+                                    <i data-lucide="bold"></i>
+                                </button>
+                                <div style="display:flex; gap:0.2rem; align-items:center; border-left:1px solid rgba(255,255,255,0.2); padding-left:0.3rem; margin-left: 0.2rem;">
+                                    <input type="color" id="comm-draw-color" value="#ffd600" title="選擇畫筆顏色" style="width: 24px; height: 24px; padding: 0; border: none; background: transparent; cursor: pointer; border-radius: 4px;">
+                                    <button class="btn-secondary btn-icon-sm" id="btn-comm-draw-pen" title="畫筆模式"><i data-lucide="pen-tool"></i></button>
+                                    <button class="btn-secondary btn-icon-sm" id="btn-comm-draw-highlighter" title="螢光筆模式"><i data-lucide="highlighter"></i></button>
+                                    <button class="btn-secondary btn-icon-sm" id="btn-comm-draw-eraser" title="畫筆橡皮擦"><i data-lucide="eraser"></i></button>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
                     <div class="attendance-grid-container" id="comm-attendance-container">
-                        <h3>學生上學簽到</h3>
-                        <div class="comm-attendance-grid" id="comm-attendance-grid">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                            <h3 style="margin: 0;">學生上學簽到</h3>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn-secondary btn-icon-sm" id="btn-comm-att-zoom-in" title="放大學生名單" style="padding: 0.3rem;"><i data-lucide="zoom-in"></i></button>
+                                <button class="btn-secondary btn-icon-sm" id="btn-comm-att-zoom-out" title="縮小學生名單" style="padding: 0.3rem;"><i data-lucide="zoom-out"></i></button>
+                            </div>
+                        </div>
+                        <div class="comm-attendance-grid" id="comm-attendance-grid" style="transition: all 0.3s;">
                             <!-- Populated by JS -->
                         </div>
                         <div class="comm-f11-note">
@@ -391,7 +404,7 @@
                         <i data-lucide="book-marked" style="width:48px; height:48px; color:white; flex-shrink:0;"></i>
                         <div>
                             <h2 style="margin:0; color:white; font-size:1.6rem;">SmartClass 使用說明</h2>
-                            <p style="margin:0.3rem 0 0; color:rgba(255,255,255,0.8); font-size:0.95rem;">Version 6.3 ｜ 奕鈞老師製作</p>
+                            <p style="margin:0.3rem 0 0; color:rgba(255,255,255,0.8); font-size:0.95rem;">Version 6.4 ｜ 奕鈞老師製作</p>
                         </div>
                     </div>
 
@@ -535,7 +548,7 @@
 
             <!-- Footer Copyright -->
             <footer class="bottom-footer">
-                <p>奕鈞老師製作 © 2026 | Version 6.3</p>
+                <p>奕鈞老師製作 © 2026 | Version 6.4</p>
             </footer>
         </main>
     </div>
@@ -544,7 +557,10 @@
     <!-- Random Picker Modal -->
     <div id="random-picker-modal" class="modal">
         <div class="modal-content">
-            <span class="close" data-modal="random-picker-modal">&times;</span>
+            <div style="position: absolute; right: 1.5rem; top: 1.5rem; display: flex; gap: 0.5rem; z-index: 10;">
+                <button class="btn-secondary btn-icon-sm btn-minimize" style="padding: 0.3rem 0.6rem; border-radius: 6px;" title="暫時返回，不中斷功能" data-modal="random-picker-modal">暫時返回 <i data-lucide="minimize-2" style="width:14px;height:14px;"></i></button>
+                <span class="close" data-modal="random-picker-modal" style="position: static; font-size: 1.8rem;">&times;</span>
+            </div>
             <div class="modal-header">
                 <i data-lucide="sparkles"></i>
                 <h2>幸運抽籤</h2>
@@ -563,7 +579,10 @@
     <!-- Buzzer Modal -->
     <div id="buzzer-modal" class="modal">
         <div class="modal-content">
-            <span class="close" data-modal="buzzer-modal">&times;</span>
+            <div style="position: absolute; right: 1.5rem; top: 1.5rem; display: flex; gap: 0.5rem; z-index: 10;">
+                <button class="btn-secondary btn-icon-sm btn-minimize" style="padding: 0.3rem 0.6rem; border-radius: 6px;" title="暫時返回，不中斷功能" data-modal="buzzer-modal">暫時返回 <i data-lucide="minimize-2" style="width:14px;height:14px;"></i></button>
+                <span class="close" data-modal="buzzer-modal" style="position: static; font-size: 1.8rem;">&times;</span>
+            </div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                 <h2>超級搶答王 (老師端)</h2>
                 <div id="contest-status-badge" style="background: var(--bg-dark); padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.85rem; color: var(--text-muted);">
@@ -594,7 +613,10 @@
     <!-- Advanced Timer Modal -->
     <div id="timer-modal" class="modal">
         <div class="modal-content">
-            <span class="close" data-modal="timer-modal">&times;</span>
+            <div style="position: absolute; right: 1.5rem; top: 1.5rem; display: flex; gap: 0.5rem; z-index: 10;">
+                <button class="btn-secondary btn-icon-sm btn-minimize" style="padding: 0.3rem 0.6rem; border-radius: 6px;" title="暫時返回，不中斷功能" data-modal="timer-modal">暫時返回 <i data-lucide="minimize-2" style="width:14px;height:14px;"></i></button>
+                <span class="close" data-modal="timer-modal" style="position: static; font-size: 1.8rem;">&times;</span>
+            </div>
             <h2>專業計時器</h2>
             <div style="font-size: 5rem; text-align: center; margin: 2rem 0; font-weight: bold;" id="adv-timer-display">00:00</div>
             <div style="display: flex; gap: 1rem; justify-content: center; margin-bottom: 1rem;">
@@ -608,8 +630,15 @@
     <!-- Noise Meter Modal -->
     <div id="noise-modal" class="modal">
         <div class="modal-content">
-            <span class="close" data-modal="noise-modal">&times;</span>
+            <div style="position: absolute; right: 1.5rem; top: 1.5rem; display: flex; gap: 0.5rem; z-index: 10;">
+                <button class="btn-secondary btn-icon-sm btn-minimize" style="padding: 0.3rem 0.6rem; border-radius: 6px;" title="暫時返回，不中斷功能" data-modal="noise-modal">暫時返回 <i data-lucide="minimize-2" style="width:14px;height:14px;"></i></button>
+                <span class="close" data-modal="noise-modal" style="position: static; font-size: 1.8rem;">&times;</span>
+            </div>
             <h2>分貝監控器</h2>
+            <div style="display: flex; justify-content: center; align-items: center; margin-top: 1rem; width: 100%;">
+                <label style="color:var(--text-muted); margin-right: 1rem;">靈敏度 <span id="noise-sens-val">1.0</span>x</label>
+                <input type="range" id="noise-sensitivity" min="0.1" max="3" step="0.1" value="1" style="width: 200px;">
+            </div>
             <div class="noise-meter-container" style="height: 40px; background: rgba(0,0,0,0.3); border-radius: 20px; overflow: hidden; margin: 2rem 0;">
                 <div id="noise-level" style="height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #f59e0b, #ef4444); transition: width 0.3s;"></div>
             </div>
@@ -621,7 +650,10 @@
     <!-- Whiteboard Modal -->
     <div id="whiteboard-modal" class="modal">
         <div class="modal-content" style="max-width: 100%; width: 100%; height: 100%; border-radius: 0; padding: 1rem; display: flex; flex-direction: column;">
-            <span class="close" data-modal="whiteboard-modal" style="z-index: 10;">&times;</span>
+            <div style="position: absolute; right: 1.5rem; top: 1rem; display: flex; gap: 0.5rem; z-index: 10;">
+                <button class="btn-secondary btn-icon-sm btn-minimize" style="padding: 0.3rem 0.6rem; border-radius: 6px;" title="暫時返回，不中斷功能" data-modal="whiteboard-modal">暫時返回 <i data-lucide="minimize-2" style="width:14px;height:14px;"></i></button>
+                <span class="close" data-modal="whiteboard-modal" style="position: static; font-size: 1.8rem;">&times;</span>
+            </div>
             <h2 style="margin-bottom: 0.5rem; flex-shrink: 0;">簡易白板</h2>
             <canvas id="whiteboard-canvas" style="flex-grow: 1; min-height: 0; background: white; border-radius: 12px; cursor: crosshair; touch-action: none; width: 100%;"></canvas>
             <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center; flex-shrink: 0; padding-bottom: 1rem;">
@@ -637,7 +669,10 @@
     <!-- Dice Modal -->
     <div id="dice-modal" class="modal">
         <div class="modal-content" style="text-align: center;">
-            <span class="close" data-modal="dice-modal">&times;</span>
+            <div style="position: absolute; right: 1.5rem; top: 1.5rem; display: flex; gap: 0.5rem; z-index: 10;">
+                <button class="btn-secondary btn-icon-sm btn-minimize" style="padding: 0.3rem 0.6rem; border-radius: 6px;" title="暫時返回，不中斷功能" data-modal="dice-modal">暫時返回 <i data-lucide="minimize-2" style="width:14px;height:14px;"></i></button>
+                <span class="close" data-modal="dice-modal" style="position: static; font-size: 1.8rem;">&times;</span>
+            </div>
             <h2>投擲骰子</h2>
             <div id="dice-display" style="font-size: 8rem; margin: 2rem 0; color: var(--primary);">⚀</div>
             <button class="btn-primary btn-large" id="btn-roll-dice">投擲</button>
@@ -647,7 +682,10 @@
     <!-- Link Broadcast Modal -->
     <div id="link-modal" class="modal">
         <div class="modal-content">
-            <span class="close" data-modal="link-modal">&times;</span>
+            <div style="position: absolute; right: 1.5rem; top: 1.5rem; display: flex; gap: 0.5rem; z-index: 10;">
+                <button class="btn-secondary btn-icon-sm btn-minimize" style="padding: 0.3rem 0.6rem; border-radius: 6px;" title="暫時返回，不中斷功能" data-modal="link-modal">暫時返回 <i data-lucide="minimize-2" style="width:14px;height:14px;"></i></button>
+                <span class="close" data-modal="link-modal" style="position: static; font-size: 1.8rem;">&times;</span>
+            </div>
             <h2><i data-lucide="link" style="margin-right: 0.5rem; color: var(--primary);"></i>廣播網址 (全班同步)</h2>
             <div style="margin: 2rem 0;">
                 <input type="text" id="inp-broadcast-link" placeholder="請輸入網址 (例如: https://kahoot.it)" style="width: 100%; padding: 1rem; border-radius: 12px; font-size: 1.2rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2);">
@@ -659,7 +697,10 @@
     <!-- QA Modal -->
     <div id="qa-modal" class="modal">
         <div class="modal-content" style="max-width: 800px; max-height: 80vh; display: flex; flex-direction: column;">
-            <span class="close" data-modal="qa-modal">&times;</span>
+            <div style="position: absolute; right: 1.5rem; top: 1.5rem; display: flex; gap: 0.5rem; z-index: 10;">
+                <button class="btn-secondary btn-icon-sm btn-minimize" style="padding: 0.3rem 0.6rem; border-radius: 6px;" title="暫時返回，不中斷功能" data-modal="qa-modal">暫時返回 <i data-lucide="minimize-2" style="width:14px;height:14px;"></i></button>
+                <span class="close" data-modal="qa-modal" style="position: static; font-size: 1.8rem;">&times;</span>
+            </div>
             <h2><i data-lucide="message-square" style="margin-right: 0.5rem; color: #10b981;"></i>隨堂互動測驗</h2>
             
             <div style="display: flex; gap: 1rem; margin: 1rem 0;">
@@ -682,7 +723,10 @@
     <!-- File Receive Modal -->
     <div id="file-modal" class="modal">
         <div class="modal-content" style="max-width: 800px;">
-            <span class="close" data-modal="file-modal">&times;</span>
+            <div style="position: absolute; right: 1.5rem; top: 1.5rem; display: flex; gap: 0.5rem; z-index: 10;">
+                <button class="btn-secondary btn-icon-sm btn-minimize" style="padding: 0.3rem 0.6rem; border-radius: 6px;" title="暫時返回，不中斷功能" data-modal="file-modal">暫時返回 <i data-lucide="minimize-2" style="width:14px;height:14px;"></i></button>
+                <span class="close" data-modal="file-modal" style="position: static; font-size: 1.8rem;">&times;</span>
+            </div>
             <h2><i data-lucide="upload-cloud" style="margin-right: 0.5rem; color: #f59e0b;"></i>收取學生檔案</h2>
             <button class="btn-primary" id="btn-request-files" style="width: 100%; margin: 1rem 0;">開放學生檔案上傳通道</button>
             
@@ -699,7 +743,10 @@
     <!-- Text Receive Modal -->
     <div id="text-modal" class="modal">
         <div class="modal-content" style="max-width: 800px;">
-            <span class="close" data-modal="text-modal">&times;</span>
+            <div style="position: absolute; right: 1.5rem; top: 1.5rem; display: flex; gap: 0.5rem; z-index: 10;">
+                <button class="btn-secondary btn-icon-sm btn-minimize" style="padding: 0.3rem 0.6rem; border-radius: 6px;" title="暫時返回，不中斷功能" data-modal="text-modal">暫時返回 <i data-lucide="minimize-2" style="width:14px;height:14px;"></i></button>
+                <span class="close" data-modal="text-modal" style="position: static; font-size: 1.8rem;">&times;</span>
+            </div>
             <h2><i data-lucide="file-text" style="margin-right: 0.5rem; color: #8b5cf6;"></i>收取學生短文通道</h2>
             <button class="btn-primary" id="btn-request-text" style="width: 100%; margin: 1rem 0;">開放學生文字輸入通道</button>
             

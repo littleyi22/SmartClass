@@ -400,8 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 escapedHtml = escapedHtml.replace(/([A-Za-z0-9.\-\/]+)/g, '<span class="tcy">$1</span>');
                 escapedHtml = escapedHtml.replace(/\n/g, '<br>');
                 
-                escapedHtml = escapedHtml.replace(/🔴([\s\S]*?)🔴/g, '<span style="color:#e8192c; font-weight:bold;">$1</span>');
-                escapedHtml = escapedHtml.replace(/🟡([\s\S]*?)🟡/g, '<span style="color:#ffd600; font-weight:bold;">$1</span>');
+                escapedHtml = escapedHtml.replace(/✱([\s\S]*?)✱/g, '<span style="font-weight:900; -webkit-text-stroke: 1px currentColor;">$1</span>');
                 
                 contentDiv.innerHTML = escapedHtml;
             } else {
@@ -418,7 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             i += m[1].length;
                         } else {
                             const ch = line[i];
-                            if (ch === '🔴' || ch === '🟡') {
+                            if (ch === '✱') {
                                 html += ch;
                             } else if (/[\u4e00-\u9fa5\u3400-\u4dbf]/.test(ch)) {
                                 html += `<ruby>${ch}<rt></rt></ruby>`;
@@ -430,8 +429,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
                 
-                html = html.replace(/🔴([\s\S]*?)🔴/g, '<span style="color:#e8192c; font-weight:bold;">$1</span>');
-                html = html.replace(/🟡([\s\S]*?)🟡/g, '<span style="color:#ffd600; font-weight:bold;">$1</span>');
+                html = html.replace(/✱([\s\S]*?)✱/g, '<span style="font-weight:900; -webkit-text-stroke: 1px currentColor;">$1</span>');
                 
                 contentDiv.innerHTML = html;
             }
@@ -444,6 +442,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const grid = document.getElementById('comm-attendance-grid');
         if (!grid) return;
         grid.innerHTML = '';
+        state.commCols = state.commCols || 4;
+        grid.style.gridTemplateColumns = `repeat(${state.commCols}, 1fr)`;
 
         currClass.students.forEach(s => {
             const box = document.createElement('div');
@@ -1641,7 +1641,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     const average = sum / bufferLength;
                     
                     // Maps RMS roughly to 0-100%
-                    const vol = Math.min(100, Math.max(0, average * 1.5));
+                    const sens = parseFloat(document.getElementById('noise-sensitivity').value) || 1.0;
+                    const vol = Math.min(100, Math.max(0, average * 1.5 * sens));
                     
                     noiseLevel.style.width = `${vol}%`;
                     if(vol < 40) { noiseStatus.textContent = "音量良好 🟢"; noiseStatus.style.color = 'var(--success)'; }
@@ -1814,6 +1815,23 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCommunicationBook();
     };
 
+    const btnCommAttZoomIn = document.getElementById('btn-comm-att-zoom-in');
+    if (btnCommAttZoomIn) {
+        btnCommAttZoomIn.onclick = () => {
+            state.commCols = Math.max(2, (state.commCols || 4) - 1);
+            saveState();
+            renderCommAttendance();
+        };
+    }
+    const btnCommAttZoomOut = document.getElementById('btn-comm-att-zoom-out');
+    if (btnCommAttZoomOut) {
+        btnCommAttZoomOut.onclick = () => {
+            state.commCols = Math.min(10, (state.commCols || 4) + 1);
+            saveState();
+            renderCommAttendance();
+        };
+    }
+
     document.getElementById('select-blackboard-font').onchange = (e) => {
         state.commFont = e.target.value;
         saveState();
@@ -1878,52 +1896,102 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- Blackboard Text Colour Buttons ---
-    function applyBlackboardColor(colorType) {
-        const board = document.getElementById('blackboard-content');
-        if (!board) return;
-        
-        const sel = window.getSelection();
-        if (!sel || sel.isCollapsed) {
-            alert('請先在黑板上選取要上色的文字。');
-            return;
-        }
-        
-        const text = sel.toString();
-        let cleanText = text.replace(/[🔴🟡]/g, '');
-        let wrappedText = cleanText;
-        if (colorType === 'red') {
-            wrappedText = `🔴${cleanText}🔴`;
-        } else if (colorType === 'yellow') {
-            wrappedText = `🟡${cleanText}🟡`;
-        }
-        
-        document.execCommand('insertText', false, wrappedText);
-        
-        const currClass = getCurrentClass();
-        if (currClass) {
-            currClass.homework = board.innerText;
-            saveState();
-            saveDailyRecord();
-            renderCommunicationBook();
-        }
+    // --- Blackboard Text Format & Canvas ---
+    const btnTextBold = document.getElementById('btn-text-bold');
+    if (btnTextBold) {
+        btnTextBold.onmousedown = (e) => { 
+            e.preventDefault(); 
+            const board = document.getElementById('blackboard-content');
+            if (!board) return;
+            const sel = window.getSelection();
+            if (!sel || sel.isCollapsed) return alert('請先在黑板上選取要變成粗體的文字。');
+            const text = sel.toString();
+            let cleanText = text.replace(/✱/g, '');
+            document.execCommand('insertText', false, `✱${cleanText}✱`);
+            const currClass = getCurrentClass();
+            if (currClass) {
+                currClass.homework = board.innerText;
+                saveState();
+                saveDailyRecord();
+                renderCommunicationBook();
+            }
+        };
     }
 
-    const btnColorRed = document.getElementById('btn-color-red');
-    const btnColorYellow = document.getElementById('btn-color-yellow');
-    const btnColorReset = document.getElementById('btn-color-reset');
+    // Canvas Drawing Logic
+    const commCanvas = document.getElementById('comm-draw-canvas');
+    if (commCanvas) {
+        const cCtx = commCanvas.getContext('2d');
+        let isDrawing = false;
+        let cMode = 'none'; 
+        let lastX = 0, lastY = 0;
+        
+        function resizeCommCanvas() {
+            commCanvas.width = commCanvas.offsetWidth;
+            commCanvas.height = commCanvas.offsetHeight;
+        }
+        
+        const setColorMode = (mode) => {
+            cMode = mode;
+            if (mode === 'none') {
+                commCanvas.style.pointerEvents = 'none';
+            } else {
+                commCanvas.style.pointerEvents = 'auto';
+                if(commCanvas.width === 0 || commCanvas.width === 300) resizeCommCanvas(); // ensure canvas size matches
+            }
+        };
 
-    if (btnColorRed) {
-        btnColorRed.onmousedown = (e) => { e.preventDefault(); applyBlackboardColor('red'); };
-        btnColorRed.onclick = null;
-    }
-    if (btnColorYellow) {
-        btnColorYellow.onmousedown = (e) => { e.preventDefault(); applyBlackboardColor('yellow'); };
-        btnColorYellow.onclick = null;
-    }
-    if (btnColorReset) {
-        btnColorReset.onmousedown = (e) => { e.preventDefault(); applyBlackboardColor('reset'); };
-        btnColorReset.onclick = null;
+        const btnPen = document.getElementById('btn-comm-draw-pen');
+        const btnHighlighter = document.getElementById('btn-comm-draw-highlighter');
+        const btnEraser = document.getElementById('btn-comm-draw-eraser');
+
+        if(btnPen) btnPen.onclick = () => { setColorMode(cMode === 'pen' ? 'none' : 'pen'); };
+        if(btnHighlighter) btnHighlighter.onclick = () => { setColorMode(cMode === 'highlighter' ? 'none' : 'highlighter'); };
+        if(btnEraser) btnEraser.onclick = () => { setColorMode(cMode === 'eraser' ? 'none' : 'eraser'); };
+        
+        // Listen to tab changes or window resize
+        window.addEventListener('resize', resizeCommCanvas);
+        // Observe container
+        new ResizeObserver(() => {
+            if(commCanvas.parentElement.offsetWidth > 0 && commCanvas.width !== commCanvas.parentElement.offsetWidth) resizeCommCanvas();
+        }).observe(commCanvas.parentElement);
+
+        commCanvas.onmousedown = (e) => {
+            if (cMode === 'none') return;
+            isDrawing = true;
+            const rect = commCanvas.getBoundingClientRect();
+            lastX = e.clientX - rect.left;
+            lastY = e.clientY - rect.top;
+        };
+        
+        window.addEventListener('mouseup', () => isDrawing = false);
+        
+        commCanvas.onmousemove = (e) => {
+            if (!isDrawing || cMode === 'none') return;
+            const rect = commCanvas.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+            
+            cCtx.beginPath();
+            if (cMode === 'eraser') {
+                cCtx.globalCompositeOperation = 'destination-out';
+                cCtx.lineWidth = 30;
+                cCtx.globalAlpha = 1.0;
+            } else {
+                cCtx.globalCompositeOperation = 'source-over';
+                cCtx.lineWidth = cMode === 'highlighter' ? 25 : 4;
+                cCtx.strokeStyle = document.getElementById('comm-draw-color').value;
+                cCtx.globalAlpha = cMode === 'highlighter' ? 0.35 : 1.0;
+            }
+            cCtx.lineCap = 'round';
+            cCtx.lineJoin = 'round';
+            cCtx.moveTo(lastX, lastY);
+            cCtx.lineTo(currentX, currentY);
+            cCtx.stroke();
+            
+            lastX = currentX;
+            lastY = currentY;
+        };
     }
 
     // --- Export/Import ---
@@ -1938,7 +2006,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Modal Closing ---
-    document.querySelectorAll('.close').forEach(c => {
+    document.querySelectorAll('.close, .btn-minimize').forEach(c => {
         c.onclick = () => document.getElementById(c.dataset.modal).style.display = 'none';
     });
 

@@ -839,7 +839,7 @@ rt {
 .comm-student-box {
     aspect-ratio: 1;
     background: rgba(255,255,255,0.05);
-    border: 1.5px solid rgba(255,255,255,0.25);
+    border: 2px solid rgba(255,255,255,0.4) !important;
     border-radius: 8px;
     display: flex;
     flex-direction: column;
@@ -947,6 +947,23 @@ body {
 body.theme-light, 
 body[class*="theme-macaron-"] {
     --border-color: rgba(0, 0, 0, 0.15); /* Stronger border for light/macaron modes */
+}
+
+/* Strengthen contrast for macaron completely */
+body[class*="theme-macaron-"] {
+    --text-main: #111827;
+    --text-muted: #374151;
+}
+
+/* Ensure strong borders on light themes for student boxes */
+body.theme-light .comm-student-box,
+body[class*="theme-macaron-"] .comm-student-box {
+    border: 2px solid rgba(0,0,0,0.5) !important;
+}
+
+/* Override hardcoded whites to text-main in macaron */
+body[class*="theme-macaron-"] *:not(.btn-primary):not(.btn-special):not(.btn-danger):not(.stat-icon):not(.badge):not(.avatar):not(.comm-student-box.arrived):not(.comm-student-box.absent) {
+    color: inherit; /* This will make many hardcoded inline colors cascade correctly if they use classes, but we better target specific selectors if we need to. Let's just set the root variables strongly to map down. */
 }
 
 /* Apply new border color to all card-like elements */
