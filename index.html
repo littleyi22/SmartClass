@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="main-title-tag">智慧教室助手 v.6.3</title>
+    <title id="main-title-tag">智慧教室助手 v.6.5</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -62,6 +62,10 @@
                 <li data-tab="communication">
                     <i data-lucide="book-open"></i>
                     <span>聯絡簿</span>
+                </li>
+                <li data-tab="weblinks">
+                    <i data-lucide="link"></i>
+                    <span>網站連結</span>
                 </li>
                 <li data-tab="history">
                     <i data-lucide="history"></i>
@@ -190,6 +194,9 @@
                         <button class="btn-secondary" id="btn-toggle-link-points" title="分組連動開關" style="border: 2px solid var(--secondary);">
                             <i data-lucide="link-2-off"></i> <span>分組連動: 關</span>
                         </button>
+                        <button class="btn-secondary" id="btn-lock-scores1" title="分數鎖定" style="border: 2px solid var(--danger);">
+                            <i data-lucide="unlock"></i> <span id="text-lock-scores1">未鎖定</span>
+                        </button>
                     </div>
                 </div>
                 <div class="student-grid" id="student-grid">
@@ -234,6 +241,9 @@
                         <i data-lucide="hand"></i> 手動微調
                     </button>
                     <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                        <button class="btn-secondary" id="btn-lock-scores2" title="分數鎖定" style="border: 2px solid var(--danger); padding: 0.5rem 1rem;">
+                            <i data-lucide="unlock"></i> <span id="text-lock-scores2">未鎖定</span>
+                        </button>
                         <button class="btn-special" id="btn-pick-group" style="padding: 0.5rem 1rem;">抽小組</button>
                         <button class="btn-special" id="btn-pick-group-student" style="padding: 0.5rem 1rem;">抽組員</button>
                     </div>
@@ -296,6 +306,37 @@
                         <h3>收取檔案</h3>
                         <p>學生專屬上傳通道</p>
                     </div>
+                </div>
+            </section>
+
+            <!-- Tab: Web Links -->
+            <section id="weblinks-tab" class="tab-content">
+                <div class="tools-grid">
+                    <a href="https://littleyi22.github.io/class-management-kit/" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block;">
+                        <div class="tool-icon" style="color: #3b82f6;"><i data-lucide="briefcase"></i></div>
+                        <h3>班級經營助手</h3>
+                        <p>實用班級經營工具</p>
+                    </a>
+                    <a href="https://littleyi22.github.io/PDF01/" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block;">
+                        <div class="tool-icon" style="color: #ef4444;"><i data-lucide="file-minus"></i></div>
+                        <h3>PDF 拆分合併</h3>
+                        <p>輕鬆處理 PDF 檔案</p>
+                    </a>
+                    <a href="https://littleyi22.github.io/exam-countdown-timer/" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block;">
+                        <div class="tool-icon" style="color: #f59e0b;"><i data-lucide="clock"></i></div>
+                        <h3>會考倒數計時器</h3>
+                        <p>掌握會考時程</p>
+                    </a>
+                    <a href="https://littleyi22.github.io/line-class/" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block;">
+                        <div class="tool-icon" style="color: #10b981;"><i data-lucide="message-circle"></i></div>
+                        <h3>班級事務通知</h3>
+                        <p>Line 小幫手</p>
+                    </a>
+                    <a href="https://littleyi22.github.io/classroom-screen/" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block;">
+                        <div class="tool-icon" style="color: #8b5cf6;"><i data-lucide="calendar"></i></div>
+                        <h3>段考時程表</h3>
+                        <p>段考時間管理</p>
+                    </a>
                 </div>
             </section>
 
@@ -404,7 +445,7 @@
                         <i data-lucide="book-marked" style="width:48px; height:48px; color:white; flex-shrink:0;"></i>
                         <div>
                             <h2 style="margin:0; color:white; font-size:1.6rem;">SmartClass 使用說明</h2>
-                            <p style="margin:0.3rem 0 0; color:rgba(255,255,255,0.8); font-size:0.95rem;">Version 6.4 ｜ 奕鈞老師製作</p>
+                            <p style="margin:0.3rem 0 0; color:rgba(255,255,255,0.8); font-size:0.95rem;">Version 6.5 ｜ 奕鈞老師製作</p>
                         </div>
                     </div>
 
@@ -548,7 +589,7 @@
 
             <!-- Footer Copyright -->
             <footer class="bottom-footer">
-                <p>奕鈞老師製作 © 2026 | Version 6.4</p>
+                <p>奕鈞老師製作 © 2026 | Version 6.5</p>
             </footer>
         </main>
     </div>
@@ -868,6 +909,14 @@
                 </div>
             </div>
             <div class="settings-group">
+                <label>分數鎖定密碼</label>
+                <div class="input-with-button">
+                    <input type="password" id="settings-lock-password" placeholder="留空代表不需密碼" style="flex:1;">
+                    <button class="btn-secondary" id="btn-apply-password">設定</button>
+                </div>
+                <p style="color:var(--text-muted); font-size:0.8rem; margin-top:0.3rem;">忘記密碼可從「匯出資料」裡的 scoreLockPassword 尋找。</p>
+            </div>
+            <div class="settings-group">
                 <label>選擇介面風格 (五種模式)</label>
                 <div class="theme-selector">
                     <button class="theme-btn default" data-theme="default" title="深邃午夜"></button>
@@ -914,6 +963,18 @@
                     <button class="btn-danger" id="btn-clear-all" style="width: 100%;">清除所有資料</button>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- Unlock Modal -->
+    <div id="unlock-modal" class="modal">
+        <div class="modal-content" style="text-align: center; max-width: 400px;">
+            <span class="close" data-modal="unlock-modal">&times;</span>
+            <h2><i data-lucide="lock" style="color: var(--danger); margin-right: 0.5rem;"></i>解除分數鎖定</h2>
+            <div style="margin: 2rem 0;">
+                <input type="password" id="inp-unlock-password" placeholder="請輸入解鎖密碼" style="width: 100%; padding: 1rem; border-radius: 12px; font-size: 1.2rem; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2);">
+            </div>
+            <button class="btn-primary" id="btn-submit-unlock" style="width: 100%;">確認解鎖</button>
         </div>
     </div>
 

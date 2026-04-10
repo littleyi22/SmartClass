@@ -72,6 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
         commFontSize: parseFloat(localStorage.getItem('sc_v3_comm_font_size')) || 1.8,
         history: JSON.parse(localStorage.getItem('sc_v3_history')) || {},
         sheetsId: localStorage.getItem('sc_v3_sheets_id') || '',
+        scoreLocked: localStorage.getItem('sc_v3_score_locked') === 'true',
+        scoreLockPassword: localStorage.getItem('sc_v3_score_pwd') || '',
         user: null,
         timer: { seconds: 0, active: false, interval: null }
     };
@@ -114,6 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('sc_v3_comm_font_size', state.commFontSize);
         localStorage.setItem('sc_v3_history', JSON.stringify(state.history));
         localStorage.setItem('sc_v3_sheets_id', state.sheetsId);
+        localStorage.setItem('sc_v3_score_locked', state.scoreLocked);
+        localStorage.setItem('sc_v3_score_pwd', state.scoreLockPassword);
         if (typeof updateDashboard === 'function') updateDashboard();
     }
 
@@ -804,6 +808,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.modS = (id, val) => {
+        if (state.scoreLocked) {
+            alert("分數操作已鎖定！若需修改請先解鎖。");
+            return;
+        }
         const currClass = getCurrentClass();
         const s = currClass.students.find(x => x.id === id);
         if (s) {
@@ -970,6 +978,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     document.getElementById('btn-reset-scores').onclick = () => {
+        if (state.scoreLocked) {
+            alert("分數操作已鎖定！若需重置請先解鎖。");
+            return;
+        }
         if(confirm("確定要將全班分數歸零嗎？")) {
             const currClass = getCurrentClass();
             currClass.students.forEach(s => s.score = 0);
@@ -1263,6 +1275,10 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     window.modGroupS = (gIdx, val) => {
+        if (state.scoreLocked) {
+            alert("分數操作已鎖定！若需修改請先解鎖。");
+            return;
+        }
         const currClass = getCurrentClass();
         if(!currClass.groupScores) currClass.groupScores = new Array(currClass.groups ? currClass.groups.length : 10).fill(0);
         currClass.groupScores[gIdx] = (currClass.groupScores[gIdx] || 0) + val;
@@ -2182,6 +2198,71 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Score Lock Logic ---
+    function updateLockUI() {
+        const btn1 = document.getElementById('btn-lock-scores1');
+        const text1 = document.getElementById('text-lock-scores1');
+        const btn2 = document.getElementById('btn-lock-scores2');
+        const text2 = document.getElementById('text-lock-scores2');
+        
+        if (state.scoreLocked) {
+            if(btn1) { btn1.innerHTML = '<i data-lucide="lock"></i> <span>鎖定中</span>'; btn1.style.background = 'var(--danger)'; btn1.style.color = 'white'; }
+            if(btn2) { btn2.innerHTML = '<i data-lucide="lock"></i> <span>鎖定中</span>'; btn2.style.background = 'var(--danger)'; btn2.style.color = 'white'; }
+        } else {
+            if(btn1) { btn1.innerHTML = '<i data-lucide="unlock"></i> <span>未鎖定</span>'; btn1.style.background = ''; btn1.style.color = ''; }
+            if(btn2) { btn2.innerHTML = '<i data-lucide="unlock"></i> <span>未鎖定</span>'; btn2.style.background = ''; btn2.style.color = ''; }
+        }
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
+    
+    function toggleScoreLock() {
+        if (state.scoreLocked) {
+            if (state.scoreLockPassword) {
+                document.getElementById('inp-unlock-password').value = '';
+                document.getElementById('unlock-modal').style.display = 'flex';
+            } else {
+                state.scoreLocked = false;
+                saveState();
+                updateLockUI();
+                addActivity(`分數已解除鎖定`);
+            }
+        } else {
+            state.scoreLocked = true;
+            saveState();
+            updateLockUI();
+            addActivity(`分數已鎖定`);
+        }
+    }
+    
+    if(document.getElementById('btn-lock-scores1')) document.getElementById('btn-lock-scores1').onclick = toggleScoreLock;
+    if(document.getElementById('btn-lock-scores2')) document.getElementById('btn-lock-scores2').onclick = toggleScoreLock;
+    
+    const unlockModal = document.getElementById('unlock-modal');
+    if(document.getElementById('btn-submit-unlock')) {
+        document.getElementById('btn-submit-unlock').onclick = () => {
+            const pwd = document.getElementById('inp-unlock-password').value;
+            if (pwd === state.scoreLockPassword) {
+                state.scoreLocked = false;
+                saveState();
+                updateLockUI();
+                unlockModal.style.display = 'none';
+                addActivity(`分數已解除鎖定`);
+            } else {
+                alert("密碼錯誤！");
+            }
+        };
+    }
+    if(document.getElementById('settings-lock-password')) {
+        document.getElementById('settings-lock-password').value = state.scoreLockPassword;
+    }
+    if(document.getElementById('btn-apply-password')) {
+        document.getElementById('btn-apply-password').onclick = () => {
+            state.scoreLockPassword = document.getElementById('settings-lock-password').value;
+            saveState();
+            alert("鎖定密碼已更新！忘記密碼請從匯出資料JSON尋找。");
+        };
+    }
+
     // --- Final Initialization ---
 
     const globalDateSelect = document.getElementById('global-date-select');
@@ -2215,5 +2296,6 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDashboard();
     applyTheme();
     updateLinkPointsUI();
+    updateLockUI();
     lucide.createIcons();
 });
