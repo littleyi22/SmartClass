@@ -72,7 +72,7 @@ document.addEventListener('DOMContentLoaded', () => {
         commFontSize: parseFloat(localStorage.getItem('sc_v3_comm_font_size')) || 1.8,
         history: JSON.parse(localStorage.getItem('sc_v3_history')) || {},
         sheetsId: localStorage.getItem('sc_v3_sheets_id') || '',
-        scoreLocked: localStorage.getItem('sc_v3_score_locked') === 'true',
+        scoreLocked: !!localStorage.getItem('sc_v3_score_pwd') || localStorage.getItem('sc_v3_score_locked') === 'true',
         scoreLockPassword: localStorage.getItem('sc_v3_score_pwd') || '',
         user: null,
         timer: { seconds: 0, active: false, interval: null }
@@ -1960,10 +1960,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnPen = document.getElementById('btn-comm-draw-pen');
         const btnHighlighter = document.getElementById('btn-comm-draw-highlighter');
         const btnEraser = document.getElementById('btn-comm-draw-eraser');
+        const btnClearAll = document.getElementById('btn-comm-draw-clear-all');
 
         if(btnPen) btnPen.onclick = () => { setColorMode(cMode === 'pen' ? 'none' : 'pen'); };
         if(btnHighlighter) btnHighlighter.onclick = () => { setColorMode(cMode === 'highlighter' ? 'none' : 'highlighter'); };
         if(btnEraser) btnEraser.onclick = () => { setColorMode(cMode === 'eraser' ? 'none' : 'eraser'); };
+        if(btnClearAll) btnClearAll.onclick = () => {
+            if(confirm('確定要擦除黑板上的所有畫筆嗎？')) {
+                cCtx.clearRect(0, 0, commCanvas.width, commCanvas.height);
+            }
+        };
         
         // Listen to tab changes or window resize
         window.addEventListener('resize', resizeCommCanvas);

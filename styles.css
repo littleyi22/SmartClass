@@ -702,7 +702,7 @@ header {
 .communication-layout {
     display: flex;
     gap: 1.5rem;
-    height: calc(100vh - 155px);
+    height: calc(100vh - 90px);
 }
 
 .blackboard-container {
@@ -748,7 +748,7 @@ header {
     background: #1b3022; /* Blackboard green */
     border-radius: 4px;
     padding: 40px;
-    color: rgba(255, 255, 255, 0.9);
+    color: #ffffff !important;
     font-size: 1.8rem;
     line-height: 2;
     overflow: auto;
