@@ -189,6 +189,7 @@
                     <div class="action-buttons">
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(20)" title="放大"><i data-lucide="zoom-in"></i></button>
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(-20)" title="縮小"><i data-lucide="zoom-out"></i></button>
+                        <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="簽到音效: 開"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
                         <button class="btn-secondary" id="btn-download-template" title="下載Excel範例檔">
                             <i data-lucide="download"></i> 範例下載
                         </button>
@@ -232,6 +233,7 @@
                     <div class="action-buttons">
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(20)" title="放大"><i data-lucide="zoom-in"></i></button>
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(-20)" title="縮小"><i data-lucide="zoom-out"></i></button>
+                        <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="簽到音效: 開"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
                         <button class="btn-secondary" id="btn-export-attendance"><i data-lucide="download"></i> 匯出今日點名 (Excel)</button>
                         <button class="btn-secondary" id="btn-reset-attendance">重置今日點名</button>
                     </div>
@@ -248,6 +250,7 @@
                     <div class="action-buttons">
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(20)" title="放大"><i data-lucide="zoom-in"></i></button>
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(-20)" title="縮小"><i data-lucide="zoom-out"></i></button>
+                        <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="簽到音效: 開"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
                     </div>
                 </div>
                 <div class="student-grid" id="course-attendance-grid">
@@ -409,6 +412,7 @@
                             <div style="display: flex; gap: 0.5rem;">
                                 <button class="btn-secondary btn-icon-sm" id="btn-comm-att-zoom-in" title="放大學生名單" style="padding: 0.3rem;"><i data-lucide="zoom-in"></i></button>
                                 <button class="btn-secondary btn-icon-sm" id="btn-comm-att-zoom-out" title="縮小學生名單" style="padding: 0.3rem;"><i data-lucide="zoom-out"></i></button>
+                                <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="簽到音效: 開" style="padding: 0.3rem;"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
                             </div>
                         </div>
                         <div class="comm-attendance-grid" id="comm-attendance-grid" style="transition: all 0.3s;">
@@ -1058,6 +1062,9 @@
     <audio id="audio-reward-2" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" preload="auto"></audio>
     <audio id="audio-reward-3" src="https://www.soundjay.com/misc/sounds/magic-chime-02.mp3" preload="auto"></audio>
     <audio id="audio-timer-end" src="https://www.soundjay.com/bell/sounds/bell-ringing-05.mp3" preload="auto"></audio>
+    <audio id="audio-checkin-1" src="powerup03.mp3" preload="auto"></audio>
+    <audio id="audio-checkin-2" src="powerup10.mp3" preload="auto"></audio>
+    <audio id="audio-checkin-3" src="coin05.mp3" preload="auto"></audio>
 
     <!-- Scripts -->
     <script src="script.js"></script>

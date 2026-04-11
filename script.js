@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
         scoreLockPassword: localStorage.getItem('sc_v3_score_pwd') || '',
         customLinks: JSON.parse(localStorage.getItem('sc_v3_custom_links')) || [],
         courseAttPrefs: localStorage.getItem('sc_v3_course_att_prefs') || '1,國語,08:40,45\n2,數學,09:30,45',
+        checkinSoundEnabled: localStorage.getItem('sc_v3_checkin_sound') !== 'false',
         user: null,
         timer: { seconds: 0, active: false, interval: null }
     };
@@ -122,6 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('sc_v3_score_pwd', state.scoreLockPassword);
         localStorage.setItem('sc_v3_custom_links', JSON.stringify(state.customLinks));
         localStorage.setItem('sc_v3_course_att_prefs', state.courseAttPrefs);
+        localStorage.setItem('sc_v3_checkin_sound', state.checkinSoundEnabled);
         if (typeof updateDashboard === 'function') updateDashboard();
     }
 
@@ -170,6 +172,31 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Create initial style block for default zoom to prevent flash
     setTimeout(() => { window.setGridZoom(0); }, 100);
+
+    window.toggleCheckinSound = () => {
+        state.checkinSoundEnabled = !state.checkinSoundEnabled;
+        saveState();
+        if (typeof updateCheckinSoundUI === 'function') updateCheckinSoundUI();
+        addActivity(`簽到音效已${state.checkinSoundEnabled ? '開啟' : '關閉'}`);
+    };
+
+    function updateCheckinSoundUI() {
+        document.querySelectorAll('.btn-sound-toggle').forEach(btn => {
+            const icon = btn.querySelector('.icon-sound-toggle');
+            if (state.checkinSoundEnabled) {
+                if (icon) icon.setAttribute('data-lucide', 'volume-2');
+                btn.title = '簽到音效: 開';
+                btn.style.color = 'white';
+                btn.style.border = '2px solid var(--success)';
+            } else {
+                if (icon) icon.setAttribute('data-lucide', 'volume-x');
+                btn.title = '簽到音效: 關';
+                btn.style.color = '';
+                btn.style.border = '';
+            }
+        });
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+    }
 
     function initWhiteboard() {
         const c = document.getElementById('whiteboard-canvas');
@@ -947,10 +974,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         } else {
                             confetti({ particleCount: 150, spread: 60, origin: { y: 0.6 }, drift: 0 }); 
                         }
-                        
-                        const snds = ['reward-1', 'reward-2', 'reward-3'];
-                        const sndId = snds[Math.floor(Math.random() * snds.length)];
-                        if(typeof playSound === 'function') playSound(sndId);
+                        if (state.checkinSoundEnabled) {
+                            const snds = ['checkin-1', 'checkin-2', 'checkin-3'];
+                            const sndId = snds[Math.floor(Math.random() * snds.length)];
+                            if(typeof playSound === 'function') playSound(sndId);
+                        }
                     }
                 }
             } else {
@@ -2593,10 +2621,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         confetti({ particleCount: 150, spread: 60, origin: { y: 0.6 }, drift: 0 }); 
                     }
-                    
-                    const snds = ['reward-1', 'reward-2', 'reward-3'];
-                    const sndId = snds[Math.floor(Math.random() * snds.length)];
-                    if (typeof playSound === 'function') playSound(sndId);
+                    if (state.checkinSoundEnabled) {
+                        const snds = ['checkin-1', 'checkin-2', 'checkin-3'];
+                        const sndId = snds[Math.floor(Math.random() * snds.length)];
+                        if (typeof playSound === 'function') playSound(sndId);
+                    }
                 }
             }
         }
@@ -2683,5 +2712,6 @@ document.addEventListener('DOMContentLoaded', () => {
     applyTheme();
     updateLinkPointsUI();
     updateLockUI();
+    if (typeof updateCheckinSoundUI === 'function') updateCheckinSoundUI();
     lucide.createIcons();
 });
