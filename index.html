@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="main-title-tag">智慧教室助手 v.6.5</title>
+    <title id="main-title-tag">智慧教室助手 v.6.7</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -27,10 +27,13 @@
 
     <div class="app-container">
         <!-- Sidebar Navigation -->
-        <nav class="sidebar">
-            <div class="logo">
-                <i data-lucide="graduation-cap"></i>
-                <span id="brand-name">SmartClass</span>
+        <nav class="sidebar" id="main-sidebar">
+            <div class="logo" style="flex-direction: column; align-items: flex-start; justify-content: flex-start; margin-bottom: 2rem;">
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <i data-lucide="graduation-cap"></i>
+                    <span id="brand-name">SmartClass</span>
+                </div>
+                <button id="btn-toggle-sidebar" class="btn-secondary" style="margin-top:0.5rem; padding: 0.2rem 0.5rem; font-size: 0.75rem; background: transparent; border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; color: var(--text-muted); cursor: pointer;"><span id="sidebar-toggle-text">收起</span></button>
             </div>
             
             <div class="class-selector" style="margin-top: 0.5rem;">
@@ -50,6 +53,10 @@
                 <li data-tab="attendance">
                     <i data-lucide="clipboard-check"></i>
                     <span>點名簿</span>
+                </li>
+                <li data-tab="course-attendance">
+                    <i data-lucide="calendar-check-2"></i>
+                    <span>課堂點名</span>
                 </li>
                 <li data-tab="groups">
                     <i data-lucide="users-2"></i>
@@ -180,6 +187,8 @@
                         <input type="text" id="student-search-input" placeholder="搜尋學生...">
                     </div>
                     <div class="action-buttons">
+                        <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(20)" title="放大"><i data-lucide="zoom-in"></i></button>
+                        <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(-20)" title="縮小"><i data-lucide="zoom-out"></i></button>
                         <button class="btn-secondary" id="btn-download-template" title="下載Excel範例檔">
                             <i data-lucide="download"></i> 範例下載
                         </button>
@@ -212,24 +221,46 @@
 
             <!-- Tab: Attendance -->
             <section id="attendance-tab" class="tab-content">
-                <div class="student-toolbar">
+                <div class="student-grid" id="attendance-grid">
+                    <!-- Cards will be populated here -->
+                </div>
+                <div class="student-toolbar" style="margin-top: 1.5rem; margin-bottom: 0;">
                     <div class="search-box">
                         <i data-lucide="search"></i>
                         <input type="text" id="attendance-search-input" placeholder="搜尋學生...">
                     </div>
                     <div class="action-buttons">
+                        <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(20)" title="放大"><i data-lucide="zoom-in"></i></button>
+                        <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(-20)" title="縮小"><i data-lucide="zoom-out"></i></button>
                         <button class="btn-secondary" id="btn-export-attendance"><i data-lucide="download"></i> 匯出今日點名 (Excel)</button>
                         <button class="btn-secondary" id="btn-reset-attendance">重置今日點名</button>
                     </div>
                 </div>
-                <div class="student-grid" id="attendance-grid">
+            </section>
+
+            <!-- Tab: Course Attendance -->
+            <section id="course-attendance-tab" class="tab-content">
+                <div class="student-toolbar" style="margin-bottom: 1.5rem; justify-content: space-between; gap: 1rem;">
+                    <div class="input-group">
+                        <label style="color:var(--text-muted); font-size:0.9rem;">目前節次：</label>
+                        <select id="course-att-period-select" class="custom-select" style="width: auto; min-width: 150px;"></select>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(20)" title="放大"><i data-lucide="zoom-in"></i></button>
+                        <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(-20)" title="縮小"><i data-lucide="zoom-out"></i></button>
+                    </div>
+                </div>
+                <div class="student-grid" id="course-attendance-grid">
                     <!-- Cards will be populated here -->
                 </div>
             </section>
 
             <!-- Tab: Groups -->
             <section id="groups-tab" class="tab-content">
-                <div class="tool-header">
+                <div class="groups-container" id="groups-container">
+                    <div class="empty-state">設定組數後開始分組</div>
+                </div>
+                <div class="tool-header" style="margin-top: 2rem;">
                     <div class="input-group">
                         <label>我要分幾組？</label>
                         <input type="number" id="group-count" value="4" min="2" max="10">
@@ -247,9 +278,6 @@
                         <button class="btn-special" id="btn-pick-group" style="padding: 0.5rem 1rem;">抽小組</button>
                         <button class="btn-special" id="btn-pick-group-student" style="padding: 0.5rem 1rem;">抽組員</button>
                     </div>
-                </div>
-                <div class="groups-container" id="groups-container">
-                    <div class="empty-state">設定組數後開始分組</div>
                 </div>
             </section>
 
@@ -310,33 +338,13 @@
             </section>
 
             <!-- Tab: Web Links -->
+            <!-- Tab: Web Links -->
             <section id="weblinks-tab" class="tab-content">
-                <div class="tools-grid">
-                    <a href="https://littleyi22.github.io/class-management-kit/" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block;">
-                        <div class="tool-icon" style="color: #3b82f6;"><i data-lucide="briefcase"></i></div>
-                        <h3>班級經營助手</h3>
-                        <p>實用班級經營工具</p>
-                    </a>
-                    <a href="https://littleyi22.github.io/PDF01/" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block;">
-                        <div class="tool-icon" style="color: #ef4444;"><i data-lucide="file-minus"></i></div>
-                        <h3>PDF 拆分合併</h3>
-                        <p>輕鬆處理 PDF 檔案</p>
-                    </a>
-                    <a href="https://littleyi22.github.io/exam-countdown-timer/" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block;">
-                        <div class="tool-icon" style="color: #f59e0b;"><i data-lucide="clock"></i></div>
-                        <h3>重要時刻倒數計時</h3>
-                        <p>掌握會考時程</p>
-                    </a>
-                    <a href="https://littleyi22.github.io/line-class/" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block;">
-                        <div class="tool-icon" style="color: #10b981;"><i data-lucide="message-circle"></i></div>
-                        <h3>班級事務通知</h3>
-                        <p>Line 小幫手</p>
-                    </a>
-                    <a href="https://littleyi22.github.io/classroom-screen/" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block;">
-                        <div class="tool-icon" style="color: #8b5cf6;"><i data-lucide="calendar"></i></div>
-                        <h3>段考時程表</h3>
-                        <p>段考時間管理</p>
-                    </a>
+                <div class="tools-grid" id="weblinks-grid-container">
+                    <!-- Loaded dynamically via script.js -->
+                </div>
+                <div style="margin-top: 2rem; display: flex; justify-content: center;">
+                    <button class="btn-primary" id="btn-add-custom-link"><i data-lucide="plus"></i> 新增自訂按鈕</button>
                 </div>
             </section>
 
@@ -355,7 +363,7 @@
                                 <i data-lucide="type"></i><span id="text-writing-mode" class="btn-icon-label">切換橫書</span>
                             </button>
                             <button class="btn-secondary btn-icon-sm" id="btn-toggle-zhuyin" title="附加注音">
-                                <i data-lucide="languages"></i><span id="text-zhuyin" class="btn-icon-label">注音:關</span>
+                                <i data-lucide="languages"></i><span id="text-zhuyin" class="btn-icon-label">注音</span>
                             </button>
                             <button class="btn-secondary btn-icon-sm" id="btn-toggle-comm-attendance" title="顯示簽到格">
                                 <i data-lucide="user-check"></i><span id="text-comm-attendance" class="btn-icon-label">簽到:開</span>
@@ -446,7 +454,7 @@
                         <i data-lucide="book-marked" style="width:48px; height:48px; color:white; flex-shrink:0;"></i>
                         <div>
                             <h2 style="margin:0; color:white; font-size:1.6rem;">SmartClass 使用說明</h2>
-                            <p style="margin:0.3rem 0 0; color:rgba(255,255,255,0.8); font-size:0.95rem;">Version 6.5 ｜ 奕鈞老師製作</p>
+                            <p style="margin:0.3rem 0 0; color:rgba(255,255,255,0.8); font-size:0.95rem;">Version 6.7 ｜ 奕鈞老師製作</p>
                         </div>
                     </div>
 
@@ -460,6 +468,16 @@
                             <li>在「設置中心」自訂按鈕名稱與介面風格</li>
                             <li>課程結束後按「雲端存檔」同步備份</li>
                         </ol>
+                    </div>
+                    
+                    <div class="card" style="margin-bottom:1.5rem;">
+                        <h3 style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="sparkles" style="color:var(--primary);"></i> 今日更新 (v.6.7) 功能簡介</h3>
+                        <ul style="padding-left:1.5rem; line-height:2; color:var(--text-secondary);">
+                            <li><strong>隨機簽到特效與音效：</strong> 在早自習或課堂點名時，準時簽到會獲得隨機煙火、星星等特效，並附帶三種隨機獎勵音效，增添課堂樂趣。</li>
+                            <li><strong>課堂點名分頁與自動重置：</strong> 新增「課堂點名」功能，可於設置中心批次設定「節次、自動重置」等，當下課時間達到您設定的重置分鐘數時，系統不須手動清除，會自動保留重置給下一堂課。</li>
+                            <li><strong>介面放大縮小按鈕：</strong> 班級狀態、點名簿、課堂點名等含有名單的畫面右上方新增「放大/縮小」名單大小的按鈕，可根據螢幕與視野彈性調整。</li>
+                            <li><strong>自訂按鈕調整：</strong> 設置中心可以設定多達三個不顯示於預設按鈕的「自訂標籤(可留白)」輔助記事。</li>
+                        </ul>
                     </div>
 
                     <!-- Feature Cards -->
@@ -511,6 +529,7 @@
                                 <li>多種注音字體（粉圓、芫荽等）</li>
                                 <li>顯示學生簽到格</li>
                                 <li>編輯內容自動同步儲存</li>
+                                <li>💡 <strong>預寫/查詢聯絡簿：</strong>從上一個版本開始，聯絡簿可以選擇日期，提早書寫，也可以查詢以前的紀錄。(好像很多老師沒發現)</li>
                                 <li>💡 <strong>建議：先橫書打字</strong>，輸入完成再切換直書</li>
                                 <li>❗ 連接符請用「~」，勿用「-」以免被誤判為英數字</li>
                                 <li>🎨 可選取文字設定鮮紅 / 鮮黃強調色</li>
@@ -534,6 +553,18 @@
                             <div>
                                 <p style="color:var(--secondary); font-weight:bold; margin-bottom:0.5rem;">🏷️ 班級狀態按鈕</p>
                                 <p style="color:var(--text-secondary); font-size:0.9rem;">按鈕1-3 為常用行為標記，按鈕4 <strong>留空時自動隱藏</strong>，填入名稱後才出現在學生卡片。</p>
+                            </div>
+                            <div>
+                                <p style="color:var(--warning); font-weight:bold; margin-bottom:0.5rem;">📋 點名簿按鈕</p>
+                                <p style="color:var(--text-secondary); font-size:0.9rem;">點名1=簽到，點名2=聯絡簿，點名3=缺席。點名欄位的狀態<strong>不會</strong>出現在班級狀態卡片上。</p>
+                            </div>
+                            <div>
+                                <p style="color:var(--accent); font-weight:bold; margin-bottom:0.5rem;">🔒 鎖定分數與密碼</p>
+                                <p style="color:var(--text-secondary); font-size:0.9rem;">
+                                    自設「密碼」：設置中心密碼欄，解除鎖定需要密碼。<br>
+                                    如已設定密碼，預設開啟瀏覽器後直接鎖定班級狀態，無法改動分數。<br>
+                                    如忘記密碼，請在左下方「匯出資料」後，使用任意文字編輯軟體(WORD)開啟，尋找「password」關鍵字。奕鈞老師不會知道你的密碼😂，資料只會儲存在本機瀏覽器。
+                                </p>
                             </div>
                             <div>
                                 <p style="color:var(--warning); font-weight:bold; margin-bottom:0.5rem;">📋 點名簿按鈕</p>
@@ -589,9 +620,10 @@
             </section>
 
             <!-- Footer Copyright -->
-            <footer class="bottom-footer">
-                <p>奕鈞老師製作 © 2026 | Version 6.5</p>
-            </footer>
+            <!-- Footer with Copyright -->
+            <div class="copyright" style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 2rem;">
+                <a href="https://www.facebook.com/profile.php?id=61584090122881" target="_blank" style="color: var(--primary); text-decoration: none;">奕鈞老師</a>製作 © 2026 ｜ v.6.7
+            </div>
         </main>
     </div>
 
@@ -803,6 +835,23 @@
         </div>
     </div>
 
+    <!-- Add Custom Link Modal -->
+    <div id="add-link-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" data-modal="add-link-modal">&times;</span>
+            <h2><i data-lucide="link" style="margin-right: 0.5rem; color: var(--primary);"></i> 新增網頁連結</h2>
+            <div style="margin-top: 1rem;">
+                <label style="color: var(--text-muted); font-size: 0.9rem;">標題名稱</label>
+                <input type="text" id="inp-custom-link-title" placeholder="例如: 學校首頁" style="width:100%; padding:0.8rem; margin:0.5rem 0 1rem; border-radius:8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white;">
+                <label style="color: var(--text-muted); font-size: 0.9rem;">網址 (URL)</label>
+                <input type="text" id="inp-custom-link-url" placeholder="例如: https://www..." style="width:100%; padding:0.8rem; margin:0.5rem 0 1rem; border-radius:8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white;">
+                <label style="color: var(--text-muted); font-size: 0.9rem;">描述 (選填)</label>
+                <input type="text" id="inp-custom-link-desc" placeholder="例如: 快速登入校務行政系統" style="width:100%; padding:0.8rem; margin:0.5rem 0 1rem; border-radius:8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color: white;">
+            </div>
+            <button class="btn-primary" id="btn-save-custom-link" style="width:100%; margin-top:1rem;">儲存連結</button>
+        </div>
+    </div>
+
     <!-- Connection Modal -->
     <div id="connection-modal" class="modal">
         <div class="modal-content" style="text-align: center; max-width: 400px;">
@@ -884,20 +933,20 @@
                         <input type="text" id="st-att-btn-1" placeholder="預設: 簽到">
                     </div>
                     <div class="input-with-button">
-                        <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">點名 2：</span>
-                        <input type="text" id="st-att-btn-2" placeholder="預設: 聯絡簿">
-                    </div>
-                    <div class="input-with-button">
                         <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">點名 3：</span>
                         <input type="text" id="st-att-btn-3" placeholder="預設: 缺席">
                     </div>
                     <div class="input-with-button">
                         <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">自訂標籤 1：</span>
-                        <input type="text" id="settings-custom-tag-1" placeholder="例如: 體溫正常">
+                        <input type="text" id="settings-custom-tag-1" placeholder="留白則隱藏">
                     </div>
                     <div class="input-with-button">
                         <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">自訂標籤 2：</span>
-                        <input type="text" id="settings-custom-tag-2" placeholder="例如: 帶便當盒">
+                        <input type="text" id="settings-custom-tag-2" placeholder="留白則隱藏">
+                    </div>
+                    <div class="input-with-button">
+                        <span style="flex:1; color:var(--text-muted); line-height: 2.5rem;">自訂標籤 3：</span>
+                        <input type="text" id="settings-custom-tag-3" placeholder="留白則隱藏">
                     </div>
                     <button class="btn-secondary" id="btn-apply-attendance-settings">套用按鈕與點名設定</button>
                 </div>
@@ -907,6 +956,28 @@
                 <div class="input-with-button">
                     <input type="text" id="settings-brand-name" placeholder="例如: 3年乙班工具箱">
                     <button class="btn-secondary" id="btn-apply-brand">套用</button>
+                </div>
+            </div>
+            <div class="settings-group">
+                <label>課堂點名批次設定</label>
+                <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; overflow-x: auto;">
+                    <table style="width: 100%; color: white; text-align: left; border-collapse: separate; border-spacing: 0 0.5rem;" id="course-att-table">
+                        <thead>
+                            <tr style="color: var(--text-muted); font-size: 0.9rem;">
+                                <th style="padding-bottom: 0.5rem;">節次</th>
+                                <th style="padding-bottom: 0.5rem;">課程(可空)</th>
+                                <th style="padding-bottom: 0.5rem;">遲到時間</th>
+                                <th style="padding-bottom: 0.5rem;">重置分鐘</th>
+                                <th style="padding-bottom: 0.5rem;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="course-att-tbody">
+                        </tbody>
+                    </table>
+                    <div style="display: flex; justify-content: space-between; margin-top: 1rem;">
+                        <button class="btn-primary" id="btn-add-course-att-row" style="background: var(--bg-sidebar); border: 1px solid rgba(255,255,255,0.2);"><i data-lucide="plus"></i> 新增一節</button>
+                        <button class="btn-secondary" id="btn-apply-course-att">套用課堂設定</button>
+                    </div>
                 </div>
             </div>
             <div class="settings-group">
@@ -983,6 +1054,9 @@
     <audio id="audio-draw" src="https://www.soundjay.com/misc/sounds/slot-machine-1.mp3" preload="auto"></audio>
     <audio id="audio-win" src="https://www.soundjay.com/human/sounds/applause-8.mp3" preload="auto"></audio>
     <audio id="audio-buzzer-end" src="https://www.soundjay.com/misc/sounds/fail-buzzer-01.mp3" preload="auto"></audio>
+    <audio id="audio-reward-1" src="https://www.soundjay.com/misc/sounds/magic-chime-01.mp3" preload="auto"></audio>
+    <audio id="audio-reward-2" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" preload="auto"></audio>
+    <audio id="audio-reward-3" src="https://www.soundjay.com/misc/sounds/magic-chime-02.mp3" preload="auto"></audio>
     <audio id="audio-timer-end" src="https://www.soundjay.com/bell/sounds/bell-ringing-05.mp3" preload="auto"></audio>
 
     <!-- Scripts -->

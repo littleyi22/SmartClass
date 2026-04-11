@@ -56,14 +56,14 @@ document.addEventListener('DOMContentLoaded', () => {
         theme: localStorage.getItem('sc_v3_theme') || "default",
         linkGroupPoints: localStorage.getItem('sc_v3_link_points') === 'true',
         arrivalTime: localStorage.getItem('sc_v3_arrival_time') || '08:00',
-        customTag1: localStorage.getItem('sc_v3_custom_tag_1') || '標籤1',
-        customTag2: localStorage.getItem('sc_v3_custom_tag_2') || '標籤2',
+        customTag1: localStorage.getItem('sc_v3_custom_tag_1') || '',
+        customTag2: localStorage.getItem('sc_v3_custom_tag_2') || '',
+        customTag3: localStorage.getItem('sc_v3_custom_tag_3') || '',
         classBtn1: localStorage.getItem('sc_v3_cbtn1') || '功課',
         classBtn2: localStorage.getItem('sc_v3_cbtn2') || '優秀',
         classBtn3: localStorage.getItem('sc_v3_cbtn3') || '秩序',
         classBtn4: localStorage.getItem('sc_v3_cbtn4') || '',
         attBtn1: localStorage.getItem('sc_v3_abtn1') || '簽到',
-        attBtn2: localStorage.getItem('sc_v3_abtn2') || '聯絡簿',
         attBtn3: localStorage.getItem('sc_v3_abtn3') || '缺席',
         commWritingMode: localStorage.getItem('sc_v3_comm_mode') || 'horizontal',
         commShowZhuyin: localStorage.getItem('sc_v3_comm_zhuyin') === 'true',
@@ -74,6 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
         sheetsId: localStorage.getItem('sc_v3_sheets_id') || '',
         scoreLocked: !!localStorage.getItem('sc_v3_score_pwd') || localStorage.getItem('sc_v3_score_locked') === 'true',
         scoreLockPassword: localStorage.getItem('sc_v3_score_pwd') || '',
+        customLinks: JSON.parse(localStorage.getItem('sc_v3_custom_links')) || [],
+        courseAttPrefs: localStorage.getItem('sc_v3_course_att_prefs') || '1,國語,08:40,45\n2,數學,09:30,45',
         user: null,
         timer: { seconds: 0, active: false, interval: null }
     };
@@ -102,12 +104,12 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('sc_v3_arrival_time', state.arrivalTime);
         localStorage.setItem('sc_v3_custom_tag_1', state.customTag1);
         localStorage.setItem('sc_v3_custom_tag_2', state.customTag2);
+        localStorage.setItem('sc_v3_custom_tag_3', state.customTag3);
         localStorage.setItem('sc_v3_cbtn1', state.classBtn1);
         localStorage.setItem('sc_v3_cbtn2', state.classBtn2);
         localStorage.setItem('sc_v3_cbtn3', state.classBtn3);
         localStorage.setItem('sc_v3_cbtn4', state.classBtn4);
         localStorage.setItem('sc_v3_abtn1', state.attBtn1);
-        localStorage.setItem('sc_v3_abtn2', state.attBtn2);
         localStorage.setItem('sc_v3_abtn3', state.attBtn3);
         localStorage.setItem('sc_v3_comm_mode', state.commWritingMode);
         localStorage.setItem('sc_v3_comm_zhuyin', state.commShowZhuyin);
@@ -118,6 +120,8 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('sc_v3_sheets_id', state.sheetsId);
         localStorage.setItem('sc_v3_score_locked', state.scoreLocked);
         localStorage.setItem('sc_v3_score_pwd', state.scoreLockPassword);
+        localStorage.setItem('sc_v3_custom_links', JSON.stringify(state.customLinks));
+        localStorage.setItem('sc_v3_course_att_prefs', state.courseAttPrefs);
         if (typeof updateDashboard === 'function') updateDashboard();
     }
 
@@ -151,6 +155,21 @@ document.addEventListener('DOMContentLoaded', () => {
     function applyTheme() {
         if(elements && elements.body) elements.body.className = `theme-${state.theme}`;
     }
+
+    let currentGridZoom = parseInt(localStorage.getItem('sc_v3_grid_zoom')) || 220;
+    window.setGridZoom = (delta) => {
+        currentGridZoom = Math.max(120, Math.min(350, currentGridZoom + delta));
+        const grids = document.querySelectorAll('.student-grid, .groups-container, #comm-attendance-grid');
+        grids.forEach(g => {
+            if (g.id !== 'comm-attendance-grid') {
+                g.style.gridTemplateColumns = `repeat(auto-fill, minmax(${currentGridZoom}px, 1fr))`;
+            }
+        });
+        localStorage.setItem('sc_v3_grid_zoom', currentGridZoom);
+    };
+    
+    // Create initial style block for default zoom to prevent flash
+    setTimeout(() => { window.setGridZoom(0); }, 100);
 
     function initWhiteboard() {
         const c = document.getElementById('whiteboard-canvas');
@@ -381,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const attContainer = document.getElementById('comm-attendance-container');
 
         if(writingModeBtn) { const lbl = writingModeBtn.querySelector('.btn-icon-label'); if(lbl) lbl.textContent = state.commWritingMode === 'horizontal' ? '切換直書' : '切換橫書'; }
-        if(zhuyinBtn) { const lbl = zhuyinBtn.querySelector('.btn-icon-label'); if(lbl) lbl.textContent = `注音:${state.commShowZhuyin ? '開' : '關'}`; }
+        if(zhuyinBtn) { const lbl = zhuyinBtn.querySelector('.btn-icon-label'); if(lbl) lbl.textContent = '注音'; }
         if(attBtn) { const lbl = attBtn.querySelector('.btn-icon-label'); if(lbl) lbl.textContent = `簽到:${state.commShowAttendance ? '開' : '關'}`; }
         if(attContainer) attContainer.style.display = state.commShowAttendance ? 'flex' : 'none';
         
@@ -540,17 +559,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="seat-no">座號: ${s.seatNo}</div>
                 <div class="badges" style="min-height:20px; margin-top:0.3rem; display:flex; flex-wrap:wrap; justify-content:center; gap:2px;">
                     ${arriveBadge}
-                    ${s.attTag1 ? '<span class="badge" style="color:var(--primary); font-size:0.75rem">' + state.attBtn2 + '</span>' : ''}
                     ${s.custom1 ? '<span class="badge" style="color:var(--accent); font-size:0.75rem">' + state.customTag1 + '</span>' : ''}
                     ${s.custom2 ? '<span class="badge" style="color:var(--accent); font-size:0.75rem">' + state.customTag2 + '</span>' : ''}
+                    ${s.custom3 ? '<span class="badge" style="color:var(--accent); font-size:0.75rem">' + state.customTag3 + '</span>' : ''}
                 </div>
                 
                 <div class="actions" style="display:grid; grid-template-columns:1fr 1fr; gap:0.3rem; margin-top:0.8rem;">
                     <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.arrived ? 'var(--success)' : ''}; color:${s.arrived ? 'white' : ''}" onclick="window.attTog(${s.id},'arrived')">${s.arrived ? '✔️' + state.attBtn1 : state.attBtn1}</button>
                     <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.absent ? 'var(--danger)' : ''}; color:${s.absent ? 'white' : ''}" onclick="window.togS(${s.id},'absent'); window.renderAttendance();">${s.absent ? '✔️' + state.attBtn3 : state.attBtn3}</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.attTag1 ? 'var(--primary)' : ''}; color:${s.attTag1 ? 'white' : ''}" onclick="window.attTog(${s.id},'attTag1')">${s.attTag1 ? '✔️' + state.attBtn2 : state.attBtn2}</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.custom1 ? 'var(--accent)' : ''}; color:${s.custom1 ? 'white' : ''}" onclick="window.attTog(${s.id},'custom1')">${s.custom1 ? '✔️' + state.customTag1 : state.customTag1}</button>
-                    <button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.custom2 ? 'var(--accent)' : ''}; color:${s.custom2 ? 'white' : ''}" onclick="window.attTog(${s.id},'custom2')">${s.custom2 ? '✔️' + state.customTag2 : state.customTag2}</button>
+                    ${state.customTag1 ? `<button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.custom1 ? 'var(--accent)' : ''}; color:${s.custom1 ? 'white' : ''}" onclick="window.attTog(${s.id},'custom1')">${s.custom1 ? '✔️' + state.customTag1 : state.customTag1}</button>` : ''}
+                    ${state.customTag2 ? `<button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.custom2 ? 'var(--accent)' : ''}; color:${s.custom2 ? 'white' : ''}" onclick="window.attTog(${s.id},'custom2')">${s.custom2 ? '✔️' + state.customTag2 : state.customTag2}</button>` : ''}
+                    ${state.customTag3 ? `<button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem; background:${s.custom3 ? 'var(--accent)' : ''}; color:${s.custom3 ? 'white' : ''}" onclick="window.attTog(${s.id},'custom3')">${s.custom3 ? '✔️' + state.customTag3 : state.customTag3}</button>` : ''}
                 </div>
             `;
             grid.appendChild(card);
@@ -647,6 +666,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target === 'history') {
                 renderHistory();
             }
+            if (target === 'weblinks') {
+                renderWeblinks();
+            }
+            if (target === 'course-attendance') {
+                if (typeof renderCourseAttendanceTab === 'function') renderCourseAttendanceTab();
+            }
         });
     });
 
@@ -719,11 +744,36 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // --- Clock & Timer ---
     const updateClock = () => {
         const now = new Date();
         if(elements.curDate) elements.curDate.textContent = now.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
         if(elements.curTime) elements.curTime.textContent = now.toLocaleTimeString('zh-TW', { hour12: false });
+        
+        if (now.getSeconds() === 0) {
+            const settings = typeof getCourseAttSettings === 'function' ? getCourseAttSettings() : [];
+            let needsRender = false;
+            settings.forEach(setting => {
+                if (setting.resetMins > 0) {
+                    const [lh, lm] = setting.lateTime.split(':').map(Number);
+                    const resetTimeMins = lh * 60 + lm + setting.resetMins;
+                    const currMins = now.getHours() * 60 + now.getMinutes();
+                    if (currMins === resetTimeMins) {
+                        state.classes.forEach(c => {
+                            if (c.courseAtt && c.courseAtt[setting.period]) {
+                                c.courseAtt[setting.period] = {};
+                                needsRender = true;
+                            }
+                        });
+                    }
+                }
+            });
+            if (needsRender) {
+                saveState();
+                if (document.getElementById('course-attendance-tab') && document.getElementById('course-attendance-tab').classList.contains('active')) {
+                    if (typeof renderCourseAttendanceGrid === 'function') renderCourseAttendanceGrid();
+                }
+            }
+        }
     };
     setInterval(updateClock, 1000);
     updateClock();
@@ -859,7 +909,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.saveNote = (id, val) => {
         const currClass = getCurrentClass();
-        const s = currClass.students.find(x => x.id === id);
+        const s = currClass.students.find(x => id === id);
         if (s) {
             s.note = val;
             addActivity(`${s.name} 備註更新：${val || '清空'}`);
@@ -871,41 +921,52 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.renderAttendance = renderAttendance;
 
-    function attTog(id, field) {
+    window.attTog = (id, type) => {
         const currClass = getCurrentClass();
         const s = currClass.students.find(x => x.id === id);
-        if (s) {
-            if (field === 'arrived') {
-                if (!s.arrived) {
-                    s.arrived = true;
-                    if (!s.arriveTimeStr) {
-                        const now = new Date();
-                        s.arriveTimeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-                    }
-                    if(s.absent) {
-                        s.absent = false;
-                    }
-                    if (s.arriveTimeStr > state.arrivalTime) {
-                        addActivity(`${s.name} 簽到 (⏰遲到 - ${s.arriveTimeStr})`);
-                    } else {
-                        addActivity(`${s.name} 簽到 (✅ ${s.arriveTimeStr})`);
-                    }
+        if(!s) return;
+
+        if (type === 'arrived') {
+            if (!s.arrived) {
+                if(s.absent) {
+                    s.absent = false;
+                }
+                const now = new Date();
+                s.arrived = true;
+                s.arriveTimeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+                if (s.arriveTimeStr > state.arrivalTime) {
+                    addActivity(`${s.name} 簽到 (⏰遲到 - ${s.arriveTimeStr})`);
                 } else {
-                    s.arrived = false;
-                    s.arriveTimeStr = null;
-                    addActivity(`取消 ${s.name} 的簽到`);
+                    addActivity(`${s.name} 簽到 (✅ ${s.arriveTimeStr})`);
+                    if (typeof confetti === 'function') {
+                        const r = Math.random();
+                        if (r < 0.33) {
+                            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                        } else if (r < 0.66) {
+                            confetti({ particleCount: 50, spread: 100, origin: { y: 0.6 }, shapes: ['star'], colors: ['#FFE400', '#FFBD00', '#E89400', '#FFCA6C', '#FDFFB8'] });
+                        } else {
+                            confetti({ particleCount: 150, spread: 60, origin: { y: 0.6 }, drift: 0 }); 
+                        }
+                        
+                        const snds = ['reward-1', 'reward-2', 'reward-3'];
+                        const sndId = snds[Math.floor(Math.random() * snds.length)];
+                        if(typeof playSound === 'function') playSound(sndId);
+                    }
                 }
             } else {
-                s[field] = !s[field];
-                let tagName = field === 'brushedTeeth' ? state.attBtn3 : (field === 'custom1' ? state.customTag1 : state.customTag2);
-                addActivity(`${s.name} 被標記為 ${s[field] ? tagName : '取消' + tagName}`);
+                s.arrived = false;
+                addActivity(`取消 ${s.name} 簽到`);
             }
-            renderAttendance();
-            renderStudents(); 
-            saveState();
+        } else if (type === 'custom1') {
+            s.custom1 = !s.custom1;
+        } else if (type === 'custom2') {
+            s.custom2 = !s.custom2;
+        } else if (type === 'custom3') {
+            s.custom3 = !s.custom3;
         }
-    }
-    window.attTog = attTog;
+        renderAttendance();
+        saveState();
+    };
 
     document.getElementById('attendance-search-input').oninput = (e) => {
         if (typeof window.renderAttendance === 'function') window.renderAttendance(e.target.value);
@@ -914,7 +975,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-export-attendance').onclick = () => {
         const currClass = getCurrentClass();
         const data = [
-            ["座號", "姓名", "出席狀態", "簽到時間", "刷牙", state.customTag1, state.customTag2]
+            ["座號", "姓名", "出席狀態", "簽到時間", state.attBtn3, state.customTag1, state.customTag2, state.customTag3]
         ];
         
         currClass.students.forEach(s => {
@@ -931,7 +992,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 s.arriveTimeStr || "-",
                 s.brushedTeeth ? "是" : "否",
                 s.custom1 ? "是" : "否",
-                s.custom2 ? "是" : "否"
+                s.custom2 ? "是" : "否",
+                s.custom3 ? "是" : "否"
             ]);
         });
         
@@ -952,6 +1014,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 s.brushedTeeth = false;
                 s.custom1 = false;
                 s.custom2 = false;
+                s.custom3 = false;
             });
             addActivity("已重置今日點名資料");
             renderAttendance();
@@ -1712,15 +1775,15 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('btn-settings-toggle').onclick = () => {
         elements.brandInput.value = state.brandName;
         document.getElementById('settings-arrival-time').value = state.arrivalTime;
-        document.getElementById('settings-custom-tag-1').value = state.customTag1;
-        document.getElementById('settings-custom-tag-2').value = state.customTag2;
+        if(document.getElementById('settings-custom-tag-1')) document.getElementById('settings-custom-tag-1').value = state.customTag1;
+        if(document.getElementById('settings-custom-tag-2')) document.getElementById('settings-custom-tag-2').value = state.customTag2;
+        if(document.getElementById('settings-custom-tag-3')) document.getElementById('settings-custom-tag-3').value = state.customTag3;
         document.getElementById('st-class-btn-1').value = state.classBtn1;
         document.getElementById('st-class-btn-2').value = state.classBtn2;
         document.getElementById('st-class-btn-3').value = state.classBtn3;
         document.getElementById('st-class-btn-4').value = state.classBtn4;
-        document.getElementById('st-att-btn-1').value = state.attBtn1;
-        document.getElementById('st-att-btn-2').value = state.attBtn2;
-        document.getElementById('st-att-btn-3').value = state.attBtn3;
+        if(document.getElementById('st-att-btn-1')) document.getElementById('st-att-btn-1').value = state.attBtn1;
+        if(document.getElementById('st-att-btn-3')) document.getElementById('st-att-btn-3').value = state.attBtn3;
         
         const currentClassLabel = document.getElementById('settings-current-class-name');
         if (currentClassLabel && getCurrentClass()) {
@@ -1740,15 +1803,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-apply-attendance-settings').onclick = () => {
         state.arrivalTime = document.getElementById('settings-arrival-time').value || '08:00';
-        state.customTag1 = document.getElementById('settings-custom-tag-1').value || '標籤1';
-        state.customTag2 = document.getElementById('settings-custom-tag-2').value || '標籤2';
-        state.classBtn1 = document.getElementById('st-class-btn-1').value || 'HW';
-        state.classBtn2 = document.getElementById('st-class-btn-2').value || '加星';
+        state.customTag1 = document.getElementById('settings-custom-tag-1').value || '';
+        state.customTag2 = document.getElementById('settings-custom-tag-2').value || '';
+        state.customTag3 = document.getElementById('settings-custom-tag-3').value || '';
+        state.classBtn1 = document.getElementById('st-class-btn-1').value || '功課';
+        state.classBtn2 = document.getElementById('st-class-btn-2').value || '優秀';
         state.classBtn3 = document.getElementById('st-class-btn-3').value || '秩序';
-        state.classBtn4 = document.getElementById('st-class-btn-4').value || '缺席';
+        state.classBtn4 = document.getElementById('st-class-btn-4').value || '';
         state.attBtn1 = document.getElementById('st-att-btn-1').value || '簽到';
-        state.attBtn2 = document.getElementById('st-att-btn-2').value || '聯絡簿';
-        state.attBtn3 = document.getElementById('st-att-btn-3').value || '功課';
+        state.attBtn3 = document.getElementById('st-att-btn-3').value || '缺席';
         saveState();
         renderStudents();
         if (typeof renderAttendance === 'function') renderAttendance();
@@ -1821,6 +1884,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-toggle-zhuyin').onclick = () => {
         state.commShowZhuyin = !state.commShowZhuyin;
+        if (state.commShowZhuyin) {
+            state.commFont = 'huninn';
+            const fontSel = document.getElementById('select-blackboard-font');
+            if(fontSel) fontSel.value = 'huninn';
+        }
         saveState();
         renderCommunicationBook();
     };
@@ -2294,6 +2362,318 @@ document.addEventListener('DOMContentLoaded', () => {
             loadDataForDate(window.currentEditDate);
         };
     }
+
+    // --- Sidebar Toggle ---
+    const btnToggleSidebar = document.getElementById('btn-toggle-sidebar');
+    const mainSidebar = document.getElementById('main-sidebar');
+    if (btnToggleSidebar && mainSidebar) {
+        btnToggleSidebar.onclick = () => {
+            mainSidebar.classList.toggle('collapsed');
+            const txt = document.getElementById('sidebar-toggle-text');
+            if (txt) {
+                if (mainSidebar.classList.contains('collapsed')) {
+                    txt.textContent = '展開';
+                } else {
+                    txt.textContent = '收起';
+                }
+            }
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        };
+    }
+
+    // --- Web Links Logic ---
+    window.renderWeblinks = () => {
+        const container = document.getElementById('weblinks-grid-container');
+        if(!container) return;
+        
+        const builtin = `
+            <a href="https://littleyi22.github.io/class-management-kit/" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block;">
+                <div class="tool-icon" style="color: #3b82f6;"><i data-lucide="briefcase"></i></div>
+                <h3>班級經營助手</h3>
+                <p>實用班級經營工具</p>
+            </a>
+            <a href="https://littleyi22.github.io/PDF01/" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block;">
+                <div class="tool-icon" style="color: #ef4444;"><i data-lucide="file-minus"></i></div>
+                <h3>PDF 拆分合併</h3>
+                <p>輕鬆處理 PDF 檔案</p>
+            </a>
+            <a href="https://littleyi22.github.io/exam-countdown-timer/" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block;">
+                <div class="tool-icon" style="color: #f59e0b;"><i data-lucide="clock"></i></div>
+                <h3>重要時刻倒數計時</h3>
+                <p>掌握會考時程</p>
+            </a>
+            <a href="https://littleyi22.github.io/line-class/" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block;">
+                <div class="tool-icon" style="color: #10b981;"><i data-lucide="message-circle"></i></div>
+                <h3>班級事務通知</h3>
+                <p>Line 小幫手</p>
+            </a>
+            <a href="https://littleyi22.github.io/classroom-screen/" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block;">
+                <div class="tool-icon" style="color: #8b5cf6;"><i data-lucide="calendar"></i></div>
+                <h3>段考時程表</h3>
+                <p>段考時間管理</p>
+            </a>
+        `;
+
+        let customHtml = '';
+        state.customLinks.forEach((link, idx) => {
+            customHtml += `
+                    <div style="position: relative;">
+                        <a href="${link.url}" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block; height: 100%;">
+                            <div class="tool-icon" style="color: var(--primary);"><i data-lucide="globe"></i></div>
+                            <h3>${link.title}</h3>
+                            <p>${link.desc || '自訂連結'}</p>
+                        </a>
+                        <button class="btn-danger" style="position: absolute; top: 10px; right: 10px; padding: 0.2rem 0.5rem; font-size: 0.8rem; border-radius: 6px;" onclick="event.preventDefault(); window.delCustomLink(${idx});"><i data-lucide="trash-2" style="width: 14px; height: 14px;"></i></button>
+                    </div>
+            `;
+        });
+        
+        container.innerHTML = builtin + customHtml;
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+    };
+
+    window.delCustomLink = (idx) => {
+        if(confirm("確定要刪除這個自訂連結嗎？")) {
+            state.customLinks.splice(idx, 1);
+            saveState();
+            renderWeblinks();
+        }
+    };
+
+    const addLinkModal = document.getElementById('add-link-modal');
+    if (document.getElementById('btn-add-custom-link')) {
+        document.getElementById('btn-add-custom-link').onclick = () => {
+            document.getElementById('inp-custom-link-title').value = '';
+            document.getElementById('inp-custom-link-url').value = '';
+            document.getElementById('inp-custom-link-desc').value = '';
+            addLinkModal.style.display = 'flex';
+        };
+    }
+    if (document.getElementById('btn-save-custom-link')) {
+        document.getElementById('btn-save-custom-link').onclick = () => {
+            const title = document.getElementById('inp-custom-link-title').value.trim();
+            const url = document.getElementById('inp-custom-link-url').value.trim();
+            const desc = document.getElementById('inp-custom-link-desc').value.trim();
+            
+            if (!title || !url) {
+                alert("請填寫標題與網址！");
+                return;
+            }
+            
+            let finalUrl = url;
+            if (!/^https?:\/\//i.test(finalUrl)) {
+                finalUrl = 'http://' + finalUrl;
+            }
+            
+            state.customLinks.push({ title, url: finalUrl, desc });
+            saveState();
+            addActivity("新增自訂連結：" + title);
+            addLinkModal.style.display = 'none';
+            renderWeblinks();
+        };
+    }
+
+    // --- Course Attendance Logic ---
+    window.getCourseAttSettings = () => {
+        if(!state.courseAttPrefs) return [];
+        return state.courseAttPrefs.split('\n').map(line => {
+            const parts = line.split(',');
+            if (parts.length >= 4) {
+                return {
+                    period: parts[0].trim(),
+                    name: parts[1].trim(),
+                    lateTime: parts[2].trim(),
+                    resetMins: parseInt(parts[3].trim()) || 0
+                };
+            }
+            return null;
+        }).filter(x => x);
+    };
+
+    window.renderCourseAttendanceTab = () => {
+        const select = document.getElementById('course-att-period-select');
+        if (!select) return;
+        
+        const settings = getCourseAttSettings();
+        const currentVal = select.value;
+        select.innerHTML = '';
+        
+        settings.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.period;
+            opt.textContent = `第${s.period}節 - ${s.name} (遲到: ${s.lateTime})`;
+            opt.dataset.latetime = s.lateTime;
+            select.appendChild(opt);
+        });
+        
+        if (currentVal && settings.find(s => s.period === currentVal)) {
+            select.value = currentVal;
+        } else if (settings.length > 0) {
+            select.value = settings[0].period;
+        }
+        
+        select.onchange = () => renderCourseAttendanceGrid();
+        renderCourseAttendanceGrid();
+    };
+
+    window.renderCourseAttendanceGrid = () => {
+        const currClass = getCurrentClass();
+        const grid = document.getElementById('course-attendance-grid');
+        const select = document.getElementById('course-att-period-select');
+        if(!grid || !select || !currClass) return;
+        
+        const period = select.value;
+        grid.innerHTML = '';
+        
+        if(!currClass.courseAtt) currClass.courseAtt = {};
+        if(!currClass.courseAtt[period]) currClass.courseAtt[period] = {};
+        
+        const lateTime = select.options[select.selectedIndex]?.dataset.latetime || '00:00';
+        
+        currClass.students.forEach(s => {
+            const card = document.createElement('div');
+            card.className = 'student-card';
+            
+            const record = currClass.courseAtt[period][s.id];
+            let arriveBadge = '';
+            let btnStyle = '';
+            let btnText = '簽到';
+            
+            if (record) {
+                if (record.time > lateTime) {
+                    arriveBadge = `<span class="badge" style="color:var(--warning); font-size:0.75rem">⏰遲到 (${record.time})</span>`;
+                } else {
+                    arriveBadge = `<span class="badge" style="color:var(--success); font-size:0.75rem">✅已到 (${record.time})</span>`;
+                }
+                btnStyle = 'background:var(--success); color:white; border:none;';
+                btnText = '✔️已簽到';
+            }
+            
+            card.innerHTML = `
+                <div class="avatar" style="background:var(--secondary)">${s.name[0]}</div>
+                <h4>${s.name}</h4>
+                <div class="seat-no">座號: ${s.seatNo}</div>
+                <div class="badges" style="min-height:20px; margin-top:0.3rem; display:flex; flex-wrap:wrap; justify-content:center; gap:2px;">
+                    ${arriveBadge}
+                </div>
+                <div class="actions" style="margin-top:0.8rem;">
+                    <button class="btn-secondary" style="width:100%; font-size:0.85rem; padding:0.5rem; ${btnStyle}" onclick="window.courseAttTog(${s.id}, '${period}', '${lateTime}')">${btnText}</button>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+    };
+
+    window.courseAttTog = (sId, period, lateTime) => {
+        const currClass = getCurrentClass();
+        if(!currClass.courseAtt) currClass.courseAtt = {};
+        if(!currClass.courseAtt[period]) currClass.courseAtt[period] = {};
+        
+        const s = currClass.students.find(x => x.id === sId);
+        if(!s) return;
+        
+        if (currClass.courseAtt[period][sId]) {
+            delete currClass.courseAtt[period][sId];
+            addActivity(`取消 ${s.name} 的課堂點名`);
+        } else {
+            const now = new Date();
+            const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            currClass.courseAtt[period][sId] = { time: timeStr };
+            
+            if (timeStr > lateTime) {
+                addActivity(`${s.name} 第${period}節 課堂簽到 (⏰遲到 - ${timeStr})`);
+            } else {
+                addActivity(`${s.name} 第${period}節 課堂簽到 (✅ ${timeStr})`);
+                if (typeof confetti === 'function') {
+                    const r = Math.random();
+                    if (r < 0.33) {
+                        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                    } else if (r < 0.66) {
+                        confetti({ particleCount: 50, spread: 100, origin: { y: 0.6 }, shapes: ['star'], colors: ['#FFE400', '#FFBD00', '#E89400', '#FFCA6C', '#FDFFB8'] });
+                    } else {
+                        confetti({ particleCount: 150, spread: 60, origin: { y: 0.6 }, drift: 0 }); 
+                    }
+                    
+                    const snds = ['reward-1', 'reward-2', 'reward-3'];
+                    const sndId = snds[Math.floor(Math.random() * snds.length)];
+                    if (typeof playSound === 'function') playSound(sndId);
+                }
+            }
+        }
+        saveState();
+        renderCourseAttendanceGrid();
+    };
+
+    // Bind settings buttons
+    window.renderCourseAttSettings = () => {
+        const tbody = document.getElementById('course-att-tbody');
+        if(!tbody) return;
+        tbody.innerHTML = '';
+        const prefs = typeof window.getCourseAttSettings === 'function' ? window.getCourseAttSettings() : [];
+        if(prefs.length === 0) prefs.push({ period: '1', name: '', lateTime: '', resetMins: 45 });
+        
+        window.courseAttUiData = prefs;
+        
+        window.drawCourseAttSettings = () => {
+            tbody.innerHTML = '';
+            window.courseAttUiData.forEach((row, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><input type="text" class="course-att-input-p custom-select" value="${row.period}" placeholder="例: 1" style="width: 50px;"></td>
+                    <td><input type="text" class="course-att-input-n custom-select" value="${row.name}" placeholder="例: 國語" style="width: 100%;"></td>
+                    <td><input type="time" class="course-att-input-l custom-select" value="${row.lateTime}" style="width: 100px;"></td>
+                    <td><input type="number" class="course-att-input-r custom-select" value="${row.resetMins}" style="width: 60px;"></td>
+                    <td><button class="btn-danger" style="padding: 0.2rem 0.5rem;" onclick="window.courseAttUiData.splice(${idx}, 1); window.drawCourseAttSettings()"><i data-lucide="trash-2" style="width:16px;height:16px;"></i></button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        };
+        window.drawCourseAttSettings();
+    };
+
+    if (document.getElementById('btn-add-course-att-row')) {
+        document.getElementById('btn-add-course-att-row').onclick = () => {
+            if(!window.courseAttUiData) window.courseAttUiData = [];
+            let nextPeriod = '1';
+            let nextReset = 45;
+            let nextLate = '';
+            const lastRow = window.courseAttUiData[window.courseAttUiData.length - 1];
+            if(lastRow) {
+                const num = parseInt(lastRow.period);
+                if(!isNaN(num)) nextPeriod = (num + 1).toString();
+                nextReset = lastRow.resetMins;
+                nextLate = lastRow.lateTime;
+            }
+            window.courseAttUiData.push({ period: nextPeriod, name: '', lateTime: nextLate, resetMins: nextReset });
+            window.drawCourseAttSettings();
+        };
+    }
+
+    if(document.getElementById('btn-apply-course-att')) {
+        document.getElementById('btn-apply-course-att').onclick = () => {
+            const trs = document.querySelectorAll('#course-att-tbody tr');
+            const lines = [];
+            trs.forEach(tr => {
+                const p = tr.querySelector('.course-att-input-p').value.trim();
+                const n = tr.querySelector('.course-att-input-n').value.trim();
+                const l = tr.querySelector('.course-att-input-l').value;
+                const r = tr.querySelector('.course-att-input-r').value;
+                if(p) lines.push(`${p},${n},${l},${r}`);
+            });
+            state.courseAttPrefs = lines.join('\n');
+            saveState();
+            alert("課堂點名批次設定已套用！");
+            if (document.getElementById('course-attendance-tab') && document.getElementById('course-attendance-tab').classList.contains('active')) {
+                renderCourseAttendanceTab();
+            }
+        };
+    }
+    
+    // Auto render to populate existing values when modal opens
+    document.getElementById('btn-settings-toggle').addEventListener('click', () => {
+        if(typeof renderCourseAttSettings === 'function') renderCourseAttSettings();
+    });
 
     renderClassSelect();
     if(window.currentEditDate) loadDataForDate(window.currentEditDate);
