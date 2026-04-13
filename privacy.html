@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>隱私權政策 - SmartClass</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Noto+Sans+TC:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #06b6d4;
+            --bg-dark: #0f172a;
+            --bg-card: rgba(30, 41, 59, 0.7);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Outfit', 'Noto Sans TC', sans-serif;
+            line-height: 1.8;
+            overflow-x: hidden;
+        }
+        .container {
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 40px;
+            background: var(--bg-card);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            animation: fadeIn 0.6s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h1 { color: var(--secondary); font-size: 2.5rem; margin-bottom: 0.5rem; }
+        h2 { color: var(--primary); font-size: 1.5rem; margin-top: 2rem; border-left: 4px solid var(--primary); padding-left: 15px; }
+        p, li { color: var(--text-main); font-size: 1.1rem; }
+        li { margin-bottom: 10px; }
+        .last-updated { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 3rem; }
+        .back-link { display: inline-block; margin-top: 3rem; color: var(--secondary); text-decoration: none; font-weight: 600; padding: 10px 20px; border: 1px solid var(--secondary); border-radius: 12px; transition: 0.3s; }
+        .back-link:hover { background: var(--secondary); color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>隱私權政策 (Privacy Policy)</h1>
+        <p class="last-updated">最後更新日期：2026年4月13日</p>
+
+        <p>歡迎使用 SmartClass（以下簡稱「本應用程式」）。我們非常重視您的隱私，本政策旨在說明我們如何處理您的個人資料。本程式專為教育用途設計，所有功能皆以保護使用者資料與隱私為核心。</p>
+
+        <h2>1. 資料收集與使用</h2>
+        <p>本應用程式採用「分散式存儲」機制：</p>
+        <ul>
+            <li><strong>本地儲存 (Local Storage)：</strong> 所有的學生名單、分數紀錄與教學進度，預設皆儲存在您的個人電腦瀏覽器中，本開發團隊無法存取。</li>
+            <li><strong>Google 資料存取：</strong> 當您啟動雲端同步功能時，我們僅會使用您授權的權限來進行備份。</li>
+        </ul>
+
+        <h2>2. Google 使用者資料權限說明</h2>
+        <p>SmartClass 會要求存取以下 Google Scopes 權限：</p>
+        <ul>
+            <li><strong>Google Drive (auth/drive.file)：</strong> 僅用於在您的雲端硬碟中建立與讀寫「SmartClass 資料備份」檔案，我們無法讀取您雲端硬碟中的其他私人檔案。</li>
+            <li><strong>Google Sheets (auth/spreadsheets)：</strong> 僅用於將您的教學紀錄、點名紀錄同步至您指定的 Google 試算表中，方便您進行行政處理。</li>
+        </ul>
+        <p>我們保證<strong>絕不會</strong>蒐集、傳輸或分享您的 Google 帳戶隱私資訊至任何第三方伺服器。</p>
+
+        <h2>3. 資料安全性</h2>
+        <p>本應用程式與 Google API 之間的通訊皆透過加密的 HTTPS 進行。資料傳輸至 Google Drive/Sheets 是直接發生在您的瀏覽器與 Google 伺服器之間，不會經過本開發者的任何伺服器。</p>
+
+        <h2>4. 您的權限</h2>
+        <p>您可以隨時在「設置中心」斷開 Google 帳號連結。一旦斷開，所有 Google API 的權限將立即中止。您也可以隨時在應用程式中「清除所有資料」來刪除存儲在瀏覽器中的內容。</p>
+
+        <h2>5. 聯絡我們</h2>
+        <p>若對本隱私權政策有任何疑問，歡迎透過 Facebook 粉絲專頁聯繫「奕鈞老師」。</p>
+
+        <a href="index.html" class="back-link">← 返回 SmartClass 主中心</a>
+    </div>
+</body>
+</html>
