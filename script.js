@@ -1424,6 +1424,22 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // 3. Buzzer (Super Buzz - PeerJS Implementation)
+    // PeerJS ICE 伺服器配置 - 增加多組 STUN 伺服器提升跨網路連線成功率
+    const PEER_CONFIG = {
+        config: {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' },
+                { urls: 'stun:global.stun.twilio.com:3478' }
+                // 若學校防火牆嚴格封鎖 UDP，可加入 TURN 伺服器（需自行架設或租用）：
+                // { urls: 'turn:your-turn-server.com:3478', username: 'user', credential: 'pass' },
+                // { urls: 'turn:your-turn-server.com:443?transport=tcp', username: 'user', credential: 'pass' }
+            ]
+        }
+    };
     let peer = null;
     let connections = [];
     let winners = [];
@@ -1443,7 +1459,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function initTeacherPeer() {
         if(peer) return; 
-        peer = new Peer(classroomId);
+        peer = new Peer(classroomId, PEER_CONFIG);
         
         peer.on('open', (id) => {
             document.getElementById('classroom-id-display').textContent = id;
@@ -2137,7 +2153,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
     let tokenClient;
-    let accessToken = null;
+    let accessToken = localStorage.getItem('smartclass_google_token') || null;
 
     const updateGoogleStatus = (isLoggedIn) => {
         const icon = document.getElementById('google-status-icon');
@@ -2165,6 +2181,22 @@ document.addEventListener('DOMContentLoaded', () => {
         lucide.createIcons();
     };
 
+    // 若有已儲存的 token，驗證是否仍有效並恢復登入狀態
+    if (accessToken) {
+        fetch('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=' + accessToken)
+            .then(res => {
+                if (res.ok) {
+                    updateGoogleStatus(true);
+                } else {
+                    accessToken = null;
+                    localStorage.removeItem('smartclass_google_token');
+                }
+            }).catch(() => {
+                accessToken = null;
+                localStorage.removeItem('smartclass_google_token');
+            });
+    }
+
     // Initialize the token client - try immediately, and also lazily on button click
     function initGoogleTokenClient() {
         if (tokenClient) return true; // already initialized
@@ -2175,6 +2207,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 callback: (tokenResponse) => {
                     if(tokenResponse && tokenResponse.access_token) {
                         accessToken = tokenResponse.access_token;
+                        localStorage.setItem('smartclass_google_token', accessToken);
                         updateGoogleStatus(true);
                         addActivity("✅ 已成功串接 Google 雲端硬碟");
                         alert("Google 帳號連結成功！未來的「下課存檔」將會自動上傳備份至您的雲端硬碟。");
@@ -2198,7 +2231,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Auto-retry after 2 seconds
             setTimeout(() => {
                 if (initGoogleTokenClient()) {
-                    tokenClient.requestAccessToken({prompt: 'consent'});
+                    tokenClient.requestAccessToken({prompt: ''});
                 } else {
                     console.error("Google API failed to load.");
                     alert("Google 服務載入失敗。若您在學校，可能被學術網路擋住，或請重新整理網頁。");
@@ -2206,13 +2239,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 2000);
             return;
         }
-        tokenClient.requestAccessToken({prompt: 'consent'});
+        tokenClient.requestAccessToken({prompt: ''});
     };
 
     document.getElementById('btn-header-google-logout').onclick = () => {
         if (accessToken) {
             google.accounts.oauth2.revoke(accessToken, () => {
                 accessToken = null;
+                localStorage.removeItem('smartclass_google_token');
                 updateGoogleStatus(false);
                 addActivity("✅ 已登出 Google 帳號");
                 alert("已成功登出 Google 帳號！");
@@ -2259,6 +2293,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 await syncToGoogleSheets(); // Sync to Google Sheets
                 confetti({ particleCount: 150, spread: 80, origin: { y: 0.4 } });
                 alert(`太棒了！下課囉！\n\n您的班級資料已備份至雲端硬碟，今日紀錄也同步到 Google 試算表了！`);
+            } else if (response.status === 401) {
+                // Token 過期，清除並提示重新登入
+                accessToken = null;
+                localStorage.removeItem('smartclass_google_token');
+                updateGoogleStatus(false);
+                throw new Error('Google 授權已過期，請至設定重新連結 Google 帳號後再試一次。');
             } else {
                 throw new Error('Upload request failed with status ' + response.status);
             }

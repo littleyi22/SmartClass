@@ -158,6 +158,20 @@
         let p2p = null;
         let myData = { seat: '', name: '' };
 
+        // PeerJS ICE 伺服器配置 - 增加多組 STUN 伺服器提升跨網路連線成功率
+        const PEER_CONFIG = {
+            config: {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' },
+                    { urls: 'stun:stun3.l.google.com:19302' },
+                    { urls: 'stun:stun4.l.google.com:19302' },
+                    { urls: 'stun:global.stun.twilio.com:3478' }
+                ]
+            }
+        };
+
         const showSec = (id) => {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -175,10 +189,21 @@
             myData = { seat, name };
             document.getElementById('btn-login').innerText = '連線中...';
             
-            p2p = new Peer();
+            p2p = new Peer(PEER_CONFIG);
+
+            // 連線逾時處理 - 15秒無法連上則提示
+            const connTimeout = setTimeout(() => {
+                if (!conn || !conn.open) {
+                    document.getElementById('login-err').style.display = 'block';
+                    document.getElementById('login-err').innerText = '連線逾時！可能原因：1.老師尚未開啟學生連線 2.網路防火牆限制（建議改用行動網路） 3.請重新掃描 QR Code';
+                    document.getElementById('btn-login').innerText = '重新連線';
+                }
+            }, 15000);
+
             p2p.on('open', () => {
                 conn = p2p.connect(roomId);
                 conn.on('open', () => {
+                    clearTimeout(connTimeout);
                     // Send join metadata
                     conn.send({ type: 'JOIN', data: myData });
                     showSec('sec-idle');
@@ -191,6 +216,7 @@
                 });
             });
             p2p.on('error', (err) => {
+                clearTimeout(connTimeout);
                 document.getElementById('login-err').style.display = 'block';
                 document.getElementById('btn-login').innerText = '進入教室';
             });
