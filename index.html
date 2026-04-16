@@ -192,8 +192,6 @@
                     <div class="action-buttons">
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(20)" title="放大"><i data-lucide="zoom-in"></i></button>
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(-20)" title="縮小"><i data-lucide="zoom-out"></i></button>
-                        <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="全域音效: 開"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
-                        <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="全域音效: 開"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
                         <button class="btn-secondary" id="btn-download-template" title="下載Excel範例檔">
                             <i data-lucide="download"></i> 範例下載
                         </button>
@@ -237,7 +235,6 @@
                     <div class="action-buttons">
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(20)" title="放大"><i data-lucide="zoom-in"></i></button>
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(-20)" title="縮小"><i data-lucide="zoom-out"></i></button>
-                        <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="全域音效: 開"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
                         <button class="btn-secondary" id="btn-export-attendance"><i data-lucide="download"></i> 匯出今日點名 (Excel)</button>
                         <button class="btn-secondary" id="btn-reset-attendance">重置今日點名</button>
                     </div>
@@ -254,7 +251,6 @@
                     <div class="action-buttons">
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(20)" title="放大"><i data-lucide="zoom-in"></i></button>
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(-20)" title="縮小"><i data-lucide="zoom-out"></i></button>
-                        <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="全域音效: 開"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
                     </div>
                 </div>
                 <div class="student-grid" id="course-attendance-grid">
@@ -419,8 +415,6 @@
                             <div style="display: flex; gap: 0.5rem;">
                                 <button class="btn-secondary btn-icon-sm" id="btn-comm-att-zoom-in" title="放大學生名單" style="padding: 0.3rem;"><i data-lucide="zoom-in"></i></button>
                                 <button class="btn-secondary btn-icon-sm" id="btn-comm-att-zoom-out" title="縮小學生名單" style="padding: 0.3rem;"><i data-lucide="zoom-out"></i></button>
-                                <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="簽到音效: 開" style="padding: 0.3rem;"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
-                                <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="簽到音效: 開" style="padding: 0.3rem;"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
                             </div>
                         </div>
                         <div class="comm-attendance-grid" id="comm-attendance-grid" style="transition: all 0.3s;">
@@ -1079,11 +1073,11 @@
     <audio id="audio-score-down" src="poka02.mp3" preload="auto"></audio>
     <audio id="audio-bell" src="bright_bell1.mp3" preload="auto"></audio>
     <audio id="audio-jump" src="jump11.mp3" preload="auto"></audio>
-    <!-- 準時簽到音效：coin05 / powerup03 隨機 -->
     <audio id="audio-checkin-ontime-1" src="coin05.mp3" preload="auto"></audio>
     <audio id="audio-checkin-ontime-2" src="powerup03.mp3" preload="auto"></audio>
-    <!-- 遲到簽到音效：powerup10 -->
     <audio id="audio-checkin-late" src="powerup10.mp3" preload="auto"></audio>
+    <audio id="audio-win" src="https://www.soundjay.com/human/sounds/applause-8.mp3" preload="auto"></audio>
+    <audio id="audio-draw" src="https://www.soundjay.com/misc/sounds/slot-machine-1.mp3" preload="auto"></audio>
 
     <!-- Scripts -->
     <script src="script.js"></script>

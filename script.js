@@ -637,21 +637,28 @@ document.addEventListener('DOMContentLoaded', () => {
             const groupScore = currClass.groupScores ? (currClass.groupScores[idx] || 0) : 0;
             const gDiv = document.createElement('div');
             gDiv.className = 'group-box';
-            let html = `<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:0.5rem;">
-                <h4 style="color:var(--secondary); margin:0;">第 ${idx + 1} 組 (共${group.length}人) <span style="color:var(--warning); margin-left:1rem;">總分: ${groupScore}</span></h4>
-                <div style="display:flex; gap:0.5rem;">
-                    <button class="btn-secondary" onclick="window.modGroupS(${idx}, 1)" style="padding:0.2rem 0.5rem; background:var(--success); color:white; border:none; border-radius:4px; font-size:0.8rem; cursor:pointer;">+小組分</button>
-                    <button class="btn-secondary" onclick="window.modGroupS(${idx}, -1)" style="padding:0.2rem 0.5rem; background:var(--danger); color:white; border:none; border-radius:4px; font-size:0.8rem; cursor:pointer;">-小組分</button>
+            let html = `<div class="group-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:0.5rem; gap:0.5rem; flex-wrap:wrap;">
+                <div style="flex:1; min-width:120px;">
+                    <h4 style="color:var(--secondary); margin:0; border:none; padding:0;">第 ${idx + 1} 組 (${group.length}人)</h4>
+                    <div style="color:var(--warning); font-weight:bold; font-size:1.1rem; margin-top:0.2rem;">總分: ${groupScore}</div>
+                </div>
+                <div style="display:flex; gap:0.4rem;">
+                    <button class="btn-primary" onclick="window.modGroupS(${idx}, 1)" style="padding:0.4rem 0.8rem; background:var(--success); font-size:0.85rem;">+ 小組分</button>
+                    <button class="btn-primary" onclick="window.modGroupS(${idx}, -1)" style="padding:0.4rem 0.8rem; background:var(--danger); font-size:0.85rem;">- 小組分</button>
                 </div>
             </div>`;
             group.forEach(sRef => {
                 const s = currClass.students.find(x => x.id === sRef.id) || sRef;
-                html += `<div class="group-member" style="margin-bottom:0.4rem; padding:0.4rem; background:rgba(0,0,0,0.2); border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-                    <div style="font-size:0.95rem;">${s.seatNo}. ${s.name} (<span style="color:var(--success); font-weight:bold;">${s.score}</span>)</div>
-                    <div style="display:flex; gap:0.3rem;">
-                        <button onclick="window.moveStudentToGroup(${s.id})" style="padding:2px 6px; background:rgba(255,255,255,0.1); color:white; border:none; border-radius:4px; font-size:0.75rem; cursor:pointer;" title="移動分組">移</button>
-                        <button onclick="window.modS(${s.id}, 1)" style="padding:2px 6px; background:var(--success); color:white; border:none; border-radius:4px; font-size:0.8rem; cursor:pointer;">+</button>
-                        <button onclick="window.modS(${s.id}, -1)" style="padding:2px 6px; background:var(--danger); color:white; border:none; border-radius:4px; font-size:0.8rem; cursor:pointer;">-</button>
+                html += `<div class="group-member">
+                    <div style="flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                        <span style="color:var(--text-muted); font-size:0.85rem; margin-right:4px;">${s.seatNo}.</span>
+                        <span style="font-weight:600;">${s.name}</span>
+                        <span style="color:var(--success); margin-left:6px; font-weight:bold;">(${s.score})</span>
+                    </div>
+                    <div style="display:flex; gap:0.3rem; flex-shrink:0;">
+                        <button class="btn-secondary" onclick="window.moveStudentToGroup(${s.id})" style="padding:3px 8px; font-size:0.75rem;" title="移動分組">移</button>
+                        <button class="btn-primary" onclick="window.modS(${s.id}, 1)" style="padding:3px 10px; background:var(--success); border:none;">+</button>
+                        <button class="btn-primary" onclick="window.modS(${s.id}, -1)" style="padding:3px 10px; background:var(--danger); border:none;">-</button>
                     </div>
                 </div>`;
             });
@@ -1400,6 +1407,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const currClass = getCurrentClass();
         if(!currClass.groupScores) currClass.groupScores = new Array(currClass.groups ? currClass.groups.length : 10).fill(0);
         currClass.groupScores[gIdx] = (currClass.groupScores[gIdx] || 0) + val;
+        
+        if (val > 0) {
+            playSound('score-up');
+        } else {
+            playSound('score-down');
+        }
         
         if (val > 0) {
             playSound('score-up');
