@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="main-title-tag">智慧教室助手 v.6.7</title>
+    <title id="main-title-tag">智慧教室助手 v.6.9</title>
     <link rel="stylesheet" href="styles.css">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -190,6 +190,7 @@
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(20)" title="放大"><i data-lucide="zoom-in"></i></button>
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(-20)" title="縮小"><i data-lucide="zoom-out"></i></button>
                         <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="簽到音效: 開"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
+                        <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="簽到音效: 開"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
                         <button class="btn-secondary" id="btn-download-template" title="下載Excel範例檔">
                             <i data-lucide="download"></i> 範例下載
                         </button>
@@ -371,6 +372,9 @@
                             <button class="btn-secondary btn-icon-sm" id="btn-toggle-comm-attendance" title="顯示簽到格">
                                 <i data-lucide="user-check"></i><span id="text-comm-attendance" class="btn-icon-label">簽到:開</span>
                             </button>
+                            <button class="btn-secondary btn-icon-sm" id="btn-toggle-grid" title="顯示格子線">
+                                <i data-lucide="grid-3x3"></i><span class="btn-icon-label">格子</span>
+                            </button>
                             <button class="btn-secondary btn-icon-sm" id="btn-insert-numbered-list" title="插入編號清單">
                                 <i data-lucide="list-ordered"></i>
                             </button>
@@ -412,6 +416,7 @@
                             <div style="display: flex; gap: 0.5rem;">
                                 <button class="btn-secondary btn-icon-sm" id="btn-comm-att-zoom-in" title="放大學生名單" style="padding: 0.3rem;"><i data-lucide="zoom-in"></i></button>
                                 <button class="btn-secondary btn-icon-sm" id="btn-comm-att-zoom-out" title="縮小學生名單" style="padding: 0.3rem;"><i data-lucide="zoom-out"></i></button>
+                                <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="簽到音效: 開" style="padding: 0.3rem;"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
                                 <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="簽到音效: 開" style="padding: 0.3rem;"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
                             </div>
                         </div>
@@ -458,7 +463,7 @@
                         <i data-lucide="book-marked" style="width:48px; height:48px; color:white; flex-shrink:0;"></i>
                         <div>
                             <h2 style="margin:0; color:white; font-size:1.6rem;">SmartClass 使用說明</h2>
-                            <p style="margin:0.3rem 0 0; color:rgba(255,255,255,0.8); font-size:0.95rem;">Version 6.7 ｜ 奕鈞老師製作</p>
+                            <p style="margin:0.3rem 0 0; color:rgba(255,255,255,0.8); font-size:0.95rem;">Version 6.8 ｜ 奕鈞老師製作</p>
                         </div>
                     </div>
 
@@ -475,7 +480,7 @@
                     </div>
                     
                     <div class="card" style="margin-bottom:1.5rem;">
-                        <h3 style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="sparkles" style="color:var(--primary);"></i> 今日更新 (v.6.7) 功能簡介</h3>
+                        <h3 style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="sparkles" style="color:var(--primary);"></i> 今日更新 (v.6.9) 功能簡介</h3>
                         <ul style="padding-left:1.5rem; line-height:2; color:var(--text-secondary);">
                             <li><strong>隨機簽到特效與音效：</strong> 在早自習或課堂點名時，準時簽到會獲得隨機煙火、星星等特效，並附帶三種隨機獎勵音效，增添課堂樂趣。</li>
                             <li><strong>課堂點名分頁與自動重置：</strong> 新增「課堂點名」功能，可於設置中心批次設定「節次、自動重置」等，當下課時間達到您設定的重置分鐘數時，系統不須手動清除，會自動保留重置給下一堂課。</li>
@@ -626,7 +631,7 @@
             <!-- Footer Copyright -->
             <!-- Footer with Copyright -->
             <div class="copyright" style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.85rem; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 2rem;">
-                <a href="https://www.facebook.com/profile.php?id=61584090122881" target="_blank" style="color: var(--primary); text-decoration: none;">奕鈞老師</a>製作 © 2026 ｜ v.6.7
+                <a href="https://www.facebook.com/profile.php?id=61584090122881" target="_blank" style="color: var(--primary); text-decoration: none;">奕鈞老師</a>製作 © 2026 ｜ v.6.9
             </div>
         </main>
     </div>
@@ -1035,7 +1040,11 @@
             </div>
             <div class="settings-group">
                 <label>資料管理</label>
-                <div class="data-actions">
+                <div class="data-actions" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <input type="file" id="json-import-file" accept=".json" style="display: none;">
+                    <button class="btn-secondary" id="btn-import-json" style="width: 100%;" onclick="document.getElementById('json-import-file').click();">
+                        <i data-lucide="upload" style="margin-right:0.5rem;"></i> 匯入 JSON 備份檔
+                    </button>
                     <button class="btn-danger" id="btn-clear-all" style="width: 100%;">清除所有資料</button>
                 </div>
             </div>
@@ -1062,9 +1071,11 @@
     <audio id="audio-reward-2" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" preload="auto"></audio>
     <audio id="audio-reward-3" src="https://www.soundjay.com/misc/sounds/magic-chime-02.mp3" preload="auto"></audio>
     <audio id="audio-timer-end" src="https://www.soundjay.com/bell/sounds/bell-ringing-05.mp3" preload="auto"></audio>
-    <audio id="audio-checkin-1" src="powerup03.mp3" preload="auto"></audio>
-    <audio id="audio-checkin-2" src="powerup10.mp3" preload="auto"></audio>
-    <audio id="audio-checkin-3" src="coin05.mp3" preload="auto"></audio>
+    <!-- 準時簽到音效：coin05 / powerup03 隨機 -->
+    <audio id="audio-checkin-ontime-1" src="coin05.mp3" preload="auto"></audio>
+    <audio id="audio-checkin-ontime-2" src="powerup03.mp3" preload="auto"></audio>
+    <!-- 遲到簽到音效：powerup10 -->
+    <audio id="audio-checkin-late" src="powerup10.mp3" preload="auto"></audio>
 
     <!-- Scripts -->
     <script src="script.js"></script>

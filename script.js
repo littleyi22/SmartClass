@@ -1,5 +1,5 @@
 /**
- * SmartClass v.6.3 - JavaScript Logic
+ * SmartClass v.6.9 - JavaScript Logic
  * Developed for 奕鈞老師
  */
 
@@ -457,6 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // With zhuyin ruby annotation on CJK mapping
                 let html = '';
                 const lines = rawText.split('\n');
+                let charIdx = 0; // track global character index
                 lines.forEach((line, li) => {
                     if (li > 0) html += '<br>';
                     let i = 0;
@@ -465,16 +466,22 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (m) {
                             html += `<span class="tcy">${m[1]}</span>`;
                             i += m[1].length;
+                            charIdx += m[1].length;
                         } else {
                             const ch = line[i];
                             if (ch === '✱') {
                                 html += ch;
                             } else if (/[\u4e00-\u9fa5\u3400-\u4dbf]/.test(ch)) {
-                                html += `<ruby>${ch}<rt></rt></ruby>`;
+                                const override = getZhuyinForChar(ch, charIdx);
+                                const isPolyphone = POLYPHONE_MAP[ch] && POLYPHONE_MAP[ch].length > 1;
+                                const polyClass = isPolyphone ? 'polyphone-char' : '';
+                                const polyStyle = isPolyphone ? ' style="cursor:pointer; border-bottom: 2px dotted rgba(255,200,0,0.5);"' : '';
+                                html += `<ruby class="${polyClass}" data-char="${ch}" data-idx="${charIdx}"${polyStyle}>${ch}<rt>${override}</rt></ruby>`;
                             } else {
                                 html += ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch;
                             }
                             i++;
+                            charIdx++;
                         }
                     }
                 });
@@ -482,6 +489,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 html = html.replace(/✱([\s\S]*?)✱/g, '<span style="font-weight:900; -webkit-text-stroke: 1px currentColor;">$1</span>');
                 
                 contentDiv.innerHTML = html;
+
+                // Attach click handlers for polyphone characters
+                contentDiv.querySelectorAll('.polyphone-char').forEach(ruby => {
+                    ruby.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const ch = ruby.dataset.char;
+                        const idx = parseInt(ruby.dataset.idx);
+                        showZhuyinPicker(ruby, ch, idx);
+                    });
+                });
             }
         }
     }
@@ -963,6 +980,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 s.arriveTimeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
                 if (s.arriveTimeStr > state.arrivalTime) {
                     addActivity(`${s.name} 簽到 (⏰遲到 - ${s.arriveTimeStr})`);
+                    // 遲到也播放音效
+                    if (state.checkinSoundEnabled && typeof playSound === 'function') {
+                        playSound('checkin-late');
+                    }
                 } else {
                     addActivity(`${s.name} 簽到 (✅ ${s.arriveTimeStr})`);
                     if (typeof confetti === 'function') {
@@ -974,10 +995,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         } else {
                             confetti({ particleCount: 150, spread: 60, origin: { y: 0.6 }, drift: 0 }); 
                         }
-                        if (state.checkinSoundEnabled) {
-                            const snds = ['checkin-1', 'checkin-2', 'checkin-3'];
-                            const sndId = snds[Math.floor(Math.random() * snds.length)];
-                            if(typeof playSound === 'function') playSound(sndId);
+                        // 準時簽到音效：coin05 / powerup03 隨機
+                        if (state.checkinSoundEnabled && typeof playSound === 'function') {
+                            const snds = ['checkin-ontime-1', 'checkin-ontime-2'];
+                            playSound(snds[Math.floor(Math.random() * snds.length)]);
                         }
                     }
                 }
@@ -1943,6 +1964,255 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCommunicationBook();
     };
 
+    // --- Blackboard Grid Toggle ---
+    let commShowGrid = localStorage.getItem('sc_v3_comm_grid') === 'true';
+    const btnToggleGrid = document.getElementById('btn-toggle-grid');
+    
+    function updateGridUI() {
+        const board = document.getElementById('blackboard-content');
+        if (!board) return;
+        if (commShowGrid) {
+            const fontSize = state.commFontSize || 1.8;
+            const cellSize = fontSize * 16 * 2; // approximate cell size in px based on line-height
+            board.style.backgroundImage = `
+                repeating-linear-gradient(0deg, transparent, transparent ${cellSize - 1}px, rgba(255,255,255,0.12) ${cellSize - 1}px, rgba(255,255,255,0.12) ${cellSize}px),
+                repeating-linear-gradient(90deg, transparent, transparent ${cellSize - 1}px, rgba(255,255,255,0.12) ${cellSize - 1}px, rgba(255,255,255,0.12) ${cellSize}px)
+            `;
+            board.style.backgroundSize = `${cellSize}px ${cellSize}px`;
+            if (btnToggleGrid) {
+                btnToggleGrid.style.background = 'var(--success)';
+                btnToggleGrid.style.color = 'white';
+                btnToggleGrid.style.border = 'none';
+            }
+        } else {
+            // Restore original blackboard texture
+            board.style.backgroundImage = `
+                radial-gradient(circle at 50% 50%, rgba(255,255,255,0.02) 0%, transparent 80%),
+                url("https://www.transparenttextures.com/patterns/black-paper.png")
+            `;
+            board.style.backgroundSize = '';
+            if (btnToggleGrid) {
+                btnToggleGrid.style.background = '';
+                btnToggleGrid.style.color = '';
+                btnToggleGrid.style.border = '';
+            }
+        }
+    }
+
+    if (btnToggleGrid) {
+        btnToggleGrid.onclick = () => {
+            commShowGrid = !commShowGrid;
+            localStorage.setItem('sc_v3_comm_grid', commShowGrid);
+            updateGridUI();
+        };
+    }
+    // Apply grid on initial render
+    setTimeout(updateGridUI, 200);
+
+    // --- Zhuyin Multi-reading (破音字) Dictionary ---
+    const POLYPHONE_MAP = {
+        '行': ['ㄒㄧㄥˊ', 'ㄏㄤˊ', 'ㄏㄤˋ', 'ㄏㄥˊ'],
+        '長': ['ㄔㄤˊ', 'ㄓㄤˇ'],
+        '樂': ['ㄌㄜˋ', 'ㄩㄝˋ', 'ㄧㄠˋ'],
+        '了': ['ㄌㄜ˙', 'ㄌㄧㄠˇ'],
+        '得': ['ㄉㄜˊ', 'ㄉㄜ˙', 'ㄉㄟˇ'],
+        '地': ['ㄉㄧˋ', 'ㄉㄜ˙'],
+        '的': ['ㄉㄜ˙', 'ㄉㄧˋ', 'ㄉㄧˊ'],
+        '還': ['ㄏㄞˊ', 'ㄏㄨㄢˊ'],
+        '都': ['ㄉㄡ', 'ㄉㄨ'],
+        '為': ['ㄨㄟˋ', 'ㄨㄟˊ'],
+        '著': ['ㄓㄜ˙', 'ㄓㄨㄛˊ', 'ㄓㄠ', 'ㄓㄠˊ'],
+        '大': ['ㄉㄚˋ', 'ㄉㄞˋ'],
+        '少': ['ㄕㄠˇ', 'ㄕㄠˋ'],
+        '好': ['ㄏㄠˇ', 'ㄏㄠˋ'],
+        '重': ['ㄓㄨㄥˋ', 'ㄔㄨㄥˊ'],
+        '教': ['ㄐㄧㄠ', 'ㄐㄧㄠˋ'],
+        '數': ['ㄕㄨˋ', 'ㄕㄨˇ', 'ㄕㄨㄛˋ'],
+        '分': ['ㄈㄣ', 'ㄈㄣˋ'],
+        '差': ['ㄔㄚ', 'ㄔㄚˋ', 'ㄔㄞ', 'ㄘ'],
+        '種': ['ㄓㄨㄥˇ', 'ㄓㄨㄥˋ'],
+        '發': ['ㄈㄚ', 'ㄈㄚˋ'],
+        '間': ['ㄐㄧㄢ', 'ㄐㄧㄢˋ'],
+        '相': ['ㄒㄧㄤ', 'ㄒㄧㄤˋ'],
+        '度': ['ㄉㄨˋ', 'ㄉㄨㄛˋ'],
+        '調': ['ㄉㄧㄠˋ', 'ㄊㄧㄠˊ'],
+        '假': ['ㄐㄧㄚˇ', 'ㄐㄧㄚˋ'],
+        '便': ['ㄅㄧㄢˋ', 'ㄆㄧㄢˊ'],
+        '難': ['ㄋㄢˊ', 'ㄋㄢˋ'],
+        '倒': ['ㄉㄠˇ', 'ㄉㄠˋ'],
+        '量': ['ㄌㄧㄤˋ', 'ㄌㄧㄤˊ'],
+        '率': ['ㄌㄩˋ', 'ㄕㄨㄞˋ'],
+        '空': ['ㄎㄨㄥ', 'ㄎㄨㄥˋ'],
+        '處': ['ㄔㄨˇ', 'ㄔㄨˋ'],
+        '喝': ['ㄏㄜ', 'ㄏㄜˋ'],
+        '識': ['ㄕˋ', 'ㄓˋ'],
+        '傳': ['ㄔㄨㄢˊ', 'ㄓㄨㄢˋ'],
+        '落': ['ㄌㄨㄛˋ', 'ㄌㄚˋ', 'ㄌㄠˋ'],
+        '乾': ['ㄍㄢ', 'ㄑㄧㄢˊ'],
+        '磨': ['ㄇㄛˊ', 'ㄇㄛˋ'],
+        '背': ['ㄅㄟˋ', 'ㄅㄟ'],
+        '彈': ['ㄉㄢˋ', 'ㄊㄢˊ'],
+        '參': ['ㄘㄢ', 'ㄕㄣ', 'ㄙㄢ'],
+        '強': ['ㄑㄧㄤˊ', 'ㄑㄧㄤˇ', 'ㄐㄧㄤˋ'],
+        '會': ['ㄏㄨㄟˋ', 'ㄎㄨㄞˋ'],
+        '切': ['ㄑㄧㄝ', 'ㄑㄧㄝˋ'],
+        '幹': ['ㄍㄢˋ', 'ㄍㄢ'],
+        '角': ['ㄐㄧㄠˇ', 'ㄐㄩㄝˊ'],
+        '觀': ['ㄍㄨㄢ', 'ㄍㄨㄢˋ'],
+        '要': ['ㄧㄠˋ', 'ㄧㄠ'],
+        '說': ['ㄕㄨㄛ', 'ㄕㄨㄟˋ', 'ㄩㄝˋ'],
+        '應': ['ㄧㄥ', 'ㄧㄥˋ'],
+        '看': ['ㄎㄢˋ', 'ㄎㄢ'],
+        '什': ['ㄕㄣˊ', 'ㄕˊ'],
+        '和': ['ㄏㄜˊ', 'ㄏㄨㄛˋ', 'ㄏㄨˊ', 'ㄏㄜˋ'],
+        '給': ['ㄍㄟˇ', 'ㄐㄧˇ'],
+        '把': ['ㄅㄚˇ', 'ㄅㄚˋ'],
+        '過': ['ㄍㄨㄛˋ', 'ㄍㄨㄛ˙'],
+        '只': ['ㄓˇ', 'ㄓ'],
+        '沒': ['ㄇㄟˊ', 'ㄇㄛˋ'],
+        '幾': ['ㄐㄧˇ', 'ㄐㄧ'],
+        '朝': ['ㄔㄠˊ', 'ㄓㄠ'],
+        '更': ['ㄍㄥ', 'ㄍㄥˋ'],
+        '可': ['ㄎㄜˇ', 'ㄎㄜˋ'],
+        '正': ['ㄓㄥˋ', 'ㄓㄥ'],
+        '期': ['ㄑㄧ', 'ㄐㄧ'],
+        '答': ['ㄉㄚˊ', 'ㄉㄚ'],
+        '當': ['ㄉㄤ', 'ㄉㄤˋ'],
+        '不': ['ㄅㄨˋ', 'ㄅㄨˊ'],
+        '省': ['ㄕㄥˇ', 'ㄒㄧㄥˇ'],
+        '藏': ['ㄘㄤˊ', 'ㄗㄤˋ'],
+        '奇': ['ㄑㄧˊ', 'ㄐㄧ'],
+        '薄': ['ㄅㄠˊ', 'ㄅㄛˊ', 'ㄅㄛˋ'],
+        '模': ['ㄇㄛˊ', 'ㄇㄨˊ'],
+        '鮮': ['ㄒㄧㄢ', 'ㄒㄧㄢˇ'],
+        '惡': ['ㄜˋ', 'ㄨˋ', 'ㄜˇ'],
+        '累': ['ㄌㄟˋ', 'ㄌㄟˇ', 'ㄌㄟˊ'],
+        '塞': ['ㄙㄜˋ', 'ㄙㄞ', 'ㄙㄞˋ'],
+        '中': ['ㄓㄨㄥ', 'ㄓㄨㄥˋ'],
+        '結': ['ㄐㄧㄝˊ', 'ㄐㄧㄝ'],
+        '血': ['ㄒㄧㄝˇ', 'ㄒㄩㄝˋ'],
+        '華': ['ㄏㄨㄚˊ', 'ㄏㄨㄚˋ'],
+        '似': ['ㄙˋ', 'ㄕˋ'],
+        '供': ['ㄍㄨㄥ', 'ㄍㄨㄥˋ'],
+        '盛': ['ㄕㄥˋ', 'ㄔㄥˊ'],
+        '擔': ['ㄉㄢ', 'ㄉㄢˋ'],
+        '露': ['ㄌㄨˋ', 'ㄌㄡˋ'],
+        '禁': ['ㄐㄧㄣˋ', 'ㄐㄧㄣ'],
+        '興': ['ㄒㄧㄥ', 'ㄒㄧㄥˋ'],
+        '解': ['ㄐㄧㄝˇ', 'ㄐㄧㄝˋ', 'ㄒㄧㄝˋ'],
+        '任': ['ㄖㄣˋ', 'ㄖㄣˊ'],
+        '石': ['ㄕˊ', 'ㄉㄢˋ'],
+        '寧': ['ㄋㄧㄥˊ', 'ㄋㄧㄥˋ'],
+        '沉': ['ㄔㄣˊ', 'ㄕㄣˇ'],
+        '燒': ['ㄕㄠ', 'ㄕㄠˊ'],
+        '降': ['ㄐㄧㄤˋ', 'ㄒㄧㄤˊ'],
+        '散': ['ㄙㄢˋ', 'ㄙㄢˇ'],
+        '夾': ['ㄐㄧㄚ', 'ㄐㄧㄚˊ', 'ㄐㄧㄚˇ'],
+        '吐': ['ㄊㄨˇ', 'ㄊㄨˋ'],
+        '幾': ['ㄐㄧˇ', 'ㄐㄧ'],
+    };
+
+    // Custom overrides stored per class/homework
+    if (!state.zhuyinOverrides) state.zhuyinOverrides = {};
+
+    function getZhuyinForChar(ch, charIndex) {
+        const currClass = getCurrentClass();
+        const classKey = currClass ? currClass.id : 'default';
+        const overrideKey = `${classKey}_${charIndex}`;
+        if (state.zhuyinOverrides[overrideKey]) {
+            return state.zhuyinOverrides[overrideKey];
+        }
+        return ''; // Let the font handle default display
+    }
+
+    function showZhuyinPicker(rubyElem, ch, charIndex) {
+        const readings = POLYPHONE_MAP[ch];
+        if (!readings || readings.length < 2) return;
+
+        // Remove existing picker
+        const existing = document.getElementById('zhuyin-picker-popup');
+        if (existing) existing.remove();
+
+        const popup = document.createElement('div');
+        popup.id = 'zhuyin-picker-popup';
+        popup.style.cssText = `
+            position: fixed; z-index: 10000;
+            background: #1e293b; border: 2px solid var(--primary);
+            border-radius: 12px; padding: 0.8rem;
+            display: flex; flex-direction: column; gap: 0.4rem;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+            min-width: 100px;
+        `;
+
+        // Title
+        const title = document.createElement('div');
+        title.textContent = `「${ch}」選擇注音`;
+        title.style.cssText = 'color: var(--secondary); font-size: 0.85rem; font-weight: bold; text-align: center; margin-bottom: 0.3rem;';
+        popup.appendChild(title);
+
+        readings.forEach(reading => {
+            const btn = document.createElement('button');
+            btn.textContent = reading;
+            btn.style.cssText = `
+                background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);
+                padding: 0.5rem 0.8rem; border-radius: 8px; cursor: pointer;
+                font-size: 1rem; font-family: 'Noto Sans TC', sans-serif;
+                transition: all 0.2s;
+            `;
+            btn.onmouseover = () => btn.style.background = 'var(--primary)';
+            btn.onmouseout = () => btn.style.background = 'rgba(255,255,255,0.1)';
+            btn.onclick = () => {
+                const currClass = getCurrentClass();
+                const classKey = currClass ? currClass.id : 'default';
+                const overrideKey = `${classKey}_${charIndex}`;
+                state.zhuyinOverrides[overrideKey] = reading;
+                localStorage.setItem('sc_v3_zhuyin_overrides', JSON.stringify(state.zhuyinOverrides));
+                popup.remove();
+                renderCommunicationBook();
+            };
+            popup.appendChild(btn);
+        });
+
+        // Clear option
+        const clearBtn = document.createElement('button');
+        clearBtn.textContent = '🔄 恢復預設';
+        clearBtn.style.cssText = `
+            background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.3);
+            padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-size: 0.85rem; margin-top: 0.2rem;
+        `;
+        clearBtn.onclick = () => {
+            const currClass = getCurrentClass();
+            const classKey = currClass ? currClass.id : 'default';
+            const overrideKey = `${classKey}_${charIndex}`;
+            delete state.zhuyinOverrides[overrideKey];
+            localStorage.setItem('sc_v3_zhuyin_overrides', JSON.stringify(state.zhuyinOverrides));
+            popup.remove();
+            renderCommunicationBook();
+        };
+        popup.appendChild(clearBtn);
+
+        document.body.appendChild(popup);
+
+        // Position near the clicked element
+        const rect = rubyElem.getBoundingClientRect();
+        popup.style.left = Math.min(rect.left, window.innerWidth - 150) + 'px';
+        popup.style.top = (rect.bottom + 5) + 'px';
+
+        // Close on outside click
+        setTimeout(() => {
+            const closeHandler = (e) => {
+                if (!popup.contains(e.target)) {
+                    popup.remove();
+                    document.removeEventListener('click', closeHandler);
+                }
+            };
+            document.addEventListener('click', closeHandler);
+        }, 100);
+    }
+
+    // Load saved overrides
+    state.zhuyinOverrides = JSON.parse(localStorage.getItem('sc_v3_zhuyin_overrides') || '{}');
+
     const btnCommAttZoomIn = document.getElementById('btn-comm-att-zoom-in');
     if (btnCommAttZoomIn) {
         btnCommAttZoomIn.onclick = () => {
@@ -2139,6 +2409,67 @@ document.addEventListener('DOMContentLoaded', () => {
         downloadAnchorNode.remove();
     };
 
+    // --- JSON Import ---
+    const jsonImportInput = document.getElementById('json-import-file');
+    if (jsonImportInput) {
+        jsonImportInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                try {
+                    const imported = JSON.parse(evt.target.result);
+                    if (!imported.classes || !Array.isArray(imported.classes)) {
+                        throw new Error('JSON 格式不正確，缺少 classes 陣列');
+                    }
+                    if (confirm('⚠️ 匯入 JSON 將會覆蓋目前的所有班級資料。確定要繼續嗎？')) {
+                        // Merge imported data into state
+                        state.classes = imported.classes;
+                        state.currentClassId = imported.currentClassId || state.classes[0].id;
+                        if (imported.activities) state.activities = imported.activities;
+                        if (imported.brandName) state.brandName = imported.brandName;
+                        if (imported.theme) state.theme = imported.theme;
+                        if (imported.arrivalTime) state.arrivalTime = imported.arrivalTime;
+                        if (imported.customTag1 !== undefined) state.customTag1 = imported.customTag1;
+                        if (imported.customTag2 !== undefined) state.customTag2 = imported.customTag2;
+                        if (imported.customTag3 !== undefined) state.customTag3 = imported.customTag3;
+                        if (imported.classBtn1) state.classBtn1 = imported.classBtn1;
+                        if (imported.classBtn2) state.classBtn2 = imported.classBtn2;
+                        if (imported.classBtn3) state.classBtn3 = imported.classBtn3;
+                        if (imported.classBtn4 !== undefined) state.classBtn4 = imported.classBtn4;
+                        if (imported.attBtn1) state.attBtn1 = imported.attBtn1;
+                        if (imported.attBtn3) state.attBtn3 = imported.attBtn3;
+                        if (imported.history) state.history = imported.history;
+                        if (imported.customLinks) state.customLinks = imported.customLinks;
+                        if (imported.courseAttPrefs) state.courseAttPrefs = imported.courseAttPrefs;
+                        if (imported.scoreLockPassword !== undefined) state.scoreLockPassword = imported.scoreLockPassword;
+                        if (imported.commWritingMode) state.commWritingMode = imported.commWritingMode;
+                        if (imported.commFont) state.commFont = imported.commFont;
+                        if (imported.commFontSize) state.commFontSize = imported.commFontSize;
+                        if (imported.commShowZhuyin !== undefined) state.commShowZhuyin = imported.commShowZhuyin;
+                        if (imported.commShowAttendance !== undefined) state.commShowAttendance = imported.commShowAttendance;
+                        if (imported.sheetsId) state.sheetsId = imported.sheetsId;
+                        
+                        saveState();
+                        renderClassSelect();
+                        renderStudents();
+                        renderGroups();
+                        if (typeof renderAttendance === 'function') renderAttendance();
+                        updateDashboard();
+                        applyTheme();
+                        addActivity(`已成功匯入 JSON 備份檔（含 ${state.classes.length} 個班級）`);
+                        alert(`匯入成功！共還原 ${state.classes.length} 個班級資料。`);
+                    }
+                } catch (err) {
+                    console.error(err);
+                    alert('讀取 JSON 時發生錯誤：\n' + (err.message || '請確認檔案格式正確'));
+                }
+            };
+            reader.readAsText(file);
+            e.target.value = '';
+        };
+    }
+
     // --- Modal Closing ---
     document.querySelectorAll('.close, .btn-minimize').forEach(c => {
         c.onclick = () => document.getElementById(c.dataset.modal).style.display = 'none';
@@ -2150,7 +2481,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Google Auth & Cloud Sync ---
     const CLIENT_ID = '83309907791-j9sqgjm9e7dfeuo20pmcttm91t8ce8e9.apps.googleusercontent.com';
-    const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
+    const SCOPES = 'https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets';
 
     let tokenClient;
     let accessToken = localStorage.getItem('smartclass_google_token') || null;
@@ -2204,13 +2535,19 @@ document.addEventListener('DOMContentLoaded', () => {
             tokenClient = google.accounts.oauth2.initTokenClient({
                 client_id: CLIENT_ID,
                 scope: SCOPES,
-                callback: (tokenResponse) => {
+                callback: async (tokenResponse) => {
                     if(tokenResponse && tokenResponse.access_token) {
                         accessToken = tokenResponse.access_token;
                         localStorage.setItem('smartclass_google_token', accessToken);
                         updateGoogleStatus(true);
                         addActivity("✅ 已成功串接 Google 雲端硬碟");
-                        alert("Google 帳號連結成功！未來的「下課存檔」將會自動上傳備份至您的雲端硬碟。");
+                        // 自動從雲端載入備份
+                        const loaded = await loadFromDriveAppData();
+                        if (loaded) {
+                            alert("Google 帳號連結成功！\n\n已自動從雲端還原您的班級資料。");
+                        } else {
+                            alert("Google 帳號連結成功！未來的「雲端存檔」將會自動上傳備份至您的雲端硬碟。\n\n在其他裝置登入同帳號即可還原資料。");
+                        }
                     }
                 },
             });
@@ -2254,6 +2591,106 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // --- Google Drive appDataFolder Sync Helpers ---
+    async function findDriveBackupFile() {
+        // Search for existing backup file in appDataFolder
+        const res = await fetch('https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=name%3D%27smartclass_backup.json%27&fields=files(id,name,modifiedTime)', {
+            headers: { 'Authorization': 'Bearer ' + accessToken }
+        });
+        if (!res.ok) return null;
+        const data = await res.json();
+        return data.files && data.files.length > 0 ? data.files[0] : null;
+    }
+
+    async function uploadToDriveAppData() {
+        const existingFile = await findDriveBackupFile();
+        const dataStr = JSON.stringify(state);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+
+        if (existingFile) {
+            // Update existing file
+            const res = await fetch(`https://www.googleapis.com/upload/drive/v3/files/${existingFile.id}?uploadType=media`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': 'Bearer ' + accessToken,
+                    'Content-Type': 'application/json'
+                },
+                body: blob
+            });
+            return res;
+        } else {
+            // Create new file
+            const metadata = {
+                name: 'smartclass_backup.json',
+                parents: ['appDataFolder'],
+                mimeType: 'application/json'
+            };
+            const form = new FormData();
+            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+            form.append('file', blob);
+            const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + accessToken },
+                body: form
+            });
+            return res;
+        }
+    }
+
+    async function loadFromDriveAppData() {
+        try {
+            const existingFile = await findDriveBackupFile();
+            if (!existingFile) return false;
+            
+            const res = await fetch(`https://www.googleapis.com/drive/v3/files/${existingFile.id}?alt=media`, {
+                headers: { 'Authorization': 'Bearer ' + accessToken }
+            });
+            if (!res.ok) return false;
+            
+            const imported = await res.json();
+            if (!imported.classes || !Array.isArray(imported.classes)) return false;
+            
+            // Merge cloud data into state
+            state.classes = imported.classes;
+            state.currentClassId = imported.currentClassId || state.classes[0]?.id;
+            if (imported.activities) state.activities = imported.activities;
+            if (imported.brandName) state.brandName = imported.brandName;
+            if (imported.theme) state.theme = imported.theme;
+            if (imported.arrivalTime) state.arrivalTime = imported.arrivalTime;
+            if (imported.customTag1 !== undefined) state.customTag1 = imported.customTag1;
+            if (imported.customTag2 !== undefined) state.customTag2 = imported.customTag2;
+            if (imported.customTag3 !== undefined) state.customTag3 = imported.customTag3;
+            if (imported.classBtn1) state.classBtn1 = imported.classBtn1;
+            if (imported.classBtn2) state.classBtn2 = imported.classBtn2;
+            if (imported.classBtn3) state.classBtn3 = imported.classBtn3;
+            if (imported.classBtn4 !== undefined) state.classBtn4 = imported.classBtn4;
+            if (imported.attBtn1) state.attBtn1 = imported.attBtn1;
+            if (imported.attBtn3) state.attBtn3 = imported.attBtn3;
+            if (imported.history) state.history = imported.history;
+            if (imported.customLinks) state.customLinks = imported.customLinks;
+            if (imported.courseAttPrefs) state.courseAttPrefs = imported.courseAttPrefs;
+            if (imported.scoreLockPassword !== undefined) state.scoreLockPassword = imported.scoreLockPassword;
+            if (imported.commWritingMode) state.commWritingMode = imported.commWritingMode;
+            if (imported.commFont) state.commFont = imported.commFont;
+            if (imported.commFontSize) state.commFontSize = imported.commFontSize;
+            if (imported.commShowZhuyin !== undefined) state.commShowZhuyin = imported.commShowZhuyin;
+            if (imported.commShowAttendance !== undefined) state.commShowAttendance = imported.commShowAttendance;
+            if (imported.sheetsId) state.sheetsId = imported.sheetsId;
+            
+            saveState();
+            renderClassSelect();
+            renderStudents();
+            renderGroups();
+            if (typeof renderAttendance === 'function') renderAttendance();
+            updateDashboard();
+            applyTheme();
+            return true;
+        } catch(err) {
+            console.error('loadFromDriveAppData error:', err);
+            return false;
+        }
+    }
+
     document.getElementById('btn-end-class').onclick = async () => {
         if(!accessToken) {
             addActivity("下課囉！(目前僅儲存於本地瀏覽器)");
@@ -2266,35 +2703,15 @@ document.addEventListener('DOMContentLoaded', () => {
         btn.innerHTML = `<span>上傳中...</span>`;
         
         try {
-            const fileMetadata = {
-                name: `智慧教室資料備份_${new Date().toLocaleDateString()}.json`,
-                mimeType: 'application/json'
-            };
-            
-            const dataStr = JSON.stringify(state);
-            const file = new Blob([dataStr], { type: 'application/json' });
-            
-            const form = new FormData();
-            form.append('metadata', new Blob([JSON.stringify(fileMetadata)], { type: 'application/json' }));
-            form.append('file', file);
-            
-            const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + accessToken
-                },
-                body: form
-            });
+            const response = await uploadToDriveAppData();
             
             if(response.ok) {
-                const resData = await response.json();
                 addActivity(`✅ 課後存檔已同步至雲端硬碟！`);
                 saveDailyRecord(); // Save to local history
                 await syncToGoogleSheets(); // Sync to Google Sheets
                 confetti({ particleCount: 150, spread: 80, origin: { y: 0.4 } });
-                alert(`太棒了！下課囉！\n\n您的班級資料已備份至雲端硬碟，今日紀錄也同步到 Google 試算表了！`);
+                alert(`太棒了！下課囉！\n\n您的班級資料已備份至雲端硬碟（appDataFolder），今日紀錄也同步到 Google 試算表了！\n\n在其他裝置登入同帳號即可還原資料。`);
             } else if (response.status === 401) {
-                // Token 過期，清除並提示重新登入
                 accessToken = null;
                 localStorage.removeItem('smartclass_google_token');
                 updateGoogleStatus(false);
@@ -2306,7 +2723,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Google Drive Upload Error:', err);
             alert("上傳雲端硬碟時發生錯誤，但資料已確保儲存於瀏覽器中。\n\n錯誤資訊：" + err.message);
         } finally {
-            btn.innerHTML = `<i data-lucide="log-out"></i> <span>下課存檔</span>`;
+            btn.innerHTML = `<i data-lucide="cloud"></i> <span>雲端存檔</span>`;
             lucide.createIcons();
         }
     };
@@ -2650,6 +3067,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (timeStr > lateTime) {
                 addActivity(`${s.name} 第${period}節 課堂簽到 (⏰遲到 - ${timeStr})`);
+                // 遲到也播放音效
+                if (state.checkinSoundEnabled && typeof playSound === 'function') {
+                    playSound('checkin-late');
+                }
             } else {
                 addActivity(`${s.name} 第${period}節 課堂簽到 (✅ ${timeStr})`);
                 if (typeof confetti === 'function') {
@@ -2661,10 +3082,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     } else {
                         confetti({ particleCount: 150, spread: 60, origin: { y: 0.6 }, drift: 0 }); 
                     }
-                    if (state.checkinSoundEnabled) {
-                        const snds = ['checkin-1', 'checkin-2', 'checkin-3'];
-                        const sndId = snds[Math.floor(Math.random() * snds.length)];
-                        if (typeof playSound === 'function') playSound(sndId);
+                    // 準時簽到音效：coin05 / powerup03 隨機
+                    if (state.checkinSoundEnabled && typeof playSound === 'function') {
+                        const snds = ['checkin-ontime-1', 'checkin-ontime-2'];
+                        playSound(snds[Math.floor(Math.random() * snds.length)]);
                     }
                 }
             }

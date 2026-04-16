@@ -913,6 +913,19 @@ rt {
     font-family: 'BiauKai', 'DFKai-SB', '標楷體', 'DFKai-SB', serif;
 }
 
+/* Polyphone character highlighting in zhuyin mode */
+.blackboard .polyphone-char:hover {
+    background: rgba(255, 200, 0, 0.15);
+    border-radius: 4px;
+}
+
+/* Override rt to show custom zhuyin */
+.blackboard ruby rt:not(:empty) {
+    font-size: 0.55em;
+    color: rgba(255, 230, 100, 0.9);
+    font-family: 'Noto Sans TC', sans-serif;
+}
+
 /* History Tab Layout */
 .history-toolbar {
     margin-bottom: 2rem;
