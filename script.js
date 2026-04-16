@@ -77,6 +77,9 @@ document.addEventListener('DOMContentLoaded', () => {
         customLinks: JSON.parse(localStorage.getItem('sc_v3_custom_links')) || [],
         courseAttPrefs: localStorage.getItem('sc_v3_course_att_prefs') || '1,國語,08:40,45\n2,數學,09:30,45',
         checkinSoundEnabled: localStorage.getItem('sc_v3_checkin_sound') !== 'false',
+        groupShowButtons: false,
+        groupEditMode: false,
+        groupZoom: parseFloat(localStorage.getItem('sc_v3_group_zoom')) || 1.0,
         user: null,
         timer: { seconds: 0, active: false, interval: null }
     };
@@ -628,6 +631,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('groups-container');
         if(!container) return;
         
+        container.style.transform = `scale(${state.groupZoom})`;
+        container.style.transformOrigin = 'top center';
         container.innerHTML = '';
         if(groups.length === 0) {
             container.innerHTML = '<div class="empty-state">設定組數後開始分組</div>';
@@ -650,15 +655,17 @@ document.addEventListener('DOMContentLoaded', () => {
             group.forEach(sRef => {
                 const s = currClass.students.find(x => x.id === sRef.id) || sRef;
                 html += `<div class="group-member">
-                    <div style="flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
-                        <span style="color:var(--text-muted); font-size:0.85rem; margin-right:4px;">${s.seatNo}.</span>
+                    <div style="flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:1.1rem;">
+                        <span style="color:var(--text-muted); font-size:0.9rem; margin-right:6px;">${s.seatNo}.</span>
                         <span style="font-weight:600;">${s.name}</span>
-                        <span style="color:var(--success); margin-left:6px; font-weight:bold;">(${s.score})</span>
+                        <span style="color:var(--success); margin-left:8px; font-weight:bold;">(${s.score})</span>
                     </div>
-                    <div style="display:flex; gap:0.3rem; flex-shrink:0;">
-                        <button class="btn-secondary" onclick="window.moveStudentToGroup(${s.id})" style="padding:3px 8px; font-size:0.75rem;" title="移動分組">移</button>
-                        <button class="btn-primary" onclick="window.modS(${s.id}, 1)" style="padding:3px 10px; background:var(--success); border:none;">+</button>
-                        <button class="btn-primary" onclick="window.modS(${s.id}, -1)" style="padding:3px 10px; background:var(--danger); border:none;">-</button>
+                    <div style="display:flex; gap:0.4rem; flex-shrink:0;">
+                        ${state.groupEditMode ? `<button class="btn-secondary" onclick="window.moveStudentToGroup(${s.id})" style="padding:4px 10px; font-size:0.8rem;" title="移動分組">移</button>` : ''}
+                        ${state.groupShowButtons ? `
+                            <button class="btn-primary" onclick="window.modS(${s.id}, 1)" style="padding:4px 12px; background:var(--success); border:none; font-size:1rem;">+</button>
+                            <button class="btn-primary" onclick="window.modS(${s.id}, -1)" style="padding:4px 12px; background:var(--danger); border:none; font-size:1rem;">-</button>
+                        ` : ''}
                     </div>
                 </div>`;
             });
@@ -723,6 +730,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             if (target === 'course-attendance') {
                 if (typeof renderCourseAttendanceTab === 'function') renderCourseAttendanceTab();
+            }
+            if (target === 'groups') {
+                renderGroups();
             }
         });
     });
@@ -1394,9 +1404,31 @@ document.addEventListener('DOMContentLoaded', () => {
         saveState();
     };
 
-    // Dummy Manual grouping logic
-    document.getElementById('btn-manual-grouping').onclick = () => {
-        alert("手動微調提示：請在分組產生後，用滑鼠隨意調整位置 (此為視覺參考)");
+    window.setGroupZoom = (delta) => {
+        state.groupZoom = Math.max(0.3, Math.min(2.0, state.groupZoom + delta));
+        localStorage.setItem('sc_v3_group_zoom', state.groupZoom);
+        renderGroups();
+    };
+
+    document.getElementById('btn-toggle-group-buttons').onclick = function() {
+        state.groupShowButtons = !state.groupShowButtons;
+        this.innerHTML = state.groupShowButtons ? '<i data-lucide="eye-off"></i> 顯示學生按鈕: 開' : '<i data-lucide="eye"></i> 顯示學生按鈕: 關';
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+        renderGroups();
+    };
+
+    document.getElementById('btn-manual-grouping').onclick = function() {
+        state.groupEditMode = !state.groupEditMode;
+        if (state.groupEditMode) {
+            this.style.background = 'var(--warning)';
+            this.style.color = 'var(--bg-dark)';
+            this.querySelector('span').textContent = '調整中(按此關閉)';
+        } else {
+            this.style.background = '';
+            this.style.color = '';
+            this.querySelector('span').textContent = '手動微調';
+        }
+        renderGroups();
     };
 
     window.modGroupS = (gIdx, val) => {

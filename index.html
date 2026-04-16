@@ -263,6 +263,14 @@
                 <div class="groups-container" id="groups-container">
                     <div class="empty-state">設定組數後開始分組</div>
                 </div>
+                <!-- Group Controls Overlay/Footer -->
+                <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1rem;">
+                    <button class="btn-secondary btn-icon-sm" onclick="setGroupZoom(0.1)" title="放大分組名單"><i data-lucide="zoom-in"></i></button>
+                    <button class="btn-secondary btn-icon-sm" onclick="setGroupZoom(-0.1)" title="縮小分組名單"><i data-lucide="zoom-out"></i></button>
+                    <button class="btn-secondary" id="btn-toggle-group-buttons" style="font-size: 0.9rem; padding: 0.4rem 0.8rem;">
+                        <i data-lucide="eye"></i> 顯示學生按鈕: 關
+                    </button>
+                </div>
                 <div class="tool-header" style="margin-top: 2rem;">
                     <div class="input-group">
                         <label>我要分幾組？</label>
@@ -271,8 +279,8 @@
                     <button class="btn-primary" id="btn-generate-groups">
                         <i data-lucide="refresh-cw"></i> 自動隨機分組
                     </button>
-                    <button class="btn-secondary" id="btn-manual-grouping">
-                        <i data-lucide="hand"></i> 手動微調
+                    <button class="btn-secondary" id="btn-manual-grouping" style="transition: all 0.3s;">
+                        <i data-lucide="hand"></i> <span>手動微調</span>
                     </button>
                     <div style="margin-left: auto; display: flex; gap: 0.5rem;">
                         <button class="btn-secondary" id="btn-lock-scores2" title="分數鎖定" style="border: 2px solid var(--danger); padding: 0.5rem 1rem;">
