@@ -83,6 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Sound Effects ---
     function playSound(id) {
+        if (!state.checkinSoundEnabled) return; // Note: using checkinSoundEnabled as global toggle for compatibility
         const audio = document.getElementById(`audio-${id}`);
         if (audio) {
             audio.currentTime = 0;
@@ -177,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.checkinSoundEnabled = !state.checkinSoundEnabled;
         saveState();
         if (typeof updateCheckinSoundUI === 'function') updateCheckinSoundUI();
-        addActivity(`簽到音效已${state.checkinSoundEnabled ? '開啟' : '關閉'}`);
+        addActivity(`全域音效已${state.checkinSoundEnabled ? '開啟' : '關閉'}`);
     };
 
     function updateCheckinSoundUI() {
@@ -185,12 +186,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const icon = btn.querySelector('.icon-sound-toggle');
             if (state.checkinSoundEnabled) {
                 if (icon) icon.setAttribute('data-lucide', 'volume-2');
-                btn.title = '簽到音效: 開';
+                btn.title = '全域音效: 開';
                 btn.style.color = 'white';
                 btn.style.border = '2px solid var(--success)';
             } else {
                 if (icon) icon.setAttribute('data-lucide', 'volume-x');
-                btn.title = '簽到音效: 關';
+                btn.title = '全域音效: 關';
                 btn.style.color = '';
                 btn.style.border = '';
             }
@@ -910,7 +911,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const s = currClass.students.find(x => x.id === id);
         if (s) {
             s.score += val;
-            if (val > 0) confetti({ particleCount: 40, spread: 50, origin: { y: 0.8 } });
+            if (val > 0) {
+                confetti({ particleCount: 40, spread: 50, origin: { y: 0.8 } });
+                playSound('score-up');
+            } else {
+                playSound('score-down');
+            }
             addActivity(`${s.name} 個人分數 ${val > 0 ? '+' : ''}${val}`);
             
             // Sync with group score IF linked
@@ -1352,7 +1358,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(onWin) onWin(winnerObj);
             }
         }, 100);
-        playSound('draw');
+        playSound('bell');
     };
 
     startPickBtn.onclick = () => {
@@ -1394,6 +1400,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const currClass = getCurrentClass();
         if(!currClass.groupScores) currClass.groupScores = new Array(currClass.groups ? currClass.groups.length : 10).fill(0);
         currClass.groupScores[gIdx] = (currClass.groupScores[gIdx] || 0) + val;
+        
+        if (val > 0) {
+            playSound('score-up');
+        } else {
+            playSound('score-down');
+        }
         
         // Sync with all group members IF linked
         if (state.linkGroupPoints && currClass.groups && currClass.groups[gIdx]) {
@@ -1558,6 +1570,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         if (winners.length === 1) {
             confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            playSound('jump');
         }
     }
 
@@ -1820,6 +1833,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnDice.onclick = () => {
         let count = 0;
         btnDice.disabled = true;
+        playSound('bell');
         const int = setInterval(() => {
             diceDisplay.textContent = faces[Math.floor(Math.random()*6)];
             diceDisplay.style.transform = `rotate(${Math.random()*360}deg)`;

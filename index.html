@@ -118,6 +118,9 @@
                             <button id="btn-timer-start"><i data-lucide="play"></i></button>
                         </div>
                     </div>
+                    <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="全域音效: 開" style="padding: 0.5rem; height: 100%;">
+                        <i data-lucide="volume-2" class="icon-sound-toggle"></i>
+                    </button>
                     <button class="btn-special" id="btn-random-pick-quick">
                         <i data-lucide="sparkles"></i> <span>隨機抽人</span>
                     </button>
@@ -189,8 +192,8 @@
                     <div class="action-buttons">
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(20)" title="放大"><i data-lucide="zoom-in"></i></button>
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(-20)" title="縮小"><i data-lucide="zoom-out"></i></button>
-                        <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="簽到音效: 開"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
-                        <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="簽到音效: 開"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
+                        <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="全域音效: 開"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
+                        <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="全域音效: 開"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
                         <button class="btn-secondary" id="btn-download-template" title="下載Excel範例檔">
                             <i data-lucide="download"></i> 範例下載
                         </button>
@@ -234,7 +237,7 @@
                     <div class="action-buttons">
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(20)" title="放大"><i data-lucide="zoom-in"></i></button>
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(-20)" title="縮小"><i data-lucide="zoom-out"></i></button>
-                        <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="簽到音效: 開"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
+                        <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="全域音效: 開"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
                         <button class="btn-secondary" id="btn-export-attendance"><i data-lucide="download"></i> 匯出今日點名 (Excel)</button>
                         <button class="btn-secondary" id="btn-reset-attendance">重置今日點名</button>
                     </div>
@@ -251,7 +254,7 @@
                     <div class="action-buttons">
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(20)" title="放大"><i data-lucide="zoom-in"></i></button>
                         <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(-20)" title="縮小"><i data-lucide="zoom-out"></i></button>
-                        <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="簽到音效: 開"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
+                        <button class="btn-secondary btn-icon-sm btn-sound-toggle" onclick="window.toggleCheckinSound()" title="全域音效: 開"><i data-lucide="volume-2" class="icon-sound-toggle"></i></button>
                     </div>
                 </div>
                 <div class="student-grid" id="course-attendance-grid">
@@ -1071,6 +1074,11 @@
     <audio id="audio-reward-2" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" preload="auto"></audio>
     <audio id="audio-reward-3" src="https://www.soundjay.com/misc/sounds/magic-chime-02.mp3" preload="auto"></audio>
     <audio id="audio-timer-end" src="https://www.soundjay.com/bell/sounds/bell-ringing-05.mp3" preload="auto"></audio>
+    <!-- 分數與功能音效 -->
+    <audio id="audio-score-up" src="coin07.mp3" preload="auto"></audio>
+    <audio id="audio-score-down" src="poka02.mp3" preload="auto"></audio>
+    <audio id="audio-bell" src="bright_bell1.mp3" preload="auto"></audio>
+    <audio id="audio-jump" src="jump11.mp3" preload="auto"></audio>
     <!-- 準時簽到音效：coin05 / powerup03 隨機 -->
     <audio id="audio-checkin-ontime-1" src="coin05.mp3" preload="auto"></audio>
     <audio id="audio-checkin-ontime-2" src="powerup03.mp3" preload="auto"></audio>
