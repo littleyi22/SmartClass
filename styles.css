@@ -771,7 +771,6 @@ header {
 /* Blackboard chalk text style */
 .blackboard {
     text-shadow: 0 0 1px rgba(255,255,255,0.3);
-    letter-spacing: 2px;
 }
 
 /* Vertical writing: upright = ALL chars (incl. Latin/digits) display upright */
@@ -780,7 +779,8 @@ header {
     text-orientation: upright;
     height: 100%;
     padding: 40px 20px;
-    letter-spacing: 1px;
+    letter-spacing: 0.5em;
+    line-height: 1.5;
 }
 
 /* In vertical mode, .tcy wraps short alphanumeric strings for combined-upright */
@@ -792,6 +792,33 @@ header {
 
 .blackboard.horizontal {
     writing-mode: horizontal-tb;
+    letter-spacing: 0.5em;
+    line-height: 1.5;
+}
+
+/* Individual character box styling when toggled */
+.blackboard.char-boxed .char-box,
+.blackboard.char-boxed ruby {
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 1.3em;
+    height: 1.3em;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+/* In horizontal mode, to ensure it centers align cleanly */
+.blackboard.horizontal.char-boxed .char-box,
+.blackboard.horizontal.char-boxed ruby {
+    margin: 0 0.1em;
+}
+
+/* In vertical mode */
+.blackboard.vertical.char-boxed .char-box,
+.blackboard.vertical.char-boxed ruby {
+    margin: 0.1em 0;
 }
 
 /* For upright combined alphanumeric text (horizontal mode or short groups) */

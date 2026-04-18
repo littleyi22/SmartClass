@@ -263,14 +263,7 @@
                 <div class="groups-container" id="groups-container">
                     <div class="empty-state">設定組數後開始分組</div>
                 </div>
-                <!-- Group Controls Overlay/Footer -->
-                <div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1rem;">
-                    <button class="btn-secondary btn-icon-sm" onclick="setGroupZoom(0.1)" title="放大分組名單"><i data-lucide="zoom-in"></i></button>
-                    <button class="btn-secondary btn-icon-sm" onclick="setGroupZoom(-0.1)" title="縮小分組名單"><i data-lucide="zoom-out"></i></button>
-                    <button class="btn-secondary" id="btn-toggle-group-buttons" style="font-size: 0.9rem; padding: 0.4rem 0.8rem;">
-                        <i data-lucide="eye"></i> 顯示學生按鈕: 關
-                    </button>
-                </div>
+
                 <div class="tool-header" style="margin-top: 2rem;">
                     <div class="input-group">
                         <label>我要分幾組？</label>
@@ -281,6 +274,12 @@
                     </button>
                     <button class="btn-secondary" id="btn-manual-grouping" style="transition: all 0.3s;">
                         <i data-lucide="hand"></i> <span>手動微調</span>
+                    </button>
+                    <!-- Move zoom and eyes here -->
+                    <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(20)" title="放大分組名單"><i data-lucide="zoom-in"></i></button>
+                    <button class="btn-secondary btn-icon-sm" onclick="setGridZoom(-20)" title="縮小分組名單"><i data-lucide="zoom-out"></i></button>
+                    <button class="btn-secondary" id="btn-toggle-group-buttons" style="font-size: 0.9rem; padding: 0.4rem 0.8rem;">
+                        <i data-lucide="eye"></i> <span id="toggle-group-buttons-text">顯示學生按鈕: 關</span>
                     </button>
                     <div style="margin-left: auto; display: flex; gap: 0.5rem;">
                         <button class="btn-secondary" id="btn-lock-scores2" title="分數鎖定" style="border: 2px solid var(--danger); padding: 0.5rem 1rem;">
@@ -379,8 +378,8 @@
                             <button class="btn-secondary btn-icon-sm" id="btn-toggle-comm-attendance" title="顯示簽到格">
                                 <i data-lucide="user-check"></i><span id="text-comm-attendance" class="btn-icon-label">簽到:開</span>
                             </button>
-                            <button class="btn-secondary btn-icon-sm" id="btn-toggle-grid" title="顯示格子線">
-                                <i data-lucide="grid-3x3"></i><span class="btn-icon-label">格子</span>
+                            <button class="btn-secondary btn-icon-sm" id="btn-toggle-char-box" title="顯示文字外框">
+                                <i data-lucide="square"></i><span class="btn-icon-label">方格</span>
                             </button>
                             <button class="btn-secondary btn-icon-sm" id="btn-insert-numbered-list" title="插入編號清單">
                                 <i data-lucide="list-ordered"></i>
@@ -468,7 +467,7 @@
                         <i data-lucide="book-marked" style="width:48px; height:48px; color:white; flex-shrink:0;"></i>
                         <div>
                             <h2 style="margin:0; color:white; font-size:1.6rem;">SmartClass 使用說明</h2>
-                            <p style="margin:0.3rem 0 0; color:rgba(255,255,255,0.8); font-size:0.95rem;">Version 6.8 ｜ 奕鈞老師製作</p>
+                            <p style="margin:0.3rem 0 0; color:rgba(255,255,255,0.8); font-size:0.95rem;">Version 7.0 ｜ 奕鈞老師製作</p>
                         </div>
                     </div>
 
@@ -485,7 +484,17 @@
                     </div>
                     
                     <div class="card" style="margin-bottom:1.5rem;">
-                        <h3 style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="sparkles" style="color:var(--primary);"></i> 今日更新 (v.6.9) 功能簡介</h3>
+                        <h3 style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="sparkles" style="color:var(--primary);"></i> 今日更新 (v.7.0) 功能簡介</h3>
+                        <ul style="padding-left:1.5rem; line-height:2; color:var(--text-secondary);">
+                            <li><strong>分組與學生連線優化：</strong> 改善分組清單的縮放及介面，並大幅提升學生連線的穩定度，支援背景活動及斷線自動重連機能。</li>
+                            <li><strong>Google Sheets 進階整合：</strong> 新增「從雲端還原」按鈕，並優化 ID 自動解析，幫助您更流暢地進行雲端硬碟與試算表的雙向同步。</li>
+                            <li><strong>聯絡簿中文字方格外框：</strong> 取代原先的格線背景，現在提供「方格」按鈕能精準賦予每個中文字正方形外框，且字體縮放不跑位。</li>
+                            <li><strong>其他介面調整：</strong> 小組加減分按鈕精簡化，並將縮放及顯示按鈕整合至工具列同一列。</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="card" style="margin-bottom:1.5rem;">
+                        <h3 style="display:flex; align-items:center; gap:0.5rem;"><i data-lucide="history" style="color:var(--text-muted);"></i> 過去更新 (v.6.9) 功能簡介</h3>
                         <ul style="padding-left:1.5rem; line-height:2; color:var(--text-secondary);">
                             <li><strong>隨機簽到特效與音效：</strong> 在早自習或課堂點名時，準時簽到會獲得隨機煙火、星星等特效，並附帶三種隨機獎勵音效，增添課堂樂趣。</li>
                             <li><strong>課堂點名分頁與自動重置：</strong> 新增「課堂點名」功能，可於設置中心批次設定「節次、自動重置」等，當下課時間達到您設定的重置分鐘數時，系統不須手動清除，會自動保留重置給下一堂課。</li>
@@ -1040,7 +1049,10 @@
                         <span style="flex:1; color:var(--text-muted); line-height: 2.5rem; font-size: 0.85rem;">Google Sheets ID：</span>
                         <input type="text" id="settings-sheets-id" placeholder="填入試算表 ID 啟用自動同步">
                     </div>
-                    <button class="btn-secondary" id="btn-apply-sheets-id">套用同步設定</button>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn-secondary" id="btn-apply-sheets-id" style="flex: 1;">套用同步設定</button>
+                        <button class="btn-primary" id="btn-restore-sheets" style="flex: 1; background: var(--info); color: white;"><i data-lucide="download-cloud"></i> 從雲端還原</button>
+                    </div>
                 </div>
             </div>
             <div class="settings-group">

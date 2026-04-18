@@ -309,7 +309,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
                 });
             }
-            const range = 'Sheet1!A:E';
+            const range = 'A:E';
             const values = [
                 [dateStr, currClass.name, currClass.homework || '', currClass.teachingProgress || '', currClass.students.filter(s => s.arrived).length + '/' + currClass.students.length]
             ];
@@ -325,6 +325,65 @@ document.addEventListener('DOMContentLoaded', () => {
             addActivity("❌ 試算表同步失敗：" + (err.result?.error?.message || "請檢查權限及 ID"));
         }
     }
+
+    window.restoreFromGoogleSheets = async () => {
+        if (!accessToken || !state.sheetsId) {
+            alert("請先連結 Google 帳號並輸入 Google Sheets ID！");
+            return;
+        }
+        const btn = document.getElementById('btn-restore-sheets');
+        if(btn) btn.innerHTML = '<i data-lucide="loader"></i> 還原中...';
+        try {
+            if (!window.gapi || !window.gapi.client) {
+                await new Promise((resolve, reject) => {
+                    gapi.load('client', {callback: resolve, onerror: reject});
+                });
+            }
+            if (!gapi.client.sheets) {
+                await gapi.client.init({
+                    discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
+                });
+            }
+            // Use get without sheet prefix to read from the first sheet
+            const response = await gapi.client.sheets.spreadsheets.values.get({
+                spreadsheetId: state.sheetsId,
+                range: 'A:E'
+            });
+            
+            const rows = response.result.values;
+            if (!rows || rows.length === 0) {
+                alert("找不到資料。試算表可能是空的。");
+                return;
+            }
+            
+            const currClass = getCurrentClass();
+            let lastClassRow = null;
+            for (let i = rows.length - 1; i >= 0; i--) {
+                const row = rows[i];
+                if (row[1] === currClass.name) {
+                    lastClassRow = row;
+                    break;
+                }
+            }
+            if (lastClassRow) {
+                if(lastClassRow[2]) currClass.homework = lastClassRow[2];
+                if(lastClassRow[3]) currClass.teachingProgress = lastClassRow[3];
+                saveState();
+                renderCommunicationBook();
+                updateDashboard();
+                addActivity(`✅ 從試算表還原 ${currClass.name} 資料成功`);
+                alert(`已成功從 Google 試算表還原 ${currClass.name} 的資料！`);
+            } else {
+                alert("在試算表中找不到目前班級的紀錄！");
+            }
+        } catch (err) {
+            console.error('Sheets Restore Error:', err);
+            alert("從試算表還原失敗：" + (err.result?.error?.message || err.message));
+        } finally {
+            if(btn) btn.innerHTML = '<i data-lucide="download-cloud"></i> 從雲端還原';
+            if(typeof lucide !== 'undefined') lucide.createIcons();
+        }
+    };
 
     function renderHistory() {
         const datePicker = document.getElementById('history-date-picker');
@@ -452,6 +511,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     .replace(/>/g, '&gt;');
                     
                 escapedHtml = escapedHtml.replace(/([A-Za-z0-9.\-\/]+)/g, '<span class="tcy">$1</span>');
+                escapedHtml = escapedHtml.replace(/([\u4e00-\u9fa5\u3400-\u4dbf])/g, '<span class="char-box">$1</span>');
                 escapedHtml = escapedHtml.replace(/\n/g, '<br>');
                 
                 escapedHtml = escapedHtml.replace(/✱([\s\S]*?)✱/g, '<span style="font-weight:900; -webkit-text-stroke: 1px currentColor;">$1</span>');
@@ -480,7 +540,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 const isPolyphone = POLYPHONE_MAP[ch] && POLYPHONE_MAP[ch].length > 1;
                                 const polyClass = isPolyphone ? 'polyphone-char' : '';
                                 const polyStyle = isPolyphone ? ' style="cursor:pointer; border-bottom: 2px dotted rgba(255,200,0,0.5);"' : '';
-                                html += `<ruby class="${polyClass}" data-char="${ch}" data-idx="${charIdx}"${polyStyle}>${ch}<rt>${override}</rt></ruby>`;
+                                if (override) {
+                                    // Use standard font for base char to remove Bpmf Huninn's default zhuyin overlap
+                                    html += `<ruby class="${polyClass}" data-char="${ch}" data-idx="${charIdx}"${polyStyle}><span style="font-family: 'Noto Sans TC', sans-serif;">${ch}</span><rt>${override}</rt></ruby>`;
+                                } else {
+                                    html += `<ruby class="${polyClass}" data-char="${ch}" data-idx="${charIdx}"${polyStyle}>${ch}<rt></rt></ruby>`;
+                                }
                             } else {
                                 html += ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch;
                             }
@@ -631,8 +696,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const container = document.getElementById('groups-container');
         if(!container) return;
         
-        container.style.transform = `scale(${state.groupZoom})`;
-        container.style.transformOrigin = 'top center';
         container.innerHTML = '';
         if(groups.length === 0) {
             container.innerHTML = '<div class="empty-state">設定組數後開始分組</div>';
@@ -648,8 +711,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div style="color:var(--warning); font-weight:bold; font-size:1.1rem; margin-top:0.2rem;">總分: ${groupScore}</div>
                 </div>
                 <div style="display:flex; gap:0.4rem;">
-                    <button class="btn-primary" onclick="window.modGroupS(${idx}, 1)" style="padding:0.4rem 0.8rem; background:var(--success); font-size:0.85rem;">+ 小組分</button>
-                    <button class="btn-primary" onclick="window.modGroupS(${idx}, -1)" style="padding:0.4rem 0.8rem; background:var(--danger); font-size:0.85rem;">- 小組分</button>
+                    <button class="btn-primary" onclick="window.modGroupS(${idx}, 1)" style="padding:0.4rem 0.8rem; background:var(--success); font-size:1.1rem; width: 36px; display:flex; justify-content:center; align-items:center;">+</button>
+                    <button class="btn-primary" onclick="window.modGroupS(${idx}, -1)" style="padding:0.4rem 0.8rem; background:var(--danger); font-size:1.1rem; width: 36px; display:flex; justify-content:center; align-items:center;">-</button>
                 </div>
             </div>`;
             group.forEach(sRef => {
@@ -1404,11 +1467,7 @@ document.addEventListener('DOMContentLoaded', () => {
         saveState();
     };
 
-    window.setGroupZoom = (delta) => {
-        state.groupZoom = Math.max(0.3, Math.min(2.0, state.groupZoom + delta));
-        localStorage.setItem('sc_v3_group_zoom', state.groupZoom);
-        renderGroups();
-    };
+
 
     document.getElementById('btn-toggle-group-buttons').onclick = function() {
         state.groupShowButtons = !state.groupShowButtons;
@@ -1512,11 +1571,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 { urls: 'stun:stun3.l.google.com:19302' },
                 { urls: 'stun:stun4.l.google.com:19302' },
                 { urls: 'stun:global.stun.twilio.com:3478' }
-                // 若學校防火牆嚴格封鎖 UDP，可加入 TURN 伺服器（需自行架設或租用）：
-                // { urls: 'turn:your-turn-server.com:3478', username: 'user', credential: 'pass' },
-                // { urls: 'turn:your-turn-server.com:443?transport=tcp', username: 'user', credential: 'pass' }
             ]
-        }
+        },
+        pingInterval: 5000
     };
     let peer = null;
     let connections = [];
@@ -1553,6 +1610,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 new QRCode(qrContainer, { text: studentUrl, width: 250, height: 250 });
             }
         });
+        
+        peer.on('disconnected', () => {
+            console.log('Peer disconnected. Attempting to reconnect...');
+            peer.reconnect();
+        });
+
+        // Add a heartbeat ping manually just in case
+        setInterval(() => {
+            if (peer && !peer.disconnected && !peer.destroyed) {
+                connections.forEach(conn => {
+                    if(conn.open) conn.send({ type: 'PING' });
+                });
+            }
+        }, 15000);
 
         peer.on('connection', (conn) => {
             connections.push(conn);
@@ -1950,7 +2021,14 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     document.getElementById('btn-apply-sheets-id').onclick = () => {
-        state.sheetsId = document.getElementById('settings-sheets-id').value.trim();
+        let val = document.getElementById('settings-sheets-id').value.trim();
+        // 自動解析網址中的 ID
+        const match = val.match(/\/d\/(.*?)(\/|$)/);
+        if (match) {
+            val = match[1];
+            document.getElementById('settings-sheets-id').value = val;
+        }
+        state.sheetsId = val;
         saveState();
         alert("試算表同步設定已更新！");
     };
@@ -1987,7 +2065,10 @@ document.addEventListener('DOMContentLoaded', () => {
         blackboardContent.oninput = (e) => {
             const currClass = getCurrentClass();
             if (!currClass) return;
-            const text = e.target.innerText;
+            // Prevent <rt> contents from being included in the saved text
+            const clone = e.target.cloneNode(true);
+            clone.querySelectorAll('rt').forEach(rt => rt.remove());
+            const text = clone.innerText;
             currClass.homework = text;
             saveState();
             saveDailyRecord();
@@ -2023,50 +2104,39 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCommunicationBook();
     };
 
-    // --- Blackboard Grid Toggle ---
-    let commShowGrid = localStorage.getItem('sc_v3_comm_grid') === 'true';
-    const btnToggleGrid = document.getElementById('btn-toggle-grid');
+    // --- Blackboard Char Box Toggle ---
+    let commShowCharBox = localStorage.getItem('sc_v3_comm_charbox') === 'true';
+    const btnToggleCharBox = document.getElementById('btn-toggle-char-box');
     
-    function updateGridUI() {
+    function updateCharBoxUI() {
         const board = document.getElementById('blackboard-content');
         if (!board) return;
-        if (commShowGrid) {
-            const fontSize = state.commFontSize || 1.8;
-            const cellSize = fontSize * 16 * 2; // approximate cell size in px based on line-height
-            board.style.backgroundImage = `
-                repeating-linear-gradient(0deg, transparent, transparent ${cellSize - 1}px, rgba(255,255,255,0.12) ${cellSize - 1}px, rgba(255,255,255,0.12) ${cellSize}px),
-                repeating-linear-gradient(90deg, transparent, transparent ${cellSize - 1}px, rgba(255,255,255,0.12) ${cellSize - 1}px, rgba(255,255,255,0.12) ${cellSize}px)
-            `;
-            board.style.backgroundSize = `${cellSize}px ${cellSize}px`;
-            if (btnToggleGrid) {
-                btnToggleGrid.style.background = 'var(--success)';
-                btnToggleGrid.style.color = 'white';
-                btnToggleGrid.style.border = 'none';
+        if (commShowCharBox) {
+            board.classList.add('char-boxed');
+            if (btnToggleCharBox) {
+                btnToggleCharBox.style.background = 'var(--success)';
+                btnToggleCharBox.style.color = 'white';
+                btnToggleCharBox.style.border = 'none';
             }
         } else {
-            // Restore original blackboard texture
-            board.style.backgroundImage = `
-                radial-gradient(circle at 50% 50%, rgba(255,255,255,0.02) 0%, transparent 80%),
-                url("https://www.transparenttextures.com/patterns/black-paper.png")
-            `;
-            board.style.backgroundSize = '';
-            if (btnToggleGrid) {
-                btnToggleGrid.style.background = '';
-                btnToggleGrid.style.color = '';
-                btnToggleGrid.style.border = '';
+            board.classList.remove('char-boxed');
+            if (btnToggleCharBox) {
+                btnToggleCharBox.style.background = '';
+                btnToggleCharBox.style.color = '';
+                btnToggleCharBox.style.border = '';
             }
         }
     }
 
-    if (btnToggleGrid) {
-        btnToggleGrid.onclick = () => {
-            commShowGrid = !commShowGrid;
-            localStorage.setItem('sc_v3_comm_grid', commShowGrid);
-            updateGridUI();
+    if (btnToggleCharBox) {
+        btnToggleCharBox.onclick = () => {
+            commShowCharBox = !commShowCharBox;
+            localStorage.setItem('sc_v3_comm_charbox', commShowCharBox);
+            updateCharBoxUI();
         };
     }
-    // Apply grid on initial render
-    setTimeout(updateGridUI, 200);
+    // Apply char-box on initial render
+    setTimeout(updateCharBoxUI, 200);
 
     // --- Zhuyin Multi-reading (破音字) Dictionary ---
     const POLYPHONE_MAP = {
