@@ -176,6 +176,24 @@
                         <h2>近期紀錄</h2>
                         <div id="activity-list" style="max-height: 250px; overflow-y: auto; padding-right: 1rem; margin-top: 1rem;"></div>
                     </div>
+                    <!-- Download Records Widget -->
+                    <div class="download-records card" style="grid-column: 1 / -1; margin-top: 1.5rem;">
+                        <h2>下載歷史紀錄 (CSV)</h2>
+                        <div style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap; margin-top: 1rem;">
+                            <div class="input-group" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <label style="font-size: 0.85rem; color: var(--text-muted);">開始日期</label>
+                                <input type="date" id="download-start-date" class="custom-select" style="width: auto;">
+                            </div>
+                            <div class="input-group" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                                <label style="font-size: 0.85rem; color: var(--text-muted);">結束日期</label>
+                                <input type="date" id="download-end-date" class="custom-select" style="width: auto;">
+                            </div>
+                            <button class="btn-primary" id="btn-download-csv-range" style="height: 42px;">
+                                <i data-lucide="download"></i> 下載 CSV 檔案
+                            </button>
+                        </div>
+                        <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">* 將匯出所選日期區間內所有班級的功課、教學進度與出勤統計。</p>
+                    </div>
                 </div>
             </section>
 

@@ -934,7 +934,7 @@ rt {
 
 /* Bopomofo / CJK Font Classes */
 .blackboard.font-huninn {
-    font-family: 'Bpmf Huninn', 'Noto Sans TC', sans-serif;
+    font-family: 'Huninn', 'Noto Sans TC', sans-serif;
 }
 .blackboard.font-kaiti {
     /* Standard Kai (BiauKai on Mac, DFKai-SB on Windows) */

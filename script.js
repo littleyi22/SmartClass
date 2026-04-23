@@ -1,5 +1,5 @@
 /**
- * SmartClass v.6.9 - JavaScript Logic
+ * SmartClass v.7.0 - JavaScript Logic
  * Developed for 奕鈞老師
  */
 
@@ -536,16 +536,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (ch === '✱') {
                                 html += ch;
                             } else if (/[\u4e00-\u9fa5\u3400-\u4dbf]/.test(ch)) {
-                                const override = getZhuyinForChar(ch, charIdx);
-                                const isPolyphone = POLYPHONE_MAP[ch] && POLYPHONE_MAP[ch].length > 1;
-                                const polyClass = isPolyphone ? 'polyphone-char' : '';
-                                const polyStyle = isPolyphone ? ' style="cursor:pointer; border-bottom: 2px dotted rgba(255,200,0,0.5);"' : '';
-                                if (override) {
-                                    // Use standard font for base char to remove Bpmf Huninn's default zhuyin overlap
-                                    html += `<ruby class="${polyClass}" data-char="${ch}" data-idx="${charIdx}"${polyStyle}><span style="font-family: 'Noto Sans TC', sans-serif;">${ch}</span><rt>${override}</rt></ruby>`;
-                                } else {
-                                    html += `<ruby class="${polyClass}" data-char="${ch}" data-idx="${charIdx}"${polyStyle}>${ch}<rt></rt></ruby>`;
-                                }
+                                html += `<span class="char-box">${ch}</span>`;
                             } else {
                                 html += ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch;
                             }
@@ -558,16 +549,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 html = html.replace(/✱([\s\S]*?)✱/g, '<span style="font-weight:900; -webkit-text-stroke: 1px currentColor;">$1</span>');
                 
                 contentDiv.innerHTML = html;
-
-                // Attach click handlers for polyphone characters
-                contentDiv.querySelectorAll('.polyphone-char').forEach(ruby => {
-                    ruby.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const ch = ruby.dataset.char;
-                        const idx = parseInt(ruby.dataset.idx);
-                        showZhuyinPicker(ruby, ch, idx);
-                    });
-                });
             }
         }
     }
@@ -615,9 +596,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const btn4Html = state.classBtn4 ? `<button class="btn-secondary" style="font-size:0.75rem; padding:0.3rem" onclick="window.togS(${s.id},'discipline2')">${state.classBtn4}</button>` : '';
             const badge4Html = state.classBtn4 && s.discipline2 ? `<span class="badge" style="color:var(--warning); font-size:0.75rem">${state.classBtn4}</span>` : '';
             card.innerHTML = `
-                <div class="avatar">${s.name[0]}</div>
+                <div class="avatar">${s.seatNo}</div>
                 <h4>${s.name}</h4>
-                <div class="seat-no">座號: ${s.seatNo}</div>
                 <div class="badges" style="min-height:20px; margin-top:0.3rem; display:flex; flex-wrap:wrap; justify-content:center; gap:2px;">
                     ${s.missingHW ? '<span class="badge" style="color:var(--danger); font-size:0.75rem">' + state.classBtn1 + '</span>' : ''}
                     ${s.goodBehavior ? '<span class="badge" style="color:var(--success); font-size:0.75rem">' + state.classBtn2 + '</span>' : ''}
@@ -667,9 +647,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             card.innerHTML = `
-                <div class="avatar" style="background:var(--secondary)">${s.name[0]}</div>
+                <div class="avatar" style="background:var(--secondary)">${s.seatNo}</div>
                 <h4>${s.name}</h4>
-                <div class="seat-no">座號: ${s.seatNo}</div>
                 <div class="badges" style="min-height:20px; margin-top:0.3rem; display:flex; flex-wrap:wrap; justify-content:center; gap:2px;">
                     ${arriveBadge}
                     ${s.custom1 ? '<span class="badge" style="color:var(--accent); font-size:0.75rem">' + state.customTag1 + '</span>' : ''}
@@ -2138,206 +2117,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Apply char-box on initial render
     setTimeout(updateCharBoxUI, 200);
 
-    // --- Zhuyin Multi-reading (破音字) Dictionary ---
-    const POLYPHONE_MAP = {
-        '行': ['ㄒㄧㄥˊ', 'ㄏㄤˊ', 'ㄏㄤˋ', 'ㄏㄥˊ'],
-        '長': ['ㄔㄤˊ', 'ㄓㄤˇ'],
-        '樂': ['ㄌㄜˋ', 'ㄩㄝˋ', 'ㄧㄠˋ'],
-        '了': ['ㄌㄜ˙', 'ㄌㄧㄠˇ'],
-        '得': ['ㄉㄜˊ', 'ㄉㄜ˙', 'ㄉㄟˇ'],
-        '地': ['ㄉㄧˋ', 'ㄉㄜ˙'],
-        '的': ['ㄉㄜ˙', 'ㄉㄧˋ', 'ㄉㄧˊ'],
-        '還': ['ㄏㄞˊ', 'ㄏㄨㄢˊ'],
-        '都': ['ㄉㄡ', 'ㄉㄨ'],
-        '為': ['ㄨㄟˋ', 'ㄨㄟˊ'],
-        '著': ['ㄓㄜ˙', 'ㄓㄨㄛˊ', 'ㄓㄠ', 'ㄓㄠˊ'],
-        '大': ['ㄉㄚˋ', 'ㄉㄞˋ'],
-        '少': ['ㄕㄠˇ', 'ㄕㄠˋ'],
-        '好': ['ㄏㄠˇ', 'ㄏㄠˋ'],
-        '重': ['ㄓㄨㄥˋ', 'ㄔㄨㄥˊ'],
-        '教': ['ㄐㄧㄠ', 'ㄐㄧㄠˋ'],
-        '數': ['ㄕㄨˋ', 'ㄕㄨˇ', 'ㄕㄨㄛˋ'],
-        '分': ['ㄈㄣ', 'ㄈㄣˋ'],
-        '差': ['ㄔㄚ', 'ㄔㄚˋ', 'ㄔㄞ', 'ㄘ'],
-        '種': ['ㄓㄨㄥˇ', 'ㄓㄨㄥˋ'],
-        '發': ['ㄈㄚ', 'ㄈㄚˋ'],
-        '間': ['ㄐㄧㄢ', 'ㄐㄧㄢˋ'],
-        '相': ['ㄒㄧㄤ', 'ㄒㄧㄤˋ'],
-        '度': ['ㄉㄨˋ', 'ㄉㄨㄛˋ'],
-        '調': ['ㄉㄧㄠˋ', 'ㄊㄧㄠˊ'],
-        '假': ['ㄐㄧㄚˇ', 'ㄐㄧㄚˋ'],
-        '便': ['ㄅㄧㄢˋ', 'ㄆㄧㄢˊ'],
-        '難': ['ㄋㄢˊ', 'ㄋㄢˋ'],
-        '倒': ['ㄉㄠˇ', 'ㄉㄠˋ'],
-        '量': ['ㄌㄧㄤˋ', 'ㄌㄧㄤˊ'],
-        '率': ['ㄌㄩˋ', 'ㄕㄨㄞˋ'],
-        '空': ['ㄎㄨㄥ', 'ㄎㄨㄥˋ'],
-        '處': ['ㄔㄨˇ', 'ㄔㄨˋ'],
-        '喝': ['ㄏㄜ', 'ㄏㄜˋ'],
-        '識': ['ㄕˋ', 'ㄓˋ'],
-        '傳': ['ㄔㄨㄢˊ', 'ㄓㄨㄢˋ'],
-        '落': ['ㄌㄨㄛˋ', 'ㄌㄚˋ', 'ㄌㄠˋ'],
-        '乾': ['ㄍㄢ', 'ㄑㄧㄢˊ'],
-        '磨': ['ㄇㄛˊ', 'ㄇㄛˋ'],
-        '背': ['ㄅㄟˋ', 'ㄅㄟ'],
-        '彈': ['ㄉㄢˋ', 'ㄊㄢˊ'],
-        '參': ['ㄘㄢ', 'ㄕㄣ', 'ㄙㄢ'],
-        '強': ['ㄑㄧㄤˊ', 'ㄑㄧㄤˇ', 'ㄐㄧㄤˋ'],
-        '會': ['ㄏㄨㄟˋ', 'ㄎㄨㄞˋ'],
-        '切': ['ㄑㄧㄝ', 'ㄑㄧㄝˋ'],
-        '幹': ['ㄍㄢˋ', 'ㄍㄢ'],
-        '角': ['ㄐㄧㄠˇ', 'ㄐㄩㄝˊ'],
-        '觀': ['ㄍㄨㄢ', 'ㄍㄨㄢˋ'],
-        '要': ['ㄧㄠˋ', 'ㄧㄠ'],
-        '說': ['ㄕㄨㄛ', 'ㄕㄨㄟˋ', 'ㄩㄝˋ'],
-        '應': ['ㄧㄥ', 'ㄧㄥˋ'],
-        '看': ['ㄎㄢˋ', 'ㄎㄢ'],
-        '什': ['ㄕㄣˊ', 'ㄕˊ'],
-        '和': ['ㄏㄜˊ', 'ㄏㄨㄛˋ', 'ㄏㄨˊ', 'ㄏㄜˋ'],
-        '給': ['ㄍㄟˇ', 'ㄐㄧˇ'],
-        '把': ['ㄅㄚˇ', 'ㄅㄚˋ'],
-        '過': ['ㄍㄨㄛˋ', 'ㄍㄨㄛ˙'],
-        '只': ['ㄓˇ', 'ㄓ'],
-        '沒': ['ㄇㄟˊ', 'ㄇㄛˋ'],
-        '幾': ['ㄐㄧˇ', 'ㄐㄧ'],
-        '朝': ['ㄔㄠˊ', 'ㄓㄠ'],
-        '更': ['ㄍㄥ', 'ㄍㄥˋ'],
-        '可': ['ㄎㄜˇ', 'ㄎㄜˋ'],
-        '正': ['ㄓㄥˋ', 'ㄓㄥ'],
-        '期': ['ㄑㄧ', 'ㄐㄧ'],
-        '答': ['ㄉㄚˊ', 'ㄉㄚ'],
-        '當': ['ㄉㄤ', 'ㄉㄤˋ'],
-        '不': ['ㄅㄨˋ', 'ㄅㄨˊ'],
-        '省': ['ㄕㄥˇ', 'ㄒㄧㄥˇ'],
-        '藏': ['ㄘㄤˊ', 'ㄗㄤˋ'],
-        '奇': ['ㄑㄧˊ', 'ㄐㄧ'],
-        '薄': ['ㄅㄠˊ', 'ㄅㄛˊ', 'ㄅㄛˋ'],
-        '模': ['ㄇㄛˊ', 'ㄇㄨˊ'],
-        '鮮': ['ㄒㄧㄢ', 'ㄒㄧㄢˇ'],
-        '惡': ['ㄜˋ', 'ㄨˋ', 'ㄜˇ'],
-        '累': ['ㄌㄟˋ', 'ㄌㄟˇ', 'ㄌㄟˊ'],
-        '塞': ['ㄙㄜˋ', 'ㄙㄞ', 'ㄙㄞˋ'],
-        '中': ['ㄓㄨㄥ', 'ㄓㄨㄥˋ'],
-        '結': ['ㄐㄧㄝˊ', 'ㄐㄧㄝ'],
-        '血': ['ㄒㄧㄝˇ', 'ㄒㄩㄝˋ'],
-        '華': ['ㄏㄨㄚˊ', 'ㄏㄨㄚˋ'],
-        '似': ['ㄙˋ', 'ㄕˋ'],
-        '供': ['ㄍㄨㄥ', 'ㄍㄨㄥˋ'],
-        '盛': ['ㄕㄥˋ', 'ㄔㄥˊ'],
-        '擔': ['ㄉㄢ', 'ㄉㄢˋ'],
-        '露': ['ㄌㄨˋ', 'ㄌㄡˋ'],
-        '禁': ['ㄐㄧㄣˋ', 'ㄐㄧㄣ'],
-        '興': ['ㄒㄧㄥ', 'ㄒㄧㄥˋ'],
-        '解': ['ㄐㄧㄝˇ', 'ㄐㄧㄝˋ', 'ㄒㄧㄝˋ'],
-        '任': ['ㄖㄣˋ', 'ㄖㄣˊ'],
-        '石': ['ㄕˊ', 'ㄉㄢˋ'],
-        '寧': ['ㄋㄧㄥˊ', 'ㄋㄧㄥˋ'],
-        '沉': ['ㄔㄣˊ', 'ㄕㄣˇ'],
-        '燒': ['ㄕㄠ', 'ㄕㄠˊ'],
-        '降': ['ㄐㄧㄤˋ', 'ㄒㄧㄤˊ'],
-        '散': ['ㄙㄢˋ', 'ㄙㄢˇ'],
-        '夾': ['ㄐㄧㄚ', 'ㄐㄧㄚˊ', 'ㄐㄧㄚˇ'],
-        '吐': ['ㄊㄨˇ', 'ㄊㄨˋ'],
-        '幾': ['ㄐㄧˇ', 'ㄐㄧ'],
-    };
-
-    // Custom overrides stored per class/homework
-    if (!state.zhuyinOverrides) state.zhuyinOverrides = {};
-
-    function getZhuyinForChar(ch, charIndex) {
-        const currClass = getCurrentClass();
-        const classKey = currClass ? currClass.id : 'default';
-        const overrideKey = `${classKey}_${charIndex}`;
-        if (state.zhuyinOverrides[overrideKey]) {
-            return state.zhuyinOverrides[overrideKey];
-        }
-        return ''; // Let the font handle default display
-    }
-
-    function showZhuyinPicker(rubyElem, ch, charIndex) {
-        const readings = POLYPHONE_MAP[ch];
-        if (!readings || readings.length < 2) return;
-
-        // Remove existing picker
-        const existing = document.getElementById('zhuyin-picker-popup');
-        if (existing) existing.remove();
-
-        const popup = document.createElement('div');
-        popup.id = 'zhuyin-picker-popup';
-        popup.style.cssText = `
-            position: fixed; z-index: 10000;
-            background: #1e293b; border: 2px solid var(--primary);
-            border-radius: 12px; padding: 0.8rem;
-            display: flex; flex-direction: column; gap: 0.4rem;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-            min-width: 100px;
-        `;
-
-        // Title
-        const title = document.createElement('div');
-        title.textContent = `「${ch}」選擇注音`;
-        title.style.cssText = 'color: var(--secondary); font-size: 0.85rem; font-weight: bold; text-align: center; margin-bottom: 0.3rem;';
-        popup.appendChild(title);
-
-        readings.forEach(reading => {
-            const btn = document.createElement('button');
-            btn.textContent = reading;
-            btn.style.cssText = `
-                background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2);
-                padding: 0.5rem 0.8rem; border-radius: 8px; cursor: pointer;
-                font-size: 1rem; font-family: 'Noto Sans TC', sans-serif;
-                transition: all 0.2s;
-            `;
-            btn.onmouseover = () => btn.style.background = 'var(--primary)';
-            btn.onmouseout = () => btn.style.background = 'rgba(255,255,255,0.1)';
-            btn.onclick = () => {
-                const currClass = getCurrentClass();
-                const classKey = currClass ? currClass.id : 'default';
-                const overrideKey = `${classKey}_${charIndex}`;
-                state.zhuyinOverrides[overrideKey] = reading;
-                localStorage.setItem('sc_v3_zhuyin_overrides', JSON.stringify(state.zhuyinOverrides));
-                popup.remove();
-                renderCommunicationBook();
-            };
-            popup.appendChild(btn);
-        });
-
-        // Clear option
-        const clearBtn = document.createElement('button');
-        clearBtn.textContent = '🔄 恢復預設';
-        clearBtn.style.cssText = `
-            background: rgba(239,68,68,0.2); color: #ef4444; border: 1px solid rgba(239,68,68,0.3);
-            padding: 0.4rem 0.8rem; border-radius: 8px; cursor: pointer; font-size: 0.85rem; margin-top: 0.2rem;
-        `;
-        clearBtn.onclick = () => {
-            const currClass = getCurrentClass();
-            const classKey = currClass ? currClass.id : 'default';
-            const overrideKey = `${classKey}_${charIndex}`;
-            delete state.zhuyinOverrides[overrideKey];
-            localStorage.setItem('sc_v3_zhuyin_overrides', JSON.stringify(state.zhuyinOverrides));
-            popup.remove();
-            renderCommunicationBook();
-        };
-        popup.appendChild(clearBtn);
-
-        document.body.appendChild(popup);
-
-        // Position near the clicked element
-        const rect = rubyElem.getBoundingClientRect();
-        popup.style.left = Math.min(rect.left, window.innerWidth - 150) + 'px';
-        popup.style.top = (rect.bottom + 5) + 'px';
-
-        // Close on outside click
-        setTimeout(() => {
-            const closeHandler = (e) => {
-                if (!popup.contains(e.target)) {
-                    popup.remove();
-                    document.removeEventListener('click', closeHandler);
-                }
-            };
-            document.addEventListener('click', closeHandler);
-        }, 100);
-    }
 
     // Load saved overrides
     state.zhuyinOverrides = JSON.parse(localStorage.getItem('sc_v3_zhuyin_overrides') || '{}');
@@ -2951,6 +2730,59 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    // --- CSV Export Logic ---
+    function downloadCsvRange() {
+        const startInput = document.getElementById('download-start-date');
+        const endInput = document.getElementById('download-end-date');
+        const start = startInput.value;
+        const end = endInput.value;
+
+        if (!start || !end) {
+            alert("請選擇日期區間！");
+            return;
+        }
+
+        const dates = Object.keys(state.history).filter(d => d >= start && d <= end).sort();
+        if (dates.length === 0) {
+            alert("所選區間內沒有歷史紀錄。");
+            return;
+        }
+
+        // CSV Header with BOM for Excel UTF-8 support
+        let csvContent = "\ufeff日期,班級,類別,內容\n";
+
+        dates.forEach(date => {
+            const dayData = state.history[date];
+            Object.values(dayData).forEach(cls => {
+                // Homework
+                csvContent += `${date},${cls.className},今日功課,"${(cls.homework || '').replace(/"/g, '""')}"\n`;
+                // Progress
+                csvContent += `${date},${cls.className},教學進度,"${(cls.teachingProgress || '').replace(/"/g, '""')}"\n`;
+                
+                // Attendance Summary
+                const att = cls.attendance || [];
+                const presentCount = att.filter(s => s.status !== '缺席' && s.status !== '未到').length;
+                const totalCount = att.length;
+                csvContent += `${date},${cls.className},出席狀況,${presentCount}/${totalCount}\n`;
+                
+                // Detailed Attendance (Absentees)
+                const absentNames = att.filter(s => s.status === '缺席').map(s => `${s.seat}號${s.name}`).join('、');
+                csvContent += `${date},${cls.className},缺席名單,"${absentNames || '無'}"\n`;
+            });
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `智慧教室紀錄_${start}_至_${end}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        addActivity(`匯出紀錄：${start} 至 ${end}`);
+    }
+
     // --- Final Initialization ---
 
     const globalDateSelect = document.getElementById('global-date-select');
@@ -2975,6 +2807,22 @@ document.addEventListener('DOMContentLoaded', () => {
             window.currentEditDate = e.target.value;
             loadDataForDate(window.currentEditDate);
         };
+    }
+
+    // Initialize Download Range Inputs
+    const dlStart = document.getElementById('download-start-date');
+    const dlEnd = document.getElementById('download-end-date');
+    if (dlStart && dlEnd) {
+        const today = new Date().toLocaleDateString('en-CA');
+        dlEnd.value = today;
+        // Default to 7 days ago
+        const lastWeek = new Date();
+        lastWeek.setDate(lastWeek.getDate() - 7);
+        dlStart.value = lastWeek.toLocaleDateString('en-CA');
+    }
+    
+    if (document.getElementById('btn-download-csv-range')) {
+        document.getElementById('btn-download-csv-range').onclick = downloadCsvRange;
     }
 
     // --- Sidebar Toggle ---
@@ -3164,9 +3012,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             card.innerHTML = `
-                <div class="avatar" style="background:var(--secondary)">${s.name[0]}</div>
+                <div class="avatar" style="background:var(--secondary)">${s.seatNo}</div>
                 <h4>${s.name}</h4>
-                <div class="seat-no">座號: ${s.seatNo}</div>
                 <div class="badges" style="min-height:20px; margin-top:0.3rem; display:flex; flex-wrap:wrap; justify-content:center; gap:2px;">
                     ${arriveBadge}
                 </div>
