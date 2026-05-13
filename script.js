@@ -553,7 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 contentDiv.innerHTML = escapedHtml;
             } else {
-                // With zhuyin ruby annotation using built-in dictionary
+                // With zhuyin using custom span structure (more reliable than ruby)
                 let html = '';
                 const lines = rawText.split('\n');
                 lines.forEach((line, li) => {
@@ -571,7 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             } else if (/[\u4e00-\u9fa5\u3400-\u4dbf]/.test(ch)) {
                                 const zy = ZHUYIN_DICT[ch] || '';
                                 if (zy) {
-                                    html += `<ruby class="char-box">${ch}<rt>${zy}</rt></ruby>`;
+                                    html += `<span class="zy-unit char-box"><span class="zy-base">${ch}</span><span class="zy-rt">${zy}</span></span>`;
                                 } else {
                                     html += `<span class="char-box">${ch}</span>`;
                                 }

@@ -834,35 +834,51 @@ header {
     text-combine-upright: none;
 }
 
-/* Ruby / Zhuyin styles — 橫書：注音在右；直書：注音在右 */
-ruby {
+/* ===== Zhuyin 注音 - Custom Span Layout ===== */
+/* 橫書：文字在左，注音縱排在右 */
+.blackboard.horizontal .zy-unit {
     display: inline-flex;
-    flex-direction: row;      /* 文字在左，注音在右 */
+    flex-direction: row;
     align-items: center;
     vertical-align: middle;
+    line-height: 1.8;
 }
-
-rt {
-    font-size: 0.5em;
+.blackboard.horizontal .zy-base {
+    display: inline-block;
+}
+.blackboard.horizontal .zy-rt {
+    display: inline-block;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: 0.42em;
+    line-height: 1;
     color: rgba(255, 255, 255, 0.9);
-    user-select: none;
-    letter-spacing: 0;
-    line-height: 1.2;
+    margin-left: 0.08em;
+    letter-spacing: -0.05em;
     font-family: 'Noto Sans TC', sans-serif;
-    display: block;
-    writing-mode: vertical-rl;  /* 注音縱向排列 */
-    margin-left: 0.05em;
+    user-select: none;
 }
 
-/* 直書模式：文字直排，注音也在右側 */
-.blackboard.vertical ruby {
+/* 直書：整體 writing-mode 已是 vertical-rl，注音需橫向顯示在字右側 */
+.blackboard.vertical .zy-unit {
+    display: inline-flex;
     flex-direction: row;
-    writing-mode: vertical-rl;
+    align-items: center;
 }
-.blackboard.vertical rt {
-    writing-mode: vertical-rl;
-    font-size: 0.45em;
+.blackboard.vertical .zy-base {
+    display: inline-block;
+}
+.blackboard.vertical .zy-rt {
+    display: inline-block;
+    font-size: 0.42em;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.9);
     margin-left: 0.05em;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    letter-spacing: -0.05em;
+    font-family: 'Noto Sans TC', sans-serif;
+    user-select: none;
 }
 
 /* Communication Attendance Grid */
