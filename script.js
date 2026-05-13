@@ -205,11 +205,22 @@ document.addEventListener('DOMContentLoaded', () => {
     function initWhiteboard() {
         const c = document.getElementById('whiteboard-canvas');
         if(!c) return;
-        const ctx = c.getContext('2d');
         
-        const rect = c.getBoundingClientRect();
-        c.width = rect.width;
-        c.height = rect.height;
+        if (c.initialized) return;
+        c.initialized = true;
+
+        const ctx = c.getContext('2d');
+        const wrapper = c.parentElement;
+        const rect = wrapper.getBoundingClientRect();
+        
+        c.width = rect.width > 0 ? rect.width : window.innerWidth * 0.8;
+        c.height = rect.height > 0 ? rect.height : window.innerHeight * 0.7;
+        c.wbZoom = 100;
+
+        const applyZoom = () => {
+            c.style.width = `${c.wbZoom}%`;
+            c.style.height = `${c.wbZoom}%`;
+        };
 
         let painting = false;
         let color = 'black';
@@ -255,12 +266,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const cBlue = document.getElementById('color-blue');
         const cEraser = document.getElementById('color-eraser');
         const cClear = document.getElementById('btn-clear-board');
+        
+        const btnZoomIn = document.getElementById('btn-wb-zoom-in');
+        const btnZoomOut = document.getElementById('btn-wb-zoom-out');
+        const btnZoomReset = document.getElementById('btn-wb-zoom-reset');
 
         if(cBlack) cBlack.onclick = () => color='black';
         if(cRed) cRed.onclick = () => color='red';
         if(cBlue) cBlue.onclick = () => color='blue';
         if(cEraser) cEraser.onclick = () => color='white';
         if(cClear) cClear.onclick = () => ctx.clearRect(0,0,c.width,c.height);
+        
+        if(btnZoomIn) btnZoomIn.onclick = () => { c.wbZoom += 20; applyZoom(); };
+        if(btnZoomOut) btnZoomOut.onclick = () => { c.wbZoom = Math.max(20, c.wbZoom - 20); applyZoom(); };
+        if(btnZoomReset) btnZoomReset.onclick = () => { c.wbZoom = 100; applyZoom(); };
     }
 
     function saveDailyRecord() {
@@ -284,11 +303,22 @@ document.addEventListener('DOMContentLoaded', () => {
             }));
         }
 
+        const studentData = currClass.students.map(s => ({
+            seat: s.seatNo,
+            name: s.name,
+            score: s.score,
+            missingHW: s.missingHW,
+            goodBehavior: s.goodBehavior,
+            discipline: s.discipline,
+            discipline2: s.discipline2
+        }));
+
         state.history[dateKey][currClass.id] = {
             className: currClass.name,
             homework: currClass.homework || '',
             teachingProgress: currClass.teachingProgress || '',
-            attendance: attendanceData
+            attendance: attendanceData,
+            studentData: studentData
         };
         saveState();
     }
@@ -490,7 +520,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const attContainer = document.getElementById('comm-attendance-container');
 
         if(writingModeBtn) { const lbl = writingModeBtn.querySelector('.btn-icon-label'); if(lbl) lbl.textContent = state.commWritingMode === 'horizontal' ? '切換直書' : '切換橫書'; }
-        if(zhuyinBtn) { const lbl = zhuyinBtn.querySelector('.btn-icon-label'); if(lbl) lbl.textContent = '注音'; }
+        if(zhuyinBtn) { 
+            const lbl = zhuyinBtn.querySelector('.btn-icon-label'); 
+            if(lbl) lbl.textContent = `注音:${state.commShowZhuyin ? '開' : '關'}`; 
+            if(state.commShowZhuyin) { zhuyinBtn.style.background = 'var(--success)'; zhuyinBtn.style.color = 'white'; zhuyinBtn.style.border = 'none'; }
+            else { zhuyinBtn.style.background = ''; zhuyinBtn.style.color = ''; zhuyinBtn.style.border = ''; }
+        }
         if(attBtn) { const lbl = attBtn.querySelector('.btn-icon-label'); if(lbl) lbl.textContent = `簽到:${state.commShowAttendance ? '開' : '關'}`; }
         if(attContainer) attContainer.style.display = state.commShowAttendance ? 'flex' : 'none';
         
@@ -518,10 +553,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 contentDiv.innerHTML = escapedHtml;
             } else {
-                // With zhuyin ruby annotation on CJK mapping
+                // With zhuyin ruby annotation using built-in dictionary
                 let html = '';
                 const lines = rawText.split('\n');
-                let charIdx = 0; // track global character index
                 lines.forEach((line, li) => {
                     if (li > 0) html += '<br>';
                     let i = 0;
@@ -530,18 +564,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (m) {
                             html += `<span class="tcy">${m[1]}</span>`;
                             i += m[1].length;
-                            charIdx += m[1].length;
                         } else {
                             const ch = line[i];
                             if (ch === '✱') {
                                 html += ch;
                             } else if (/[\u4e00-\u9fa5\u3400-\u4dbf]/.test(ch)) {
-                                html += `<span class="char-box">${ch}</span>`;
+                                const zy = ZHUYIN_DICT[ch] || '';
+                                if (zy) {
+                                    html += `<ruby class="char-box">${ch}<rt>${zy}</rt></ruby>`;
+                                } else {
+                                    html += `<span class="char-box">${ch}</span>`;
+                                }
                             } else {
                                 html += ch === '&' ? '&amp;' : ch === '<' ? '&lt;' : ch;
                             }
                             i++;
-                            charIdx++;
                         }
                     }
                 });
@@ -1422,8 +1459,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     startPickBtn.onclick = () => {
         // Class pick generic mode
+        const candidates = getCurrentClass().students.filter(s => !s.absent);
+        if (candidates.length === 0) {
+            alert('名單中無人可抽（全員皆缺席）');
+            return;
+        }
         runPickerAnimation(
-            getCurrentClass().students, 
+            candidates, 
             "幸運兒就是", 
             (s) => s.name
         );
@@ -1528,8 +1570,18 @@ document.addEventListener('DOMContentLoaded', () => {
         let allValidStudents = [];
         validGroups.forEach((g) => {
             const gIdx = currClass.groups.indexOf(g);
-            g.forEach(s => allValidStudents.push({ ...s, gLabel: gIdx + 1 }));
+            g.forEach(sRef => {
+                const s = currClass.students.find(x => x.id === sRef.id) || sRef;
+                if (!s.absent) {
+                    allValidStudents.push({ ...s, gLabel: gIdx + 1 });
+                }
+            });
         });
+
+        if (allValidStudents.length === 0) {
+            alert('名單中無人可抽（全員皆缺席）');
+            return;
+        }
 
         pickerModal.style.display = 'flex';
         runPickerAnimation(
@@ -2068,10 +2120,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.getElementById('btn-toggle-zhuyin').onclick = () => {
         state.commShowZhuyin = !state.commShowZhuyin;
+        const fontSel = document.getElementById('select-blackboard-font');
         if (state.commShowZhuyin) {
             state.commFont = 'huninn';
-            const fontSel = document.getElementById('select-blackboard-font');
             if(fontSel) fontSel.value = 'huninn';
+        } else {
+            if (state.commFont === 'huninn') {
+                state.commFont = 'default';
+                if(fontSel) fontSel.value = 'default';
+            }
         }
         saveState();
         renderCommunicationBook();
@@ -2118,7 +2175,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(updateCharBoxUI, 200);
 
 
+    // --- 注音字典 (built-in, no CDN needed) ---
+    const ZHUYIN_DICT = {'一':'ㄧ','二':'ㄦˋ','三':'ㄙㄢ','四':'ㄙˋ','五':'ㄨˇ','六':'ㄌㄧㄡˋ','七':'ㄑㄧ','八':'ㄅㄚ','九':'ㄐㄧㄡˇ','十':'ㄕˊ','百':'ㄅㄞˇ','千':'ㄑㄧㄢ','萬':'ㄨㄢˋ','零':'ㄌㄧㄥˊ','人':'ㄖㄣˊ','大':'ㄉㄚˋ','小':'ㄒㄧㄠˇ','中':'ㄓㄨㄥ','上':'ㄕㄤˋ','下':'ㄒㄧㄚˋ','左':'ㄗㄨㄛˇ','右':'ㄧㄡˋ','前':'ㄑㄧㄢˊ','後':'ㄏㄡˋ','內':'ㄋㄟˋ','外':'ㄨㄞˋ','東':'ㄉㄨㄥ','西':'ㄒㄧ','南':'ㄋㄢˊ','北':'ㄅㄟˇ','天':'ㄊㄧㄢ','地':'ㄉㄧˋ','日':'ㄖˋ','月':'ㄩㄝˋ','年':'ㄋㄧㄢˊ','時':'ㄕˊ','分':'ㄈㄣ','秒':'ㄇㄧㄠˇ','今':'ㄐㄧㄣ','明':'ㄇㄧㄥˊ','昨':'ㄗㄨㄛˊ','早':'ㄗㄠˇ','晚':'ㄨㄢˇ','午':'ㄨˇ','夜':'ㄧㄝˋ','春':'ㄔㄨㄣ','夏':'ㄒㄧㄚˋ','秋':'ㄑㄧㄡ','冬':'ㄉㄨㄥ','星':'ㄒㄧㄥ','期':'ㄑㄧˊ','週':'ㄓㄡ','假':'ㄐㄧㄚˋ','父':'ㄈㄨˋ','母':'ㄇㄨˇ','兄':'ㄒㄩㄥ','弟':'ㄉㄧˋ','姐':'ㄐㄧㄝˇ','妹':'ㄇㄟˋ','家':'ㄐㄧㄚ','朋':'ㄆㄥˊ','友':'ㄧㄡˇ','老':'ㄌㄠˇ','師':'ㄕ','生':'ㄕㄥ','同':'ㄊㄨㄥˊ','學':'ㄒㄩㄝˊ','校':'ㄒㄧㄠˋ','班':'ㄅㄢ','級':'ㄐㄧˊ','國':'ㄍㄨㄛˊ','語':'ㄩˇ','文':'ㄨㄣˊ','字':'ㄗˋ','書':'ㄕㄨ','本':'ㄅㄣˇ','作':'ㄗㄨㄛˋ','業':'ㄧㄝˋ','數':'ㄕㄨˋ','英':'ㄧㄥ','音':'ㄧㄣ','樂':'ㄩㄝˋ','體':'ㄊㄧˇ','育':'ㄩˋ','美':'ㄇㄟˇ','術':'ㄕㄨˋ','課':'ㄎㄜˋ','堂':'ㄊㄤˊ','考':'ㄎㄠˇ','試':'ㄕˋ','題':'ㄊㄧˊ','答':'ㄉㄚˊ','功':'ㄍㄨㄥ','預':'ㄩˋ','習':'ㄒㄧˊ','複':'ㄈㄨˋ','看':'ㄎㄢˋ','讀':'ㄉㄨˊ','寫':'ㄒㄧㄝˇ','說':'ㄕㄨㄛ','聽':'ㄊㄧㄥ','做':'ㄗㄨㄛˋ','玩':'ㄨㄢˊ','跑':'ㄆㄠˇ','走':'ㄗㄡˇ','吃':'ㄔ','喝':'ㄏㄜ','睡':'ㄕㄨㄟˋ','起':'ㄑㄧˇ','去':'ㄑㄩˋ','來':'ㄌㄞˊ','回':'ㄏㄨㄟˊ','進':'ㄐㄧㄣˋ','出':'ㄔㄨ','開':'ㄎㄞ','關':'ㄍㄨㄢ','放':'ㄈㄤˋ','收':'ㄕㄡ','拿':'ㄋㄚˊ','給':'ㄍㄟˇ','帶':'ㄉㄞˋ','買':'ㄇㄞˇ','賣':'ㄇㄞˋ','是':'ㄕˋ','不':'ㄅㄨˋ','有':'ㄧㄡˇ','沒':'ㄇㄟˊ','要':'ㄧㄠˋ','會':'ㄏㄨㄟˋ','能':'ㄋㄥˊ','可':'ㄎㄜˇ','以':'ㄧˇ','我':'ㄨㄛˇ','你':'ㄋㄧˇ','他':'ㄊㄚ','她':'ㄊㄚ','它':'ㄊㄚ','這':'ㄓㄜˋ','那':'ㄋㄚˋ','哪':'ㄋㄚˇ','什':'ㄕㄣˊ','麼':'ㄇㄜ','誰':'ㄕㄟˊ','為':'ㄨㄟˋ','和':'ㄏㄜˊ','跟':'ㄍㄣ','還':'ㄏㄞˊ','也':'ㄧㄝˇ','都':'ㄉㄡ','很':'ㄏㄣˇ','真':'ㄓㄣ','太':'ㄊㄞˋ','非':'ㄈㄟ','常':'ㄔㄤˊ','好':'ㄏㄠˇ','壞':'ㄏㄨㄞˋ','多':'ㄉㄨㄛ','少':'ㄕㄠˇ','快':'ㄎㄨㄞˋ','慢':'ㄇㄢˋ','高':'ㄍㄠ','低':'ㄉㄧ','長':'ㄔㄤˊ','短':'ㄉㄨㄢˇ','新':'ㄒㄧㄣ','舊':'ㄐㄧㄡˋ','乾':'ㄍㄢ','淨':'ㄐㄧㄥˋ','髒':'ㄗㄤ','胖':'ㄆㄤˋ','瘦':'ㄕㄡˋ','矮':'ㄞˇ','紅':'ㄏㄨㄥˊ','橙':'ㄔㄥˊ','黃':'ㄏㄨㄤˊ','綠':'ㄌㄩˋ','藍':'ㄌㄢˊ','紫':'ㄗˇ','白':'ㄅㄞˊ','黑':'ㄏㄟ','灰':'ㄏㄨㄟ','花':'ㄏㄨㄚ','草':'ㄘㄠˇ','樹':'ㄕㄨˋ','木':'ㄇㄨˋ','山':'ㄕㄢ','水':'ㄕㄨㄟˇ','海':'ㄏㄞˇ','河':'ㄏㄜˊ','風':'ㄈㄥ','雨':'ㄩˇ','雪':'ㄒㄩㄝˇ','雲':'ㄩㄣˊ','光':'ㄍㄨㄤ','火':'ㄏㄨㄛˇ','土':'ㄊㄨˇ','石':'ㄕˊ','金':'ㄐㄧㄣ','貓':'ㄇㄠ','狗':'ㄍㄡˇ','鳥':'ㄋㄧㄠˇ','魚':'ㄩˊ','兔':'ㄊㄨˋ','牛':'ㄋㄧㄡˊ','馬':'ㄇㄚˇ','羊':'ㄧㄤˊ','豬':'ㄓㄨ','雞':'ㄐㄧ','鴨':'ㄧㄚ','飯':'ㄈㄢˋ','菜':'ㄘㄞˋ','肉':'ㄖㄡˋ','麵':'ㄇㄧㄢˋ','湯':'ㄊㄤ','果':'ㄍㄨㄛˇ','奶':'ㄋㄞˇ','手':'ㄕㄡˇ','腳':'ㄐㄧㄠˇ','眼':'ㄧㄢˇ','耳':'ㄦˇ','口':'ㄎㄡˇ','嘴':'ㄗㄨㄟˇ','鼻':'ㄅㄧˊ','頭':'ㄊㄡˊ','臉':'ㄌㄧㄢˇ','心':'ㄒㄧㄣ','房':'ㄈㄤˊ','門':'ㄇㄣˊ','窗':'ㄔㄨㄤ','桌':'ㄓㄨㄛ','椅':'ㄧˇ','床':'ㄔㄨㄤˊ','包':'ㄅㄠ','筆':'ㄅㄧˇ','紙':'ㄓˇ','車':'ㄔㄜ','機':'ㄐㄧ','船':'ㄔㄨㄢˊ','路':'ㄌㄨˋ','橋':'ㄑㄧㄠˊ','市':'ㄕˋ','區':'ㄑㄩ','縣':'ㄒㄧㄢˋ','鄉':'ㄒㄧㄤ','鎮':'ㄓㄣˋ','村':'ㄘㄨㄣ','道':'ㄉㄠˋ','街':'ㄐㄧㄝ','請':'ㄑㄧㄥˇ','謝':'ㄒㄧㄝˋ','對':'ㄉㄨㄟˋ','係':'ㄒㄧˋ','喜':'ㄒㄧˇ','歡':'ㄏㄨㄢ','愛':'ㄞˋ','怕':'ㄆㄚˋ','哭':'ㄎㄨ','笑':'ㄒㄧㄠˋ','問':'ㄨㄣˋ','告':'ㄍㄠˋ','訴':'ㄙㄨˋ','知':'ㄓ','現':'ㄒㄧㄢˋ','在':'ㄗㄞˋ','然':'ㄖㄢˊ','最':'ㄗㄨㄟˋ','因':'ㄧㄣ','所':'ㄙㄨㄛˇ','如':'ㄖㄨˊ','但':'ㄉㄢˋ','的':'ㄉㄜ','得':'ㄉㄜˊ','了':'ㄌㄜ','著':'ㄓㄜ','過':'ㄍㄨㄛˋ','嗎':'ㄇㄚ','呢':'ㄋㄜ','啊':'ㄚ','再':'ㄗㄞˋ','又':'ㄧㄡˋ','只':'ㄓˇ','就':'ㄐㄧㄡˋ','才':'ㄘㄞˊ','已':'ㄧˇ','經':'ㄐㄧㄥ','更':'ㄍㄥˋ','雖':'ㄙㄨㄟ','應':'ㄧㄥ','該':'ㄍㄞ','必':'ㄅㄧˋ','須':'ㄒㄩ','第':'ㄉㄧˋ','每':'ㄇㄟˇ','各':'ㄍㄜˋ','其':'ㄑㄧˊ','另':'ㄌㄧㄥˋ','特':'ㄊㄜˋ','別':'ㄅㄧㄝˊ','名':'ㄇㄧㄥˊ','注':'ㄓㄨˋ','意':'ㄧˋ','安':'ㄢ','全':'ㄑㄩㄢˊ','健':'ㄐㄧㄢˋ','康':'ㄎㄤ','努':'ㄋㄨˇ','力':'ㄌㄧˋ','認':'ㄖㄣˋ','乖':'ㄍㄨㄞ','守':'ㄕㄡˇ','規':'ㄍㄨㄟ','矩':'ㄐㄩˇ','加':'ㄐㄧㄚ','油':'ㄧㄡˊ','棒':'ㄅㄤˋ','厲':'ㄌㄧˋ','害':'ㄏㄞˋ','記':'ㄐㄧˋ','忘':'ㄨㄤˋ','交':'ㄐㄧㄠ','繳':'ㄐㄧㄠˇ','簽':'ㄑㄧㄢ','段':'ㄉㄨㄢˋ','末':'ㄇㄛˋ','運':'ㄩㄣˋ','動':'ㄉㄨㄥˋ','畢':'ㄅㄧˋ','典':'ㄉㄧㄢˇ','禮':'ㄌㄧˇ','慶':'ㄑㄧㄥˋ','活':'ㄏㄨㄛˊ','自':'ㄗˋ','科':'ㄎㄜ','社':'ㄕㄜˋ','教':'ㄐㄧㄠˋ','算':'ㄙㄨㄢˋ','表':'ㄅㄧㄠˇ','演':'ㄧㄢˇ','練':'ㄌㄧㄢˋ','報':'ㄅㄠˋ','成':'ㄔㄥˊ','績':'ㄐㄧˋ','等':'ㄉㄥˇ','次':'ㄘˋ','缺':'ㄑㄩㄝ','席':'ㄒㄧˊ','事':'ㄕˋ','病':'ㄅㄧㄥˋ','鉛':'ㄑㄧㄢ','尺':'ㄔˇ','橡':'ㄒㄧㄤˋ','皮':'ㄆㄧˊ','剪':'ㄐㄧㄢˇ','刀':'ㄉㄠ','膠':'ㄐㄧㄠ','聯':'ㄌㄧㄢˊ','絡':'ㄌㄨㄛˋ','簿':'ㄅㄨˋ','通':'ㄊㄨㄥ','單':'ㄉㄢ','升':'ㄕㄥ','旗':'ㄑㄧˊ','操':'ㄘㄠ','場':'ㄔㄤˊ','室':'ㄕˋ','辦':'ㄅㄢˋ','公':'ㄍㄨㄥ','印':'ㄧㄣˋ','刷':'ㄕㄨㄚ','品':'ㄆㄧㄣˇ','費':'ㄈㄟˋ','用':'ㄩㄥˋ','清':'ㄑㄧㄥ','思':'ㄙ','想':'ㄒㄧㄤˇ','感':'ㄍㄢˇ','情':'ㄑㄧㄥˊ','心':'ㄒㄧㄣ','裡':'ㄌㄧˇ','面':'ㄇㄧㄢˋ','右':'ㄧㄡˋ','點':'ㄉㄧㄢˇ','鐘':'ㄓㄨㄥ','分':'ㄈㄣ','半':'ㄅㄢˋ','整':'ㄓㄥˇ','差':'ㄔㄚ','到':'ㄉㄠˋ','停':'ㄊㄧㄥˊ','休':'ㄒㄧㄡ','息':'ㄒㄧ','上':'ㄕㄤˋ','學':'ㄒㄩㄝˊ','放':'ㄈㄤˋ','學':'ㄒㄩㄝˊ','隊':'ㄉㄨㄟˋ','伍':'ㄨˇ','排':'ㄆㄞˊ','列':'ㄌㄧㄝˋ','靠':'ㄎㄠˋ','右':'ㄧㄡˋ','靠':'ㄎㄠˋ','左':'ㄗㄨㄛˇ','抬':'ㄊㄞˊ','頭':'ㄊㄡˊ','挺':'ㄊㄧㄥˇ','胸':'ㄒㄩㄥ','收':'ㄕㄡ','腹':'ㄈㄨˋ','立':'ㄌㄧˋ','正':'ㄓㄥˋ','坐':'ㄗㄨㄛˋ','好':'ㄏㄠˇ','安':'ㄢ','靜':'ㄐㄧㄥˋ','喝':'ㄏㄜ','水':'ㄕㄨㄟˇ','如':'ㄖㄨˊ','廁':'ㄘˋ','所':'ㄙㄨㄛˇ','遊':'ㄧㄡˊ','戲':'ㄒㄧˋ','場':'ㄔㄤˊ','球':'ㄑㄧㄡˊ','類':'ㄌㄟˋ','繩':'ㄕㄥˊ','跳':'ㄊㄧㄠˋ','打':'ㄉㄚˇ','球':'ㄑㄧㄡˊ','踢':'ㄊㄧ','跑':'ㄆㄠˇ','步':'ㄅㄨˋ','游':'ㄧㄡˊ','泳':'ㄩㄥˇ','跳':'ㄊㄧㄠˋ','繩':'ㄕㄥˊ'};
+
     // Load saved overrides
+
     state.zhuyinOverrides = JSON.parse(localStorage.getItem('sc_v3_zhuyin_overrides') || '{}');
 
     const btnCommAttZoomIn = document.getElementById('btn-comm-att-zoom-in');
@@ -2749,28 +2810,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // CSV Header with BOM for Excel UTF-8 support
-        let csvContent = "\ufeff日期,班級,類別,內容\n";
+        let csvContent = "\ufeff日期,班級,類別,座號,姓名,分數,標籤,備註\n";
 
         dates.forEach(date => {
             const dayData = state.history[date];
             Object.values(dayData).forEach(cls => {
-                // Homework
-                csvContent += `${date},${cls.className},今日功課,"${(cls.homework || '').replace(/"/g, '""')}"\n`;
-                // Progress
-                csvContent += `${date},${cls.className},教學進度,"${(cls.teachingProgress || '').replace(/"/g, '""')}"\n`;
-                
-                // Attendance Summary
+                csvContent += `${date},${cls.className},今日功課,,,,,` + '"' + (cls.homework || '').replace(/"/g, '""') + '"' + '\n';
+                csvContent += `${date},${cls.className},教學進度,,,,,` + '"' + (cls.teachingProgress || '').replace(/"/g, '""') + '"' + '\n';
                 const att = cls.attendance || [];
                 const presentCount = att.filter(s => s.status !== '缺席' && s.status !== '未到').length;
-                const totalCount = att.length;
-                csvContent += `${date},${cls.className},出席狀況,${presentCount}/${totalCount}\n`;
-                
-                // Detailed Attendance (Absentees)
-                const absentNames = att.filter(s => s.status === '缺席').map(s => `${s.seat}號${s.name}`).join('、');
-                csvContent += `${date},${cls.className},缺席名單,"${absentNames || '無'}"\n`;
+                csvContent += `${date},${cls.className},出席狀況,,,,,${presentCount}/${att.length}\n`;
+                att.filter(s => s.status === '缺席').forEach(s => {
+                    csvContent += `${date},${cls.className},缺席,${s.seat},"${s.name}",,,""\n`;
+                });
+                const sd = cls.studentData || [];
+                sd.forEach(s => {
+                    const tags = [];
+                    if (s.missingHW) tags.push(state.classBtn1 || '未交作業');
+                    if (s.goodBehavior) tags.push(state.classBtn2 || '良好表現');
+                    if (s.discipline) tags.push(state.classBtn3 || '違規');
+                    if (s.discipline2 && state.classBtn4) tags.push(state.classBtn4);
+                    csvContent += `${date},${cls.className},加減分與標籤,${s.seat},"${s.name}",${s.score},"${tags.join('|')}",""\n`;
+                });
             });
         });
-
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");

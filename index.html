@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="main-title-tag">智慧教室助手 v.6.9</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css?v=7.0.1">
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -769,8 +769,17 @@
                 <button class="btn-secondary btn-icon-sm btn-minimize" style="padding: 0.3rem 0.6rem; border-radius: 6px;" title="暫時返回，不中斷功能" data-modal="whiteboard-modal">暫時返回 <i data-lucide="minimize-2" style="width:14px;height:14px;"></i></button>
                 <span class="close" data-modal="whiteboard-modal" style="position: static; font-size: 1.8rem;">&times;</span>
             </div>
-            <h2 style="margin-bottom: 0.5rem; flex-shrink: 0;">簡易白板</h2>
-            <canvas id="whiteboard-canvas" style="flex-grow: 1; min-height: 0; background: white; border-radius: 12px; cursor: crosshair; touch-action: none; width: 100%;"></canvas>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-shrink: 0;">
+                <h2 style="margin: 0;">簡易白板</h2>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn-secondary btn-icon-sm" id="btn-wb-zoom-out" title="縮小"><i data-lucide="zoom-out"></i></button>
+                    <button class="btn-secondary btn-icon-sm" id="btn-wb-zoom-reset" title="重置">100%</button>
+                    <button class="btn-secondary btn-icon-sm" id="btn-wb-zoom-in" title="放大"><i data-lucide="zoom-in"></i></button>
+                </div>
+            </div>
+            <div id="whiteboard-wrapper" style="flex-grow: 1; min-height: 0; overflow: auto; border-radius: 12px; background: #e2e8f0; display: block; position: relative;">
+                <canvas id="whiteboard-canvas" style="background: white; cursor: crosshair; touch-action: none; width: 100%; height: 100%; display: block;"></canvas>
+            </div>
             <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center; flex-shrink: 0; padding-bottom: 1rem;">
                 <button class="btn-secondary" id="color-black" style="background: black; color: white;">黑筆</button>
                 <button class="btn-secondary" id="color-red" style="background: red; color: white;">紅筆</button>

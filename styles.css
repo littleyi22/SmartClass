@@ -129,6 +129,10 @@
     --text-muted: #6d28d9;
 }
 
+.font-default { font-family: 'Outfit', 'Noto Sans TC', sans-serif; }
+.font-huninn { font-family: 'Bpmf Huninn', 'Outfit', 'Noto Sans TC', sans-serif; }
+.font-kaiti { font-family: 'BiauKai', 'DFKai-SB', 'Kaiti', '標楷體', serif; }
+
 * {
     margin: 0;
     padding: 0;
@@ -834,17 +838,31 @@ header {
 ruby {
     ruby-position: over;
     ruby-align: center;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    vertical-align: bottom;
 }
 
 rt {
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.55em;
+    color: rgba(255, 255, 255, 0.9);
     user-select: none;
+    letter-spacing: 0;
+    line-height: 1.1;
+    font-family: 'Noto Sans TC', sans-serif;
+    display: block;
 }
 
+/* Vertical mode: zhuyin goes to the right */
+.blackboard.vertical ruby {
+    flex-direction: row-reverse;
+    writing-mode: vertical-rl;
+}
 .blackboard.vertical rt {
-    ruby-position: right;
-    margin-right: 0.2em;
+    writing-mode: vertical-rl;
+    font-size: 0.5em;
+    margin-right: 0.05em;
 }
 
 /* Communication Attendance Grid */
@@ -934,7 +952,7 @@ rt {
 
 /* Bopomofo / CJK Font Classes */
 .blackboard.font-huninn {
-    font-family: 'Huninn', 'Noto Sans TC', sans-serif;
+    font-family: 'Bpmf Huninn', 'Noto Sans TC', sans-serif;
 }
 .blackboard.font-kaiti {
     /* Standard Kai (BiauKai on Mac, DFKai-SB on Windows) */
