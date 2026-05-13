@@ -1028,6 +1028,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderStudents();
             renderGroups();
             saveState();
+            saveDailyRecord(); // 寫入歷史紀錄供 CSV 使用
         }
     };
 
@@ -1050,6 +1051,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             updateDashboard();
             saveState();
+            saveDailyRecord(); // 寫入歷史紀錄供 CSV 使用
         }
     };
 
@@ -1117,6 +1119,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         renderAttendance();
         saveState();
+        saveDailyRecord(); // 寫入歷史紀錄供 CSV 使用
     };
 
     document.getElementById('attendance-search-input').oninput = (e) => {

@@ -834,35 +834,35 @@ header {
     text-combine-upright: none;
 }
 
-/* Ruby / Zhuyin styles */
+/* Ruby / Zhuyin styles — 橫書：注音在右；直書：注音在右 */
 ruby {
-    ruby-position: over;
-    ruby-align: center;
     display: inline-flex;
-    flex-direction: column;
+    flex-direction: row;      /* 文字在左，注音在右 */
     align-items: center;
-    vertical-align: bottom;
+    vertical-align: middle;
 }
 
 rt {
-    font-size: 0.55em;
+    font-size: 0.5em;
     color: rgba(255, 255, 255, 0.9);
     user-select: none;
     letter-spacing: 0;
-    line-height: 1.1;
+    line-height: 1.2;
     font-family: 'Noto Sans TC', sans-serif;
     display: block;
+    writing-mode: vertical-rl;  /* 注音縱向排列 */
+    margin-left: 0.05em;
 }
 
-/* Vertical mode: zhuyin goes to the right */
+/* 直書模式：文字直排，注音也在右側 */
 .blackboard.vertical ruby {
-    flex-direction: row-reverse;
+    flex-direction: row;
     writing-mode: vertical-rl;
 }
 .blackboard.vertical rt {
     writing-mode: vertical-rl;
-    font-size: 0.5em;
-    margin-right: 0.05em;
+    font-size: 0.45em;
+    margin-left: 0.05em;
 }
 
 /* Communication Attendance Grid */
