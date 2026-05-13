@@ -834,37 +834,8 @@ header {
     text-combine-upright: none;
 }
 
-/* ===== 注音 Zhuyin Annotation ===== */
-
-/* 直書：使用瀏覽器原生 ruby，ruby-position:over 在 vertical-rl 下 = 右側 */
-.blackboard.vertical ruby {
-    ruby-position: over;
-}
-.blackboard.vertical rt {
-    font-size: 0.42em;
-    color: rgba(255, 255, 255, 0.88);
-    user-select: none;
-    letter-spacing: -0.05em;
-}
-
-/* 橫書：覆寫為 flex，讓 rt 顯示在字的右側 */
-.blackboard.horizontal ruby {
-    display: inline-flex;
-    flex-direction: row;
-    align-items: center;
-    vertical-align: middle;
-}
-.blackboard.horizontal rt {
-    display: inline-block;
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    font-size: 0.42em;
-    line-height: 1;
-    color: rgba(255, 255, 255, 0.88);
-    margin-left: 0.06em;
-    letter-spacing: -0.08em;
-    user-select: none;
-}
+/* ===== 注音 CSS 已移除（改由波波注音 iframe 處理）===== */
+/* bopodoc-frame 樣式在 index.html inline style 中定義 */
 
 /* Communication Attendance Grid */
 .attendance-grid-container {

@@ -2054,6 +2054,28 @@ document.addEventListener('DOMContentLoaded', () => {
         alert("標題已更新！");
     };
 
+    document.getElementById('btn-toggle-zhuyin').onclick = () => {
+        state.commShowZhuyin = !state.commShowZhuyin;
+        const blackboard = document.getElementById('blackboard-content');
+        const bopodocFrame = document.getElementById('bopodoc-frame');
+        const zhuyinBtn = document.getElementById('btn-toggle-zhuyin');
+        const lbl = zhuyinBtn ? zhuyinBtn.querySelector('.btn-icon-label') : null;
+
+        if (state.commShowZhuyin) {
+            // 顯示波波注音，隱藏黑板
+            if (blackboard) blackboard.style.display = 'none';
+            if (bopodocFrame) bopodocFrame.style.display = 'block';
+            if (lbl) lbl.textContent = '注音:開';
+            if (zhuyinBtn) { zhuyinBtn.style.background = 'var(--success)'; zhuyinBtn.style.color = 'white'; zhuyinBtn.style.border = 'none'; }
+        } else {
+            if (blackboard) blackboard.style.display = '';
+            if (bopodocFrame) bopodocFrame.style.display = 'none';
+            if (lbl) lbl.textContent = '注音:關';
+            if (zhuyinBtn) { zhuyinBtn.style.background = ''; zhuyinBtn.style.color = ''; zhuyinBtn.style.border = ''; }
+        }
+        saveState();
+    };
+
     document.getElementById('btn-apply-sheets-id').onclick = () => {
         let val = document.getElementById('settings-sheets-id').value.trim();
         // 自動解析網址中的 ID
@@ -2121,21 +2143,6 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCommunicationBook();
     };
 
-    document.getElementById('btn-toggle-zhuyin').onclick = () => {
-        state.commShowZhuyin = !state.commShowZhuyin;
-        const fontSel = document.getElementById('select-blackboard-font');
-        if (state.commShowZhuyin) {
-            state.commFont = 'huninn';
-            if(fontSel) fontSel.value = 'huninn';
-        } else {
-            if (state.commFont === 'huninn') {
-                state.commFont = 'default';
-                if(fontSel) fontSel.value = 'default';
-            }
-        }
-        saveState();
-        renderCommunicationBook();
-    };
 
     document.getElementById('btn-toggle-comm-attendance').onclick = () => {
         state.commShowAttendance = !state.commShowAttendance;
