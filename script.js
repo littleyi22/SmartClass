@@ -571,7 +571,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             } else if (/[\u4e00-\u9fa5\u3400-\u4dbf]/.test(ch)) {
                                 const zy = ZHUYIN_DICT[ch] || '';
                                 if (zy) {
-                                    html += `<span class="zy-unit char-box"><span class="zy-base">${ch}</span><span class="zy-rt">${zy}</span></span>`;
+                                    html += `<ruby class="char-box">${ch}<rt>${zy}</rt></ruby>`;
                                 } else {
                                     html += `<span class="char-box">${ch}</span>`;
                                 }

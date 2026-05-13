@@ -834,50 +834,35 @@ header {
     text-combine-upright: none;
 }
 
-/* ===== Zhuyin 注音 - Custom Span Layout ===== */
-/* 橫書：文字在左，注音縱排在右 */
-.blackboard.horizontal .zy-unit {
+/* ===== 注音 Zhuyin Annotation ===== */
+
+/* 直書：使用瀏覽器原生 ruby，ruby-position:over 在 vertical-rl 下 = 右側 */
+.blackboard.vertical ruby {
+    ruby-position: over;
+}
+.blackboard.vertical rt {
+    font-size: 0.42em;
+    color: rgba(255, 255, 255, 0.88);
+    user-select: none;
+    letter-spacing: -0.05em;
+}
+
+/* 橫書：覆寫為 flex，讓 rt 顯示在字的右側 */
+.blackboard.horizontal ruby {
     display: inline-flex;
     flex-direction: row;
     align-items: center;
     vertical-align: middle;
-    line-height: 1.8;
 }
-.blackboard.horizontal .zy-base {
-    display: inline-block;
-}
-.blackboard.horizontal .zy-rt {
+.blackboard.horizontal rt {
     display: inline-block;
     writing-mode: vertical-rl;
     text-orientation: mixed;
     font-size: 0.42em;
     line-height: 1;
-    color: rgba(255, 255, 255, 0.9);
-    margin-left: 0.08em;
-    letter-spacing: -0.05em;
-    font-family: 'Noto Sans TC', sans-serif;
-    user-select: none;
-}
-
-/* 直書：整體 writing-mode 已是 vertical-rl，注音需橫向顯示在字右側 */
-.blackboard.vertical .zy-unit {
-    display: inline-flex;
-    flex-direction: row;
-    align-items: center;
-}
-.blackboard.vertical .zy-base {
-    display: inline-block;
-}
-.blackboard.vertical .zy-rt {
-    display: inline-block;
-    font-size: 0.42em;
-    line-height: 1;
-    color: rgba(255, 255, 255, 0.9);
-    margin-left: 0.05em;
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    letter-spacing: -0.05em;
-    font-family: 'Noto Sans TC', sans-serif;
+    color: rgba(255, 255, 255, 0.88);
+    margin-left: 0.06em;
+    letter-spacing: -0.08em;
     user-select: none;
 }
 
