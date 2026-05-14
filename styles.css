@@ -926,9 +926,10 @@ header {
 .blackboard.font-huninn {
     font-family: 'Bpmf Huninn', 'Noto Sans TC', sans-serif;
 }
-.blackboard.font-kaiti {
-    /* Standard Kai (BiauKai on Mac, DFKai-SB on Windows) */
-    font-family: 'BiauKai', 'DFKai-SB', '標楷體', 'DFKai-SB', serif;
+.blackboard.font-kaiti,
+.blackboard.font-kaiti * {
+    /* cwTeXKai: Google Fonts Kai fallback; BiauKai on Mac; DFKai-SB / 標楷體 on Windows */
+    font-family: 'cwTeXKai', 'BiauKai', 'DFKai-SB', '標楷體', serif !important;
 }
 
 /* Polyphone character highlighting in zhuyin mode */
