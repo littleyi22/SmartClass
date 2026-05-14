@@ -2084,6 +2084,35 @@ document.addEventListener('DOMContentLoaded', () => {
         renderCommunicationBook();
     };
 
+    // 波波注音嵌入 iframe 開關
+    const btnToggleBopodoc = document.getElementById('btn-toggle-bopodoc');
+    const btnCloseBopodoc = document.getElementById('btn-close-bopodoc');
+    const bopodocOverlay = document.getElementById('bopodoc-overlay');
+    if (btnToggleBopodoc && bopodocOverlay) {
+        btnToggleBopodoc.onclick = () => {
+            const isVisible = bopodocOverlay.style.display === 'flex';
+            bopodocOverlay.style.display = isVisible ? 'none' : 'flex';
+            if (!isVisible) {
+                btnToggleBopodoc.style.background = 'var(--primary)';
+                btnToggleBopodoc.style.color = 'white';
+                btnToggleBopodoc.style.border = 'none';
+            } else {
+                btnToggleBopodoc.style.background = '';
+                btnToggleBopodoc.style.color = '';
+                btnToggleBopodoc.style.border = '';
+            }
+        };
+    }
+    if (btnCloseBopodoc && bopodocOverlay) {
+        btnCloseBopodoc.onclick = () => {
+            bopodocOverlay.style.display = 'none';
+            if (btnToggleBopodoc) {
+                btnToggleBopodoc.style.background = '';
+                btnToggleBopodoc.style.color = '';
+                btnToggleBopodoc.style.border = '';
+            }
+        };
+    }
 
     document.getElementById('btn-toggle-comm-attendance').onclick = () => {
         state.commShowAttendance = !state.commShowAttendance;
@@ -2127,7 +2156,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // --- 注音字典 (built-in, no CDN needed) ---
-    const ZHUYIN_DICT = {'一':'ㄧ','二':'ㄦˋ','三':'ㄙㄢ','四':'ㄙˋ','五':'ㄨˇ','六':'ㄌㄧㄡˋ','七':'ㄑㄧ','八':'ㄅㄚ','九':'ㄐㄧㄡˇ','十':'ㄕˊ','百':'ㄅㄞˇ','千':'ㄑㄧㄢ','萬':'ㄨㄢˋ','零':'ㄌㄧㄥˊ','人':'ㄖㄣˊ','大':'ㄉㄚˋ','小':'ㄒㄧㄠˇ','中':'ㄓㄨㄥ','上':'ㄕㄤˋ','下':'ㄒㄧㄚˋ','左':'ㄗㄨㄛˇ','右':'ㄧㄡˋ','前':'ㄑㄧㄢˊ','後':'ㄏㄡˋ','內':'ㄋㄟˋ','外':'ㄨㄞˋ','東':'ㄉㄨㄥ','西':'ㄒㄧ','南':'ㄋㄢˊ','北':'ㄅㄟˇ','天':'ㄊㄧㄢ','地':'ㄉㄧˋ','日':'ㄖˋ','月':'ㄩㄝˋ','年':'ㄋㄧㄢˊ','時':'ㄕˊ','分':'ㄈㄣ','秒':'ㄇㄧㄠˇ','今':'ㄐㄧㄣ','明':'ㄇㄧㄥˊ','昨':'ㄗㄨㄛˊ','早':'ㄗㄠˇ','晚':'ㄨㄢˇ','午':'ㄨˇ','夜':'ㄧㄝˋ','春':'ㄔㄨㄣ','夏':'ㄒㄧㄚˋ','秋':'ㄑㄧㄡ','冬':'ㄉㄨㄥ','星':'ㄒㄧㄥ','期':'ㄑㄧˊ','週':'ㄓㄡ','假':'ㄐㄧㄚˋ','父':'ㄈㄨˋ','母':'ㄇㄨˇ','兄':'ㄒㄩㄥ','弟':'ㄉㄧˋ','姐':'ㄐㄧㄝˇ','妹':'ㄇㄟˋ','家':'ㄐㄧㄚ','朋':'ㄆㄥˊ','友':'ㄧㄡˇ','老':'ㄌㄠˇ','師':'ㄕ','生':'ㄕㄥ','同':'ㄊㄨㄥˊ','學':'ㄒㄩㄝˊ','校':'ㄒㄧㄠˋ','班':'ㄅㄢ','級':'ㄐㄧˊ','國':'ㄍㄨㄛˊ','語':'ㄩˇ','文':'ㄨㄣˊ','字':'ㄗˋ','書':'ㄕㄨ','本':'ㄅㄣˇ','作':'ㄗㄨㄛˋ','業':'ㄧㄝˋ','數':'ㄕㄨˋ','英':'ㄧㄥ','音':'ㄧㄣ','樂':'ㄩㄝˋ','體':'ㄊㄧˇ','育':'ㄩˋ','美':'ㄇㄟˇ','術':'ㄕㄨˋ','課':'ㄎㄜˋ','堂':'ㄊㄤˊ','考':'ㄎㄠˇ','試':'ㄕˋ','題':'ㄊㄧˊ','答':'ㄉㄚˊ','功':'ㄍㄨㄥ','預':'ㄩˋ','習':'ㄒㄧˊ','複':'ㄈㄨˋ','看':'ㄎㄢˋ','讀':'ㄉㄨˊ','寫':'ㄒㄧㄝˇ','說':'ㄕㄨㄛ','聽':'ㄊㄧㄥ','做':'ㄗㄨㄛˋ','玩':'ㄨㄢˊ','跑':'ㄆㄠˇ','走':'ㄗㄡˇ','吃':'ㄔ','喝':'ㄏㄜ','睡':'ㄕㄨㄟˋ','起':'ㄑㄧˇ','去':'ㄑㄩˋ','來':'ㄌㄞˊ','回'    // Load saved overrides
+    const ZHUYIN_DICT = {'一':'ㄧ','二':'ㄦˋ','三':'ㄙㄢ','四':'ㄙˋ','五':'ㄨˇ','六':'ㄌㄧㄡˋ','七':'ㄑㄧ','八':'ㄅㄚ','九':'ㄐㄧㄡˇ','十':'ㄕˊ','百':'ㄅㄞˇ','千':'ㄑㄧㄢ','萬':'ㄨㄢˋ','零':'ㄌㄧㄥˊ','人':'ㄖㄣˊ','大':'ㄉㄚˋ','小':'ㄒㄧㄠˇ','中':'ㄓㄨㄥ','上':'ㄕㄤˋ','下':'ㄒㄧㄚˋ','左':'ㄗㄨㄛˇ','右':'ㄧㄡˋ','前':'ㄑㄧㄢˊ','後':'ㄏㄡˋ','內':'ㄋㄟˋ','外':'ㄨㄞˋ','東':'ㄉㄨㄥ','西':'ㄒㄧ','南':'ㄋㄢˊ','北':'ㄅㄟˇ','天':'ㄊㄧㄢ','地':'ㄉㄧˋ','日':'ㄖˋ','月':'ㄩㄝˋ','年':'ㄋㄧㄢˊ','時':'ㄕˊ','分':'ㄈㄣ','秒':'ㄇㄧㄠˇ','今':'ㄐㄧㄣ','明':'ㄇㄧㄥˊ','昨':'ㄗㄨㄛˊ','早':'ㄗㄠˇ','晚':'ㄨㄢˇ','午':'ㄨˇ','夜':'ㄧㄝˋ','春':'ㄔㄨㄣ','夏':'ㄒㄧㄚˋ','秋':'ㄑㄧㄡ','冬':'ㄉㄨㄥ','星':'ㄒㄧㄥ','期':'ㄑㄧˊ','週':'ㄓㄡ','假':'ㄐㄧㄚˋ','父':'ㄈㄨˋ','母':'ㄇㄨˇ','兄':'ㄒㄩㄥ','弟':'ㄉㄧˋ','姐':'ㄐㄧㄝˇ','妹':'ㄇㄟˋ','家':'ㄐㄧㄚ','朋':'ㄆㄥˊ','友':'ㄧㄡˇ','老':'ㄌㄠˇ','師':'ㄕ','生':'ㄕㄥ','同':'ㄊㄨㄥˊ','學':'ㄒㄩㄝˊ','校':'ㄒㄧㄠˋ','班':'ㄅㄢ','級':'ㄐㄧˊ','國':'ㄍㄨㄛˊ','語':'ㄩˇ','文':'ㄨㄣˊ','字':'ㄗˋ','書':'ㄕㄨ','本':'ㄅㄣˇ','作':'ㄗㄨㄛˋ','業':'ㄧㄝˋ','數':'ㄕㄨˋ','英':'ㄧㄥ','音':'ㄧㄣ','樂':'ㄩㄝˋ','體':'ㄊㄧˇ','育':'ㄩˋ','美':'ㄇㄟˇ','術':'ㄕㄨˋ','課':'ㄎㄜˋ','堂':'ㄊㄤˊ','考':'ㄎㄠˇ','試':'ㄕˋ','題':'ㄊㄧˊ','答':'ㄉㄚˊ','功':'ㄍㄨㄥ','預':'ㄩˋ','習':'ㄒㄧˊ','複':'ㄈㄨˋ','看':'ㄎㄢˋ','讀':'ㄉㄨˊ','寫':'ㄒㄧㄝˇ','說':'ㄕㄨㄛ','聽':'ㄊㄧㄥ','做':'ㄗㄨㄛˋ','玩':'ㄨㄢˊ','跑':'ㄆㄠˇ','走':'ㄗㄡˇ','吃':'ㄔ','喝':'ㄏㄜ','睡':'ㄕㄨㄟˋ','起':'ㄑㄧˇ','去':'ㄑㄩˋ','來':'ㄌㄞˊ','回':'ㄏㄨㄟˊ'};
+    // Load saved overrides
 
     state.zhuyinOverrides = JSON.parse(localStorage.getItem('sc_v3_zhuyin_overrides') || '{}');
 
@@ -2861,6 +2891,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if(!container) return;
         
         const builtin = `
+            <a href="https://bopodoc.com/files" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block;">
+                <div class="tool-icon" style="color: #ec4899;"><i data-lucide="languages"></i></div>
+                <h3>波波注音</h3>
+                <p>注音字型編輯工具</p>
+            </a>
             <a href="https://littleyi22.github.io/class-management-kit/" target="_blank" class="tool-card" style="text-decoration: none; color: inherit; display: block;">
                 <div class="tool-icon" style="color: #3b82f6;"><i data-lucide="briefcase"></i></div>
                 <h3>班級經營助手</h3>
