@@ -70,6 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
         commShowAttendance: localStorage.getItem('sc_v3_comm_show_att') !== 'false',
         commFont: localStorage.getItem('sc_v3_comm_font') || 'default',
         commFontSize: parseFloat(localStorage.getItem('sc_v3_comm_font_size')) || 1.8,
+        commLetterSpacing: parseFloat(localStorage.getItem('sc_v3_comm_letter_spacing')) || 0,
+        commLineHeight: parseFloat(localStorage.getItem('sc_v3_comm_line_height')) || 1.5,
         history: JSON.parse(localStorage.getItem('sc_v3_history')) || {},
         sheetsId: localStorage.getItem('sc_v3_sheets_id') || '',
         scoreLocked: !!localStorage.getItem('sc_v3_score_pwd') || localStorage.getItem('sc_v3_score_locked') === 'true',
@@ -121,6 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('sc_v3_comm_show_att', state.commShowAttendance);
         localStorage.setItem('sc_v3_comm_font', state.commFont);
         localStorage.setItem('sc_v3_comm_font_size', state.commFontSize);
+        localStorage.setItem('sc_v3_comm_letter_spacing', state.commLetterSpacing);
+        localStorage.setItem('sc_v3_comm_line_height', state.commLineHeight);
         localStorage.setItem('sc_v3_history', JSON.stringify(state.history));
         localStorage.setItem('sc_v3_sheets_id', state.sheetsId);
         localStorage.setItem('sc_v3_score_locked', state.scoreLocked);
@@ -538,6 +542,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (document.activeElement !== contentDiv) {
             contentDiv.style.fontSize = `${state.commFontSize}rem`;
+            contentDiv.style.letterSpacing = `${state.commLetterSpacing}em`;
+            contentDiv.style.lineHeight = `${state.commLineHeight}`;
+            contentDiv.style.setProperty('--sc-letter-spacing', `${state.commLetterSpacing}em`);
             // Plain HTML rendering (zhuyin removed — use bopodoc.com via Wave button)
             let escapedHtml = rawText
                 .replace(/&/g, '&amp;')
@@ -2233,6 +2240,42 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
+    const btnIncLetterSpacing = document.getElementById('btn-increase-letter-spacing');
+    if (btnIncLetterSpacing) {
+        btnIncLetterSpacing.onclick = () => {
+            state.commLetterSpacing = parseFloat((Math.min(1.0, state.commLetterSpacing + 0.1)).toFixed(1));
+            saveState();
+            renderCommunicationBook();
+        };
+    }
+
+    const btnDecLetterSpacing = document.getElementById('btn-decrease-letter-spacing');
+    if (btnDecLetterSpacing) {
+        btnDecLetterSpacing.onclick = () => {
+            state.commLetterSpacing = parseFloat((Math.max(-0.5, state.commLetterSpacing - 0.1)).toFixed(1));
+            saveState();
+            renderCommunicationBook();
+        };
+    }
+
+    const btnIncLineHeight = document.getElementById('btn-increase-line-height');
+    if (btnIncLineHeight) {
+        btnIncLineHeight.onclick = () => {
+            state.commLineHeight = parseFloat((Math.min(3.0, state.commLineHeight + 0.1)).toFixed(1));
+            saveState();
+            renderCommunicationBook();
+        };
+    }
+
+    const btnDecLineHeight = document.getElementById('btn-decrease-line-height');
+    if (btnDecLineHeight) {
+        btnDecLineHeight.onclick = () => {
+            state.commLineHeight = parseFloat((Math.max(1.0, state.commLineHeight - 0.1)).toFixed(1));
+            saveState();
+            renderCommunicationBook();
+        };
+    }
+
     const saveLocalBtn = document.getElementById('btn-save-local');
     if (saveLocalBtn) {
         saveLocalBtn.onclick = () => {
@@ -2396,6 +2439,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (imported.commFontSize) state.commFontSize = imported.commFontSize;
                         if (imported.commShowZhuyin !== undefined) state.commShowZhuyin = imported.commShowZhuyin;
                         if (imported.commShowAttendance !== undefined) state.commShowAttendance = imported.commShowAttendance;
+                        if (imported.commLetterSpacing !== undefined) state.commLetterSpacing = imported.commLetterSpacing;
+                        if (imported.commLineHeight !== undefined) state.commLineHeight = imported.commLineHeight;
                         if (imported.sheetsId) state.sheetsId = imported.sheetsId;
                         
                         saveState();

@@ -816,13 +816,13 @@ header {
 /* In horizontal mode, to ensure it centers align cleanly */
 .blackboard.horizontal.char-boxed .char-box,
 .blackboard.horizontal.char-boxed ruby {
-    margin: 0 0.1em;
+    margin: 0 calc(0.1em + var(--sc-letter-spacing, 0em) / 2);
 }
 
 /* In vertical mode */
 .blackboard.vertical.char-boxed .char-box,
 .blackboard.vertical.char-boxed ruby {
-    margin: 0.1em 0;
+    margin: calc(0.1em + var(--sc-letter-spacing, 0em) / 2) 0;
 }
 
 /* For upright combined alphanumeric text (horizontal mode or short groups) */
